@@ -13,6 +13,8 @@ const {
   onboardAdvisor,
   getMyProfile,
   updateAdvisorProfile,
+  checkSlugAvailability,
+  updateAdvisorSlug,
   uploadProfilePhoto,
   uploadMicrositeImage,
   uploadContentLibraryImages,
@@ -72,6 +74,8 @@ router.post('/:slug/admin-enter', adminEnterAdvisor);
 
 // Protected — advisor views/edits their own profile from the dashboard
 router.get('/me', authenticate, getMyProfile);
+router.get('/slug-availability', authenticate, checkSlugAvailability);
+router.patch('/slug', authenticate, updateAdvisorSlug);
 router.patch('/profile', authenticate, updateAdvisorProfile);
 router.post('/photo', authenticate, uploadPhoto.single('photo'), uploadProfilePhoto);
 router.post(

@@ -6,6 +6,22 @@ const Advisor = require('../models/Advisor');
 const Testimonial = require('../models/Testimonial');
 const User = require('../models/User');
 
+// Subdomains that must never be assignable to an advisor — mirrors
+// frontend/middleware.js's RESERVED_SUBDOMAINS plus a couple of backend-only
+// reservations (this API is itself served under /api).
+const RESERVED_SLUGS = ['www', 'admin', 'api', 'app', 'mail', 'blog'];
+
+// Same cleanup rule used at signup (authController's generateUniqueSlug) —
+// lowercase, non-alphanumerics collapsed to single hyphens, capped length.
+function sanitizeSlug(raw) {
+  return String(raw || '')
+    .toLowerCase()
+    .replace(/@.*/, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 30);
+}
+
 const CSV_COLUMNS = [
   'slug',
   'name',
@@ -440,6 +456,83 @@ exports.updateAdvisorProfile = async (req, res, next) => {
     if (!updated) return res.status(404).json({ error: 'Advisor not found' });
     res.json({ advisor: updated });
   } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/advisor/slug-availability?slug=xyz — as the advisor types a new
+// website address, checks whether it's free and, if not, offers a handful
+// of available alternatives (Gmail-style username suggestions).
+exports.checkSlugAvailability = async (req, res, next) => {
+  try {
+    const cleaned = sanitizeSlug(req.query.slug);
+    if (cleaned.length < 3) {
+      return res.json({ slug: cleaned, available: false, reason: 'Must be at least 3 characters.', suggestions: [] });
+    }
+
+    // Excluding the advisor's own _id means re-submitting their current slug
+    // correctly comes back as available rather than "taken by myself".
+    const taken = await Advisor.exists({ slug: cleaned, _id: { $ne: req.user.advisorId } });
+    const reserved = !taken && RESERVED_SLUGS.includes(cleaned);
+
+    if (!taken && !reserved) {
+      return res.json({ slug: cleaned, available: true, suggestions: [] });
+    }
+
+    // Build candidates the way Gmail suggests free usernames: numbered
+    // variants plus a couple of short random-suffix ones, then check them
+    // all in one query and return the first handful that are actually free.
+    const candidates = [
+      `${cleaned}-2`,
+      `${cleaned}-3`,
+      `${cleaned}${Math.floor(10 + Math.random() * 90)}`,
+      `${cleaned}-advisor`,
+      `${cleaned}-${Math.floor(1000 + Math.random() * 9000)}`,
+      `${cleaned}-${Math.floor(1000 + Math.random() * 9000)}`
+    ].filter((c) => !RESERVED_SLUGS.includes(c));
+
+    const takenDocs = await Advisor.find({ slug: { $in: candidates } }).select('slug').lean();
+    const takenSet = new Set(takenDocs.map((d) => d.slug));
+    const suggestions = candidates.filter((c) => !takenSet.has(c)).slice(0, 4);
+
+    res.json({
+      slug: cleaned,
+      available: false,
+      reason: reserved ? 'This address is reserved.' : 'This address is already taken.',
+      suggestions
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/advisor/slug — advisor changes their own website address.
+exports.updateAdvisorSlug = async (req, res, next) => {
+  try {
+    const cleaned = sanitizeSlug(req.body.slug);
+    if (cleaned.length < 3) {
+      return res.status(400).json({ error: 'Website address must be at least 3 characters.' });
+    }
+    if (RESERVED_SLUGS.includes(cleaned)) {
+      return res.status(409).json({ error: 'This address is reserved.' });
+    }
+
+    const taken = await Advisor.exists({ slug: cleaned, _id: { $ne: req.user.advisorId } });
+    if (taken) {
+      return res.status(409).json({ error: 'This address is already taken.' });
+    }
+
+    const updated = await Advisor.findByIdAndUpdate(
+      req.user.advisorId,
+      { $set: { slug: cleaned } },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Advisor not found' });
+    res.json({ advisor: updated });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: 'This address is already taken.' });
+    }
     next(err);
   }
 };

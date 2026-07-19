@@ -281,6 +281,10 @@ export default function AdvisorDashboardPage() {
   const [achievements, setAchievements] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [profileStatus, setProfileStatus] = useState({ saving: false, error: '', success: '' });
+  const [slugEditorOpen, setSlugEditorOpen] = useState(false);
+  const [slugInput, setSlugInput] = useState('');
+  const [slugCheck, setSlugCheck] = useState({ checking: false, available: null, reason: '', suggestions: [] });
+  const [slugSaveStatus, setSlugSaveStatus] = useState({ saving: false, error: '', success: '' });
   const [photoStatus, setPhotoStatus] = useState({ uploading: false, error: '' });
   const [micrositeImages, setMicrositeImages] = useState({});
   const [micrositeImageStatus, setMicrositeImageStatus] = useState({});
@@ -737,6 +741,52 @@ export default function AdvisorDashboardPage() {
     if (res.ok) {
       setLibraryImages(data.advisor.contentLibraryImages || []);
     }
+  }
+
+  function openSlugEditor() {
+    setSlugInput(advisor?.slug || '');
+    setSlugCheck({ checking: false, available: null, reason: '', suggestions: [] });
+    setSlugSaveStatus({ saving: false, error: '', success: '' });
+    setSlugEditorOpen(true);
+  }
+
+  // Debounced live-availability check, Gmail-signup style: pause typing for
+  // 400ms, then ask the backend if this address is free (and if not, what
+  // similar ones are).
+  useEffect(() => {
+    if (!slugEditorOpen) return;
+    const value = slugInput.trim();
+    if (!value || value === advisor?.slug) {
+      setSlugCheck({ checking: false, available: null, reason: '', suggestions: [] });
+      return;
+    }
+    setSlugCheck((s) => ({ ...s, checking: true }));
+    const timer = setTimeout(() => {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/slug-availability?slug=${encodeURIComponent(value)}`, {
+        headers: authHeaders()
+      })
+        .then((res) => res.json())
+        .then((data) => setSlugCheck({ checking: false, available: data.available, reason: data.reason || '', suggestions: data.suggestions || [] }))
+        .catch(() => setSlugCheck({ checking: false, available: null, reason: '', suggestions: [] }));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [slugInput, slugEditorOpen]);
+
+  async function handleSlugSave() {
+    setSlugSaveStatus({ saving: true, error: '', success: '' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/slug`, {
+      method: 'PATCH',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ slug: slugInput.trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setSlugSaveStatus({ saving: false, error: data.error || 'Could not update your website address', success: '' });
+      return;
+    }
+    setAdvisor(data.advisor);
+    setSlugSaveStatus({ saving: false, error: '', success: 'Website address updated!' });
+    setTimeout(() => setSlugEditorOpen(false), 1500);
   }
 
   async function handleProfileSubmit(e) {
@@ -1349,8 +1399,95 @@ export default function AdvisorDashboardPage() {
                     >
                       Edit Profile
                     </button>
+                    {!slugEditorOpen && (
+                      <button
+                        type="button"
+                        onClick={openSlugEditor}
+                        className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold shadow-sm transition hover:bg-gray-50"
+                      >
+                        Change Address
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                {slugEditorOpen && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <h3 className="text-sm font-extrabold text-gray-900">Change your website address</h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Your old address will stop working immediately — update any links you've shared once you save.
+                    </p>
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="flex flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5">
+                        <input
+                          type="text"
+                          value={slugInput}
+                          onChange={(e) => setSlugInput(e.target.value)}
+                          autoFocus
+                          className="w-full bg-transparent text-sm font-semibold text-gray-900 outline-none"
+                        />
+                        <span className="flex-none whitespace-nowrap text-sm text-gray-400">
+                          .{process.env.NEXT_PUBLIC_BASE_DOMAIN}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSlugSave}
+                          disabled={
+                            slugSaveStatus.saving ||
+                            slugCheck.checking ||
+                            slugCheck.available === false ||
+                            !slugInput.trim() ||
+                            slugInput.trim() === advisor?.slug
+                          }
+                          className="flex-none rounded-xl bg-ia-blue px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-ia-blue-soft disabled:opacity-50"
+                        >
+                          {slugSaveStatus.saving ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSlugEditorOpen(false)}
+                          className="flex-none rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-bold text-gray-600 transition hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 min-h-[1.25rem] text-xs font-semibold">
+                      {slugCheck.checking && <span className="text-gray-400">Checking availability...</span>}
+                      {!slugCheck.checking && slugCheck.available === true && (
+                        <span className="text-ia-green">✓ Available</span>
+                      )}
+                      {!slugCheck.checking && slugCheck.available === false && (
+                        <span className="text-red-500">✕ {slugCheck.reason || 'Not available'}</span>
+                      )}
+                      {slugSaveStatus.error && <span className="block text-red-500">{slugSaveStatus.error}</span>}
+                      {slugSaveStatus.success && <span className="block text-ia-green">{slugSaveStatus.success}</span>}
+                    </div>
+
+                    {slugCheck.suggestions.length > 0 && (
+                      <div className="mt-3">
+                        <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-wide text-gray-400">
+                          Try one of these instead
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {slugCheck.suggestions.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setSlugInput(s)}
+                              className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-xs font-bold text-gray-700 transition hover:border-ia-blue hover:text-ia-blue"
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
               )}
 
