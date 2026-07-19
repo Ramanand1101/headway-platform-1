@@ -52,5 +52,13 @@ app.use(errorHandler);
 
 startMonthlyContentJob();
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Traditional hosting (local dev, Render, etc.) runs this file directly and
+// needs a listening port. Vercel instead requires the app itself via
+// api/index.js and invokes it as a serverless function per-request, so it
+// must not bind a port.
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;
