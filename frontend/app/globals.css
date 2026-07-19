@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Default homepage color palette (classic-navy) — used by SiteHeader/SiteFooter
+   on every page. The homepage itself (app/page.js) overrides these on its root
+   element via inline style, per the admin's chosen theme at /admin/homepage. */
+:root {
+  --site-navy: #0b1f3a;
+  --site-navy-2: #122b4e;
+  --site-navy-3: #0a1830;
+  --site-blue: #c9972e;
+  --site-blue-soft: #ddae4e;
+  --site-green: #16a34a;
+  --site-green-soft: #22c55e;
+  --site-navy-rgb: 11 31 58;
+  --site-blue-rgb: 201 151 46;
+  --site-green-rgb: 22 163 74;
+}
+
+body {
+  color: #1f2937;
+}
