@@ -333,6 +333,28 @@ exports.uploadMicrositeImage = async (req, res, next) => {
   }
 };
 
+// DELETE /api/advisor/microsite-image/:section — advisor clears a microsite
+// section photo, reverting it to its fallback (profile photo or icon).
+exports.deleteMicrositeImage = async (req, res, next) => {
+  try {
+    const section = String(req.params.section || '');
+    if (!MICROSITE_IMAGE_SECTIONS.includes(section)) {
+      return res.status(400).json({ error: 'Invalid microsite image section' });
+    }
+
+    const advisor = await Advisor.findByIdAndUpdate(
+      req.user.advisorId,
+      { $unset: { [`micrositeImages.${section}`]: '' } },
+      { new: true }
+    );
+    if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    res.json({ advisor });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // POST /api/advisor/content-library — advisor uploads one or more photos to
 // their Content Library for use in reels/carousels/posters.
 exports.uploadContentLibraryImages = async (req, res, next) => {

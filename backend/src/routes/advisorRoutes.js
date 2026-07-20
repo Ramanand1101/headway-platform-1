@@ -17,6 +17,7 @@ const {
   updateAdvisorSlug,
   uploadProfilePhoto,
   uploadMicrositeImage,
+  deleteMicrositeImage,
   uploadContentLibraryImages,
   deleteContentLibraryImage,
   uploadListImage,
@@ -89,6 +90,7 @@ router.post(
   uploadPhoto.single('image'),
   uploadMicrositeImage
 );
+router.delete('/microsite-image/:section', authenticate, deleteMicrositeImage);
 router.post(
   '/content-library',
   authenticate,

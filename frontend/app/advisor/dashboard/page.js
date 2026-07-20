@@ -283,7 +283,6 @@ export default function AdvisorDashboardPage() {
   const [achievementImageStatus, setAchievementImageStatus] = useState({});
   const [faqs, setFaqs] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [reviewDraft, setReviewDraft] = useState({ clientName: '', role: '', photoUrl: '', message: '', rating: 5 });
   const [reviewStatus, setReviewStatus] = useState({ savingId: '', adding: false, error: '' });
   const [reviewPhotoStatus, setReviewPhotoStatus] = useState({});
   const [profileStatus, setProfileStatus] = useState({ saving: false, error: '', success: '' });
@@ -601,39 +600,11 @@ export default function AdvisorDashboardPage() {
     }
   }
 
-  function updateReviewDraftField(field, value) {
-    setReviewDraft((prev) => ({ ...prev, [field]: value }));
-  }
-
-  async function handleReviewDraftPhotoChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setReviewPhotoStatus((prev) => ({ ...prev, draft: { uploading: true, error: '' } }));
-    try {
-      const url = await uploadListImageFile(file);
-      updateReviewDraftField('photoUrl', url);
-      setReviewPhotoStatus((prev) => ({ ...prev, draft: { uploading: false, error: '' } }));
-    } catch (err) {
-      setReviewPhotoStatus((prev) => ({ ...prev, draft: { uploading: false, error: err.message } }));
-    }
-  }
-
-  async function addReview() {
-    if (!reviewDraft.clientName.trim() || !reviewDraft.message.trim()) return;
-    setReviewStatus({ savingId: '', adding: true, error: '' });
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(reviewDraft)
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setReviewStatus({ savingId: '', adding: false, error: data.error || 'Could not add review' });
-      return;
-    }
-    setReviews((prev) => [data.testimonial, ...prev]);
-    setReviewDraft({ clientName: '', role: '', photoUrl: '', message: '', rating: 5 });
-    setReviewStatus({ savingId: '', adding: false, error: '' });
+  // Adds a blank, unsaved review row to edit locally — mirrors
+  // addCompany/addAchievement. Nothing hits the server until that row's own
+  // Save button is clicked.
+  function addReview() {
+    setReviews((prev) => [{ _id: null, clientName: '', role: '', photoUrl: '', message: '', rating: 5 }, ...prev]);
   }
 
   function updateReviewLocal(i, field, value) {
@@ -653,20 +624,35 @@ export default function AdvisorDashboardPage() {
     }
   }
 
+  // Saves one review row — creates it (POST) the first time, updates it
+  // (PATCH) on every save after that, based on whether it already has an _id.
   async function saveReview(i) {
     const review = reviews[i];
-    setReviewStatus({ savingId: review._id, adding: false, error: '' });
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials/${review._id}`, {
-      method: 'PATCH',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({
-        clientName: review.clientName,
-        role: review.role,
-        photoUrl: review.photoUrl,
-        message: review.message,
-        rating: review.rating
-      })
-    });
+    if (!review.clientName.trim() || !review.message.trim()) {
+      setReviewStatus({ savingId: '', adding: false, error: 'Customer name and review text are required' });
+      return;
+    }
+
+    const isNew = !review._id;
+    setReviewStatus({ savingId: isNew ? 'new' : review._id, adding: false, error: '' });
+
+    const body = {
+      clientName: review.clientName,
+      role: review.role,
+      photoUrl: review.photoUrl,
+      message: review.message,
+      rating: review.rating
+    };
+    const res = await fetch(
+      isNew
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials/${review._id}`,
+      {
+        method: isNew ? 'POST' : 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body)
+      }
+    );
     const data = await res.json();
     if (!res.ok) {
       setReviewStatus({ savingId: '', adding: false, error: data.error || 'Could not save review' });
@@ -679,10 +665,12 @@ export default function AdvisorDashboardPage() {
 
   async function removeReview(i) {
     const review = reviews[i];
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials/${review._id}`, {
-      method: 'DELETE',
-      headers: authHeaders()
-    });
+    if (review._id) {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials/${review._id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+    }
     setReviews((prev) => prev.filter((_, idx) => idx !== i));
   }
 
@@ -741,6 +729,26 @@ export default function AdvisorDashboardPage() {
       setMicrositeImageStatus((prev) => ({
         ...prev,
         [section]: { uploading: false, error: data.error || 'Could not upload photo' }
+      }));
+      return;
+    }
+
+    setMicrositeImages(data.advisor.micrositeImages || {});
+    setMicrositeImageStatus((prev) => ({ ...prev, [section]: { uploading: false, error: '' } }));
+  }
+
+  async function handleMicrositeImageRemove(section) {
+    setMicrositeImageStatus((prev) => ({ ...prev, [section]: { uploading: true, error: '' } }));
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/microsite-image/${section}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setMicrositeImageStatus((prev) => ({
+        ...prev,
+        [section]: { uploading: false, error: data.error || 'Could not remove photo' }
       }));
       return;
     }
@@ -1738,6 +1746,16 @@ export default function AdvisorDashboardPage() {
                                 className="hidden"
                               />
                             </label>
+                            {micrositeImages[slot.key] && (
+                              <button
+                                type="button"
+                                onClick={() => handleMicrositeImageRemove(slot.key)}
+                                disabled={micrositeImageStatus[slot.key]?.uploading}
+                                className="mt-1 ml-2 inline-block text-xs font-bold text-red-500 hover:underline"
+                              >
+                                Remove
+                              </button>
+                            )}
                             {micrositeImageStatus[slot.key]?.error && (
                               <p className="mt-1 text-[0.65rem] text-red-600">{micrositeImageStatus[slot.key].error}</p>
                             )}
@@ -2000,6 +2018,16 @@ export default function AdvisorDashboardPage() {
                                       className="hidden"
                                     />
                                   </label>
+                                  {micrositeImages[slot.key] && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMicrositeImageRemove(slot.key)}
+                                      disabled={micrositeImageStatus[slot.key]?.uploading}
+                                      className="mt-1 ml-2 inline-block text-xs font-bold text-red-500 hover:underline"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
                                   {micrositeImageStatus[slot.key]?.error && (
                                     <p className="mt-1 text-[0.65rem] text-red-600">
                                       {micrositeImageStatus[slot.key].error}
@@ -2328,165 +2356,106 @@ export default function AdvisorDashboardPage() {
                     </div>
 
                     <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                      <h3 className="text-sm font-extrabold text-ia-navy">Customer Reviews</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-extrabold text-ia-navy">Customer Reviews</h3>
+                        <button
+                          type="button"
+                          onClick={addReview}
+                          className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40"
+                        >
+                          + Add review
+                        </button>
+                      </div>
                       <p className="mt-1 text-xs text-gray-500">
-                        Text reviews shown on your microsite — customer photo is optional.
+                        Text reviews shown on your microsite — customer photo is optional. Each review saves on its
+                        own with the Save button below it.
                       </p>
                       <div className="mt-4 space-y-3">
-                        {reviews.map((r, i) => (
-                          <div key={r._id} className="rounded-xl border border-gray-200 bg-white p-3">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                              <div className="h-14 w-14 flex-none overflow-hidden rounded-full bg-gray-100">
-                                {r.photoUrl ? (
-                                  <img src={r.photoUrl} alt={r.clientName} className="h-full w-full object-cover" />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
-                                    Photo
-                                  </div>
-                                )}
-                              </div>
-                              <input
-                                value={r.clientName || ''}
-                                onChange={(e) => updateReviewLocal(i, 'clientName', e.target.value)}
-                                placeholder="Customer name"
-                                className={`sm:flex-1 ${profileInputClasses}`}
-                              />
-                              <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
-                                {reviewPhotoStatus[i]?.uploading ? 'Uploading...' : r.photoUrl ? 'Replace photo' : 'Upload photo'}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handleReviewPhotoChange(i, e)}
-                                  disabled={reviewPhotoStatus[i]?.uploading}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
-                            <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                              <input
-                                value={r.role || ''}
-                                onChange={(e) => updateReviewLocal(i, 'role', e.target.value)}
-                                placeholder="Role/city (optional)"
-                                className={`sm:flex-1 ${profileInputClasses}`}
-                              />
-                              <select
-                                value={r.rating ?? 5}
-                                onChange={(e) => updateReviewLocal(i, 'rating', Number(e.target.value))}
-                                className={`sm:w-32 ${profileInputClasses}`}
-                              >
-                                {[5, 4, 3, 2, 1].map((n) => (
-                                  <option key={n} value={n}>
-                                    {n} star{n === 1 ? '' : 's'}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <textarea
-                              value={r.message || ''}
-                              onChange={(e) => updateReviewLocal(i, 'message', e.target.value)}
-                              placeholder="What did they say?"
-                              rows={2}
-                              className={`mt-2.5 ${profileInputClasses}`}
-                            />
-                            {reviewPhotoStatus[i]?.error && (
-                              <p className="mt-1 text-[0.65rem] text-red-600">{reviewPhotoStatus[i].error}</p>
-                            )}
-                            <div className="mt-2.5 flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => saveReview(i)}
-                                disabled={reviewStatus.savingId === r._id}
-                                className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40 disabled:opacity-50"
-                              >
-                                {reviewStatus.savingId === r._id ? 'Saving...' : 'Save'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeReview(i)}
-                                className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-
-                        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-3">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <div className="h-14 w-14 flex-none overflow-hidden rounded-full bg-gray-100">
-                              {reviewDraft.photoUrl ? (
-                                <img
-                                  src={reviewDraft.photoUrl}
-                                  alt={reviewDraft.clientName}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
-                                  Photo
+                        {reviews.map((r, i) => {
+                          const isSaving = r._id ? reviewStatus.savingId === r._id : reviewStatus.savingId === 'new';
+                          return (
+                            <div key={r._id || `new-${i}`} className="rounded-xl border border-gray-200 bg-white p-3">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="h-14 w-14 flex-none overflow-hidden rounded-full bg-gray-100">
+                                  {r.photoUrl ? (
+                                    <img src={r.photoUrl} alt={r.clientName} className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
+                                      Photo
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            <input
-                              value={reviewDraft.clientName}
-                              onChange={(e) => updateReviewDraftField('clientName', e.target.value)}
-                              placeholder="Customer name"
-                              className={`sm:flex-1 ${profileInputClasses}`}
-                            />
-                            <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
-                              {reviewPhotoStatus.draft?.uploading
-                                ? 'Uploading...'
-                                : reviewDraft.photoUrl
-                                  ? 'Replace photo'
-                                  : 'Upload photo'}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleReviewDraftPhotoChange}
-                                disabled={reviewPhotoStatus.draft?.uploading}
-                                className="hidden"
+                                <input
+                                  value={r.clientName || ''}
+                                  onChange={(e) => updateReviewLocal(i, 'clientName', e.target.value)}
+                                  placeholder="Customer name"
+                                  className={`sm:flex-1 ${profileInputClasses}`}
+                                />
+                                <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
+                                  {reviewPhotoStatus[i]?.uploading
+                                    ? 'Uploading...'
+                                    : r.photoUrl
+                                      ? 'Replace photo'
+                                      : 'Upload photo'}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleReviewPhotoChange(i, e)}
+                                    disabled={reviewPhotoStatus[i]?.uploading}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+                              <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                <input
+                                  value={r.role || ''}
+                                  onChange={(e) => updateReviewLocal(i, 'role', e.target.value)}
+                                  placeholder="Role/city (optional)"
+                                  className={`sm:flex-1 ${profileInputClasses}`}
+                                />
+                                <select
+                                  value={r.rating ?? 5}
+                                  onChange={(e) => updateReviewLocal(i, 'rating', Number(e.target.value))}
+                                  className={`sm:w-32 ${profileInputClasses}`}
+                                >
+                                  {[5, 4, 3, 2, 1].map((n) => (
+                                    <option key={n} value={n}>
+                                      {n} star{n === 1 ? '' : 's'}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <textarea
+                                value={r.message || ''}
+                                onChange={(e) => updateReviewLocal(i, 'message', e.target.value)}
+                                placeholder="What did they say?"
+                                rows={2}
+                                className={`mt-2.5 ${profileInputClasses}`}
                               />
-                            </label>
-                          </div>
-                          <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                            <input
-                              value={reviewDraft.role}
-                              onChange={(e) => updateReviewDraftField('role', e.target.value)}
-                              placeholder="Role/city (optional)"
-                              className={`sm:flex-1 ${profileInputClasses}`}
-                            />
-                            <select
-                              value={reviewDraft.rating}
-                              onChange={(e) => updateReviewDraftField('rating', Number(e.target.value))}
-                              className={`sm:w-32 ${profileInputClasses}`}
-                            >
-                              {[5, 4, 3, 2, 1].map((n) => (
-                                <option key={n} value={n}>
-                                  {n} star{n === 1 ? '' : 's'}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <textarea
-                            value={reviewDraft.message}
-                            onChange={(e) => updateReviewDraftField('message', e.target.value)}
-                            placeholder="What did they say?"
-                            rows={2}
-                            className={`mt-2.5 ${profileInputClasses}`}
-                          />
-                          {reviewPhotoStatus.draft?.error && (
-                            <p className="mt-1 text-[0.65rem] text-red-600">{reviewPhotoStatus.draft.error}</p>
-                          )}
-                          <div className="mt-2.5 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={addReview}
-                              disabled={reviewStatus.adding || !reviewDraft.clientName.trim() || !reviewDraft.message.trim()}
-                              className="rounded-lg bg-ia-blue px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-ia-blue-soft disabled:opacity-50"
-                            >
-                              {reviewStatus.adding ? 'Adding...' : '+ Add review'}
-                            </button>
-                          </div>
-                        </div>
+                              {reviewPhotoStatus[i]?.error && (
+                                <p className="mt-1 text-[0.65rem] text-red-600">{reviewPhotoStatus[i].error}</p>
+                              )}
+                              <div className="mt-2.5 flex items-center justify-end gap-2">
+                                {!r._id && <span className="mr-auto text-[0.65rem] font-bold text-ia-blue">Unsaved</span>}
+                                <button
+                                  type="button"
+                                  onClick={() => saveReview(i)}
+                                  disabled={isSaving}
+                                  className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40 disabled:opacity-50"
+                                >
+                                  {isSaving ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeReview(i)}
+                                  className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                         {reviewStatus.error && <p className="text-[0.65rem] text-red-600">{reviewStatus.error}</p>}
                       </div>
                     </div>
