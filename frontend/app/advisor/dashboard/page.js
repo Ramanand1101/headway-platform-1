@@ -2293,6 +2293,15 @@ export default function AdvisorDashboardPage() {
                                       className="hidden"
                                     />
                                   </label>
+                                  {a.imageUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateAchievement(i, 'imageUrl', '')}
+                                      className="flex-none whitespace-nowrap text-xs font-bold text-red-500 hover:underline"
+                                    >
+                                      Remove photo
+                                    </button>
+                                  )}
                                 </div>
                                 <textarea
                                   value={a.description}
