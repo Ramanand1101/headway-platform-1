@@ -91,25 +91,6 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
         missionImage={advisor.micrositeImages?.mission}
       />
 
-      {advisor.faqs?.length > 0 && (
-        <section className="bg-gray-50 px-6 py-20">
-          <div className="mx-auto max-w-3xl">
-            <div className="mb-10 text-center">
-              <h2
-                data-field="micrositeContent.faqHeading"
-                className="text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl"
-              >
-                {micrositeCopy(advisor, 'faqHeading')}
-              </h2>
-              <p data-field="micrositeContent.faqSubtext" className="mt-2 italic text-gray-500">
-                {micrositeCopy(advisor, 'faqSubtext')}
-              </p>
-            </div>
-            <FAQAccordion faqs={advisor.faqs} />
-          </div>
-        </section>
-      )}
-
       {/* 4. Services */}
       {serviceCards.length > 0 && (
         <section id="services" className="scroll-mt-20 px-6 py-20">
@@ -366,6 +347,26 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
           <SocialGrid advisor={advisor} />
         </div>
       </section>
+
+      {/* FAQs — kept last */}
+      {advisor.faqs?.length > 0 && (
+        <section id="faqs" className="scroll-mt-20 bg-gray-50 px-6 py-20">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-10 text-center">
+              <h2
+                data-field="micrositeContent.faqHeading"
+                className="text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl"
+              >
+                {micrositeCopy(advisor, 'faqHeading')}
+              </h2>
+              <p data-field="micrositeContent.faqSubtext" className="mt-2 italic text-gray-500">
+                {micrositeCopy(advisor, 'faqSubtext')}
+              </p>
+            </div>
+            <FAQAccordion faqs={advisor.faqs} />
+          </div>
+        </section>
+      )}
     </main>
   );
 }

@@ -1,14 +1,11 @@
 import { micrositeCopy } from '../lib/advisorMicrositeCopyDefaults';
 
-const avatarColors = ['bg-[var(--tc-primary)]', 'bg-[var(--tc-dark)]', 'bg-[var(--tc-secondary)]'];
-
 export default function AdvisorHero({ advisor, testimonials = [] }) {
   const ratings = testimonials.map((t) => t.rating).filter((r) => typeof r === 'number');
   const avgRating = advisor.googleBusiness?.rating || (ratings.length
     ? (ratings.reduce((sum, r) => sum + r, 0) / ratings.length).toFixed(1)
     : null);
   const reviewCount = advisor.googleBusiness?.reviewCount || testimonials.length;
-  const avatarNames = testimonials.slice(0, 3).map((t) => t.clientName).filter(Boolean);
   const heroImage = advisor.micrositeImages?.hero || advisor.photoUrl;
 
   const badges = [
@@ -68,28 +65,12 @@ export default function AdvisorHero({ advisor, testimonials = [] }) {
             )}
           </div>
 
-          {(avatarNames.length > 0 || avgRating) && (
-            <div className="mt-8 flex items-center gap-3.5">
-              {avatarNames.length > 0 && (
-                <div className="flex -space-x-2.5">
-                  {avatarNames.map((name, i) => (
-                    <span
-                      key={name}
-                      className={`grid h-9 w-9 place-items-center rounded-full ${avatarColors[i % avatarColors.length]} text-xs font-bold text-white ring-2 ring-white`}
-                    >
-                      {name[0]}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {avgRating && (
-                <div>
-                  <p className="text-sm font-extrabold text-[var(--tc-dark)]">
-                    {avgRating} <span className="text-[var(--tc-primary)]">★★★★★</span>
-                  </p>
-                  <p className="text-xs text-gray-500">From {reviewCount}+ Reviews</p>
-                </div>
-              )}
+          {avgRating && (
+            <div className="mt-8">
+              <p className="text-sm font-extrabold text-[var(--tc-dark)]">
+                {avgRating} <span className="text-[var(--tc-primary)]">★★★★★</span>
+              </p>
+              <p className="text-xs text-gray-500">From {reviewCount}+ Reviews</p>
             </div>
           )}
         </div>

@@ -4,9 +4,12 @@ export default function TestimonialsGrid({ testimonials }) {
   if (!testimonials?.length) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-wrap justify-center gap-5">
       {testimonials.map((t, i) => (
-        <div key={t._id} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div
+          key={t._id}
+          className="w-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]"
+        >
           {typeof t.rating === 'number' && (
             <div className="mb-3.5 flex gap-0.5 text-[var(--tc-primary)]">
               {Array.from({ length: 5 }).map((_, j) => (
