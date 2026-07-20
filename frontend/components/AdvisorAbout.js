@@ -8,7 +8,7 @@ export default function AdvisorAbout({ advisor }) {
     advisor.irdaiLicenseNumber && 'IRDAI Licensed Advisor',
     ...(advisor.credentials || []),
     advisor.yearsExperience && `${advisor.yearsExperience} Years Experience`,
-    advisor.achievements?.[0] && `${advisor.achievements[0].value} ${advisor.achievements[0].label}`
+    advisor.achievements?.[0]?.name
   ].filter(Boolean);
 
   return (

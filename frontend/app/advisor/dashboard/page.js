@@ -261,7 +261,6 @@ export default function AdvisorDashboardPage() {
     vision: '',
     mission: '',
     missionPillars: '',
-    companiesWorkedWith: '',
     linkedin: '',
     facebook: '',
     youtube: '',
@@ -278,8 +277,14 @@ export default function AdvisorDashboardPage() {
   // this; unset keys just fall back to the default copy on the microsite.
   const [micrositeContentForm, setMicrositeContentForm] = useState({});
   const [serviceOfferings, setServiceOfferings] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [companyLogoStatus, setCompanyLogoStatus] = useState({});
   const [achievements, setAchievements] = useState([]);
+  const [achievementImageStatus, setAchievementImageStatus] = useState({});
   const [faqs, setFaqs] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewDraft, setReviewDraft] = useState({ clientName: '', role: '', message: '', rating: 5 });
+  const [reviewStatus, setReviewStatus] = useState({ savingId: '', adding: false, error: '' });
   const [profileStatus, setProfileStatus] = useState({ saving: false, error: '', success: '' });
   const [slugEditorOpen, setSlugEditorOpen] = useState(false);
   const [slugInput, setSlugInput] = useState('');
@@ -352,7 +357,6 @@ export default function AdvisorDashboardPage() {
             vision: data.advisor.vision || '',
             mission: data.advisor.mission || '',
             missionPillars: (data.advisor.missionPillars || []).join(', '),
-            companiesWorkedWith: (data.advisor.companiesWorkedWith || []).join(', '),
             linkedin: data.advisor.socialLinks?.linkedin || '',
             facebook: data.advisor.socialLinks?.facebook || '',
             youtube: data.advisor.socialLinks?.youtube || '',
@@ -369,6 +373,7 @@ export default function AdvisorDashboardPage() {
           setServiceOfferings(
             data.advisor.serviceOfferings?.length ? data.advisor.serviceOfferings : []
           );
+          setCompanies(data.advisor.companiesWorkedWith || []);
           setAchievements(data.advisor.achievements || []);
           setFaqs(data.advisor.faqs || []);
         }
@@ -380,6 +385,10 @@ export default function AdvisorDashboardPage() {
         setLeads(data.leads || []);
         setLoading(false);
       });
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((data) => setReviews(data.testimonials || []));
   }
 
   useEffect(() => {
@@ -469,7 +478,7 @@ export default function AdvisorDashboardPage() {
       vision: profileForm.vision,
       mission: profileForm.mission,
       missionPillars: profileForm.missionPillars.split(',').map((s) => s.trim()).filter(Boolean),
-      companiesWorkedWith: profileForm.companiesWorkedWith.split(',').map((s) => s.trim()).filter(Boolean),
+      companiesWorkedWith: companies.filter((c) => c.name.trim()),
       socialLinks: {
         linkedin: profileForm.linkedin,
         facebook: profileForm.facebook,
@@ -484,7 +493,7 @@ export default function AdvisorDashboardPage() {
       },
       themeKey: profileForm.themeKey,
       serviceOfferings: serviceOfferings.filter((o) => o.title.trim()),
-      achievements: achievements.filter((a) => a.value.trim() || a.label.trim()),
+      achievements: achievements.filter((a) => a.name.trim()),
       faqs: faqs.filter((f) => f.question.trim()),
       micrositeImages,
       micrositeContent: micrositeContentForm,
@@ -499,7 +508,17 @@ export default function AdvisorDashboardPage() {
       '*'
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewReadyTick, profileForm, serviceOfferings, achievements, faqs, micrositeImages, micrositeContentForm, advisor]);
+  }, [
+    previewReadyTick,
+    profileForm,
+    serviceOfferings,
+    companies,
+    achievements,
+    faqs,
+    micrositeImages,
+    micrositeContentForm,
+    advisor
+  ]);
 
   function updateProfileField(field, value) {
     setProfileForm((prev) => ({ ...prev, [field]: value }));
@@ -519,14 +538,124 @@ export default function AdvisorDashboardPage() {
     setServiceOfferings((prev) => prev.filter((_, idx) => idx !== i));
   }
 
+  function addCompany() {
+    setCompanies((prev) => [...prev, { name: '', logoUrl: '' }]);
+  }
+  function updateCompany(i, field, value) {
+    setCompanies((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+  }
+  function removeCompany(i) {
+    setCompanies((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
   function addAchievement() {
-    setAchievements((prev) => [...prev, { value: '', label: '' }]);
+    setAchievements((prev) => [...prev, { imageUrl: '', name: '', description: '' }]);
   }
   function updateAchievement(i, field, value) {
     setAchievements((prev) => prev.map((a, idx) => (idx === i ? { ...a, [field]: value } : a)));
   }
   function removeAchievement(i) {
     setAchievements((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  // Shared uploader for one-off images inside a repeating list (a company
+  // logo, an achievement photo) — hits the generic list-image endpoint and
+  // just returns a URL, unlike the fixed-slot microsite-image uploader.
+  async function uploadListImageFile(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/list-image`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not upload photo');
+    return data.url;
+  }
+
+  async function handleCompanyLogoChange(i, e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCompanyLogoStatus((prev) => ({ ...prev, [i]: { uploading: true, error: '' } }));
+    try {
+      const url = await uploadListImageFile(file);
+      updateCompany(i, 'logoUrl', url);
+      setCompanyLogoStatus((prev) => ({ ...prev, [i]: { uploading: false, error: '' } }));
+    } catch (err) {
+      setCompanyLogoStatus((prev) => ({ ...prev, [i]: { uploading: false, error: err.message } }));
+    }
+  }
+
+  async function handleAchievementImageChange(i, e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAchievementImageStatus((prev) => ({ ...prev, [i]: { uploading: true, error: '' } }));
+    try {
+      const url = await uploadListImageFile(file);
+      updateAchievement(i, 'imageUrl', url);
+      setAchievementImageStatus((prev) => ({ ...prev, [i]: { uploading: false, error: '' } }));
+    } catch (err) {
+      setAchievementImageStatus((prev) => ({ ...prev, [i]: { uploading: false, error: err.message } }));
+    }
+  }
+
+  function updateReviewDraftField(field, value) {
+    setReviewDraft((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function addReview() {
+    if (!reviewDraft.clientName.trim() || !reviewDraft.message.trim()) return;
+    setReviewStatus({ savingId: '', adding: true, error: '' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(reviewDraft)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setReviewStatus({ savingId: '', adding: false, error: data.error || 'Could not add review' });
+      return;
+    }
+    setReviews((prev) => [data.testimonial, ...prev]);
+    setReviewDraft({ clientName: '', role: '', message: '', rating: 5 });
+    setReviewStatus({ savingId: '', adding: false, error: '' });
+  }
+
+  function updateReviewLocal(i, field, value) {
+    setReviews((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+  }
+
+  async function saveReview(i) {
+    const review = reviews[i];
+    setReviewStatus({ savingId: review._id, adding: false, error: '' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials/${review._id}`, {
+      method: 'PATCH',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        clientName: review.clientName,
+        role: review.role,
+        message: review.message,
+        rating: review.rating
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setReviewStatus({ savingId: '', adding: false, error: data.error || 'Could not save review' });
+      return;
+    }
+    setReviews((prev) => prev.map((r, idx) => (idx === i ? data.testimonial : r)));
+    setReviewStatus({ savingId: '', adding: false, error: '' });
+    showToast('Review saved.');
+  }
+
+  async function removeReview(i) {
+    const review = reviews[i];
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me/testimonials/${review._id}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    setReviews((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   function addFaq() {
@@ -825,10 +954,7 @@ export default function AdvisorDashboardPage() {
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean),
-        companiesWorkedWith: profileForm.companiesWorkedWith
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
+        companiesWorkedWith: companies.filter((c) => c.name.trim()),
         socialLinks: {
           linkedin: profileForm.linkedin.trim(),
           facebook: profileForm.facebook.trim(),
@@ -842,7 +968,7 @@ export default function AdvisorDashboardPage() {
           mapsLink: profileForm.gmbMapsLink.trim()
         },
         serviceOfferings: serviceOfferings.filter((o) => o.title.trim()),
-        achievements: achievements.filter((a) => a.value.trim() || a.label.trim()),
+        achievements: achievements.filter((a) => a.name.trim()),
         faqs: faqs.filter((f) => f.question.trim()),
         themeKey: profileForm.themeKey,
         micrositeContent: micrositeContentForm
@@ -1896,14 +2022,64 @@ export default function AdvisorDashboardPage() {
                       </div>
                     )}
 
-                    <div>
-                      <label className={profileLabelClasses}>Companies worked with (comma separated)</label>
-                      <input
-                        value={profileForm.companiesWorkedWith}
-                        onChange={(e) => updateProfileField('companiesWorkedWith', e.target.value)}
-                        placeholder="LIC of India, HDFC Life, ICICI Prudential"
-                        className={`mt-1.5 ${profileInputClasses}`}
-                      />
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                      <div className="flex items-center justify-between">
+                        <label className={profileLabelClasses}>Company working with</label>
+                        <button
+                          type="button"
+                          onClick={addCompany}
+                          className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40"
+                        >
+                          + Add company
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Insurers you're empanelled with, shown with their logo on your microsite.
+                      </p>
+                      <div className="mt-4 space-y-3">
+                        {companies.map((c, i) => (
+                          <div
+                            key={i}
+                            className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-3 sm:flex-row sm:items-center"
+                          >
+                            <div className="h-14 w-14 flex-none overflow-hidden rounded-lg bg-gray-100">
+                              {c.logoUrl ? (
+                                <img src={c.logoUrl} alt={c.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
+                                  Logo
+                                </div>
+                              )}
+                            </div>
+                            <input
+                              value={c.name}
+                              onChange={(e) => updateCompany(i, 'name', e.target.value)}
+                              placeholder="Company name, e.g. LIC of India"
+                              className={`sm:flex-1 ${profileInputClasses}`}
+                            />
+                            <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
+                              {companyLogoStatus[i]?.uploading ? 'Uploading...' : c.logoUrl ? 'Replace logo' : 'Upload logo'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleCompanyLogoChange(i, e)}
+                                disabled={companyLogoStatus[i]?.uploading}
+                                className="hidden"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => removeCompany(i)}
+                              className="flex-none self-end rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100 sm:self-auto"
+                            >
+                              Remove
+                            </button>
+                            {companyLogoStatus[i]?.error && (
+                              <p className="w-full text-[0.65rem] text-red-600">{companyLogoStatus[i].error}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
@@ -2045,35 +2221,173 @@ export default function AdvisorDashboardPage() {
                         </button>
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
-                        Key stat cards, e.g. value "600+", label "Families Protected".
+                        Awards, certificates or recognitions — photo, name, and why you received it.
                       </p>
                       <div className="mt-4 space-y-3">
                         {achievements.map((a, i) => (
-                          <div
-                            key={i}
-                            className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 sm:flex-row sm:items-center sm:gap-3"
-                          >
-                            <input
-                              value={a.value}
-                              onChange={(e) => updateAchievement(i, 'value', e.target.value)}
-                              placeholder="Value, e.g. 600+"
-                              className={`sm:flex-1 ${profileInputClasses}`}
-                            />
-                            <input
-                              value={a.label}
-                              onChange={(e) => updateAchievement(i, 'label', e.target.value)}
-                              placeholder="Label, e.g. Families Protected"
-                              className={`sm:flex-1 ${profileInputClasses}`}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeAchievement(i)}
-                              className="flex-none self-end rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100 sm:self-auto"
-                            >
-                              Remove
-                            </button>
+                          <div key={i} className="rounded-xl border border-gray-200 bg-white p-3">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                              <div className="h-14 w-14 flex-none overflow-hidden rounded-lg bg-gray-100">
+                                {a.imageUrl ? (
+                                  <img src={a.imageUrl} alt={a.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
+                                    Photo
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    value={a.name}
+                                    onChange={(e) => updateAchievement(i, 'name', e.target.value)}
+                                    placeholder="Achievement name, e.g. MDRT Top of the Table"
+                                    className={`flex-1 ${profileInputClasses}`}
+                                  />
+                                  <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
+                                    {achievementImageStatus[i]?.uploading
+                                      ? 'Uploading...'
+                                      : a.imageUrl
+                                        ? 'Replace photo'
+                                        : 'Upload photo'}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleAchievementImageChange(i, e)}
+                                      disabled={achievementImageStatus[i]?.uploading}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                </div>
+                                <textarea
+                                  value={a.description}
+                                  onChange={(e) => updateAchievement(i, 'description', e.target.value)}
+                                  placeholder="Why was this given to me?"
+                                  rows={2}
+                                  className={profileInputClasses}
+                                />
+                                {achievementImageStatus[i]?.error && (
+                                  <p className="text-[0.65rem] text-red-600">{achievementImageStatus[i].error}</p>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeAchievement(i)}
+                                className="flex-none self-start rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100"
+                              >
+                                Remove
+                              </button>
+                            </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                      <h3 className="text-sm font-extrabold text-ia-navy">Customer Reviews</h3>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Text reviews shown on your microsite — no photo needed.
+                      </p>
+                      <div className="mt-4 space-y-3">
+                        {reviews.map((r, i) => (
+                          <div key={r._id} className="rounded-xl border border-gray-200 bg-white p-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                              <input
+                                value={r.clientName || ''}
+                                onChange={(e) => updateReviewLocal(i, 'clientName', e.target.value)}
+                                placeholder="Customer name"
+                                className={`sm:flex-1 ${profileInputClasses}`}
+                              />
+                              <input
+                                value={r.role || ''}
+                                onChange={(e) => updateReviewLocal(i, 'role', e.target.value)}
+                                placeholder="Role/city (optional)"
+                                className={`sm:flex-1 ${profileInputClasses}`}
+                              />
+                              <select
+                                value={r.rating ?? 5}
+                                onChange={(e) => updateReviewLocal(i, 'rating', Number(e.target.value))}
+                                className={profileInputClasses}
+                              >
+                                {[5, 4, 3, 2, 1].map((n) => (
+                                  <option key={n} value={n}>
+                                    {n} star{n === 1 ? '' : 's'}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <textarea
+                              value={r.message || ''}
+                              onChange={(e) => updateReviewLocal(i, 'message', e.target.value)}
+                              placeholder="What did they say?"
+                              rows={2}
+                              className={`mt-2 ${profileInputClasses}`}
+                            />
+                            <div className="mt-2 flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => saveReview(i)}
+                                disabled={reviewStatus.savingId === r._id}
+                                className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40 disabled:opacity-50"
+                              >
+                                {reviewStatus.savingId === r._id ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeReview(i)}
+                                className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-3">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                            <input
+                              value={reviewDraft.clientName}
+                              onChange={(e) => updateReviewDraftField('clientName', e.target.value)}
+                              placeholder="Customer name"
+                              className={`sm:flex-1 ${profileInputClasses}`}
+                            />
+                            <input
+                              value={reviewDraft.role}
+                              onChange={(e) => updateReviewDraftField('role', e.target.value)}
+                              placeholder="Role/city (optional)"
+                              className={`sm:flex-1 ${profileInputClasses}`}
+                            />
+                            <select
+                              value={reviewDraft.rating}
+                              onChange={(e) => updateReviewDraftField('rating', Number(e.target.value))}
+                              className={profileInputClasses}
+                            >
+                              {[5, 4, 3, 2, 1].map((n) => (
+                                <option key={n} value={n}>
+                                  {n} star{n === 1 ? '' : 's'}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <textarea
+                            value={reviewDraft.message}
+                            onChange={(e) => updateReviewDraftField('message', e.target.value)}
+                            placeholder="What did they say?"
+                            rows={2}
+                            className={`mt-2 ${profileInputClasses}`}
+                          />
+                          <div className="mt-2 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={addReview}
+                              disabled={reviewStatus.adding || !reviewDraft.clientName.trim() || !reviewDraft.message.trim()}
+                              className="rounded-lg bg-ia-blue px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-ia-blue-soft disabled:opacity-50"
+                            >
+                              {reviewStatus.adding ? 'Adding...' : '+ Add review'}
+                            </button>
+                          </div>
+                        </div>
+                        {reviewStatus.error && <p className="text-[0.65rem] text-red-600">{reviewStatus.error}</p>}
                       </div>
                     </div>
 

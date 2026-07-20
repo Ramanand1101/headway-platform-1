@@ -389,6 +389,101 @@ exports.deleteContentLibraryImage = async (req, res, next) => {
   }
 };
 
+// POST /api/advisor/list-image — advisor uploads a single photo for use
+// inside a repeating list (a company logo, an achievement/award photo, etc).
+// Unlike the content library this doesn't attach the image to the advisor
+// doc itself — it just returns the hosted URL for the frontend to store
+// inside whichever list item (companiesWorkedWith/achievements) it belongs to.
+exports.uploadListImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Photo file is required' });
+    }
+
+    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+    const uploaded = await cloudinary.uploader.upload(dataUri, {
+      folder: 'advisor-list-images',
+      public_id: `${req.user.advisorId}-${Date.now()}`,
+      resource_type: 'image'
+    });
+
+    res.json({ url: uploaded.secure_url });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/advisor/me/testimonials — advisor manages their own text reviews
+// (both published and unpublished) from the dashboard.
+exports.getMyTestimonials = async (req, res, next) => {
+  try {
+    const testimonials = await Testimonial.find({ advisorId: req.user.advisorId }).sort({ createdAt: -1 });
+    res.json({ testimonials });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/advisor/me/testimonials — advisor adds a customer review
+// themselves (text only). Published immediately since the advisor is
+// vouching for it directly, unlike client-submitted testimonials.
+exports.createMyTestimonial = async (req, res, next) => {
+  try {
+    const { clientName, role, message, rating } = req.body;
+    if (!clientName || !message) {
+      return res.status(400).json({ error: 'Customer name and review are required' });
+    }
+
+    const testimonial = await Testimonial.create({
+      advisorId: req.user.advisorId,
+      clientName,
+      role,
+      message,
+      rating,
+      isVerified: true,
+      isPublished: true
+    });
+
+    res.status(201).json({ testimonial });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/advisor/me/testimonials/:id
+exports.updateMyTestimonial = async (req, res, next) => {
+  try {
+    const { clientName, role, message, rating } = req.body;
+
+    const testimonial = await Testimonial.findOneAndUpdate(
+      { _id: req.params.id, advisorId: req.user.advisorId },
+      { $set: { clientName, role, message, rating } },
+      { new: true, runValidators: true }
+    );
+    if (!testimonial) return res.status(404).json({ error: 'Review not found' });
+
+    res.json({ testimonial });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/advisor/me/testimonials/:id
+exports.deleteMyTestimonial = async (req, res, next) => {
+  try {
+    const testimonial = await Testimonial.findOneAndDelete({
+      _id: req.params.id,
+      advisorId: req.user.advisorId
+    });
+    if (!testimonial) return res.status(404).json({ error: 'Review not found' });
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // PATCH /api/advisor/profile (advisor edits own profile)
 exports.updateAdvisorProfile = async (req, res, next) => {
   try {

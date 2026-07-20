@@ -107,10 +107,12 @@ export default function AdvisorHero({ advisor, testimonials = [] }) {
               {advisor.name?.[0] || 'A'}
             </div>
           )}
-          {statPill && (statPill.value || statPill.label) && (
-            <div className="absolute -bottom-5 -left-5 rounded-2xl bg-white px-5 py-3.5 shadow-xl">
-              <p className="text-xl font-extrabold text-[var(--tc-primary)]">{statPill.value}</p>
-              <p className="text-[0.65rem] font-bold leading-tight text-gray-500">{statPill.label}</p>
+          {statPill?.name && (
+            <div className="absolute -bottom-5 -left-5 max-w-[12rem] rounded-2xl bg-white px-5 py-3.5 shadow-xl">
+              <p className="text-sm font-extrabold leading-tight text-[var(--tc-primary)]">{statPill.name}</p>
+              {statPill.description && (
+                <p className="mt-0.5 text-[0.65rem] font-bold leading-tight text-gray-500">{statPill.description}</p>
+              )}
             </div>
           )}
         </div>

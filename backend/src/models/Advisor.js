@@ -18,10 +18,12 @@ const advisorSchema = new mongoose.Schema(
     // microsite's services carousel. Falls back to the plain `services`
     // list above when empty, so existing advisors keep working unchanged.
     serviceOfferings: [{ title: String, description: String }],
-    companiesWorkedWith: [String],
-    // Key stat cards for the microsite's Achievements section, e.g.
-    // { value: '600+', label: 'Families Protected' }.
-    achievements: [{ value: String, label: String }],
+    // Insurers/companies the advisor is empanelled with, each with an
+    // optional logo shown on the microsite's "Companies I Work With" grid.
+    companiesWorkedWith: [{ name: String, logoUrl: String }],
+    // Awards/certificates shown in the microsite's Achievements section,
+    // e.g. { name: 'MDRT Top of the Table', description: 'Awarded for...' }.
+    achievements: [{ imageUrl: String, name: String, description: String }],
     googleBusiness: {
       rating: Number,
       reviewCount: Number,

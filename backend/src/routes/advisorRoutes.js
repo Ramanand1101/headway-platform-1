@@ -19,6 +19,11 @@ const {
   uploadMicrositeImage,
   uploadContentLibraryImages,
   deleteContentLibraryImage,
+  uploadListImage,
+  getMyTestimonials,
+  createMyTestimonial,
+  updateMyTestimonial,
+  deleteMyTestimonial,
   adminEnterAdvisor
 } = require('../controllers/advisorController');
 
@@ -91,5 +96,11 @@ router.post(
   uploadContentLibraryImages
 );
 router.delete('/content-library', authenticate, deleteContentLibraryImage);
+router.post('/list-image', authenticate, uploadPhoto.single('image'), uploadListImage);
+
+router.get('/me/testimonials', authenticate, getMyTestimonials);
+router.post('/me/testimonials', authenticate, createMyTestimonial);
+router.patch('/me/testimonials/:id', authenticate, updateMyTestimonial);
+router.delete('/me/testimonials/:id', authenticate, deleteMyTestimonial);
 
 module.exports = router;
