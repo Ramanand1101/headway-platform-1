@@ -8,7 +8,7 @@ export default function AchievementsGrid({ achievements }) {
       {achievements.map((a, i) =>
         a.imageUrl ? (
           <div key={i} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <img src={a.imageUrl} alt={a.name} className="h-28 w-full object-cover sm:h-32" />
+            <img src={a.imageUrl} alt={a.name} className="h-40 w-full object-cover sm:h-48" />
             <div className="p-3">
               <p className="text-sm font-extrabold leading-tight text-[var(--tc-dark)]">{a.name}</p>
               {a.description && <p className="mt-1 text-xs text-gray-500">{a.description}</p>}
