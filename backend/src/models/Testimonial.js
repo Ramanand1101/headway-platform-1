@@ -10,6 +10,7 @@ const testimonialSchema = new mongoose.Schema(
     },
     clientName: String,
     role: String,
+    photoUrl: String,
     message: String,
     rating: { type: Number, min: 1, max: 5, default: 5 },
     isVerified: { type: Boolean, default: false },

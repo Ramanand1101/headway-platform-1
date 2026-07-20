@@ -16,11 +16,19 @@ export default function TestimonialsGrid({ testimonials }) {
           )}
           <p className="text-sm italic leading-relaxed text-gray-700">&ldquo;{t.message}&rdquo;</p>
           <div className="mt-5 flex items-center gap-3">
-            <span
-              className={`grid h-10 w-10 flex-none place-items-center rounded-full ${avatarColors[i % avatarColors.length]} text-sm font-bold text-white`}
-            >
-              {t.clientName?.[0] || '?'}
-            </span>
+            {t.photoUrl ? (
+              <img
+                src={t.photoUrl}
+                alt={t.clientName}
+                className="h-10 w-10 flex-none rounded-full object-cover"
+              />
+            ) : (
+              <span
+                className={`grid h-10 w-10 flex-none place-items-center rounded-full ${avatarColors[i % avatarColors.length]} text-sm font-bold text-white`}
+              >
+                {t.clientName?.[0] || '?'}
+              </span>
+            )}
             <div>
               <p className="text-sm font-bold text-[var(--tc-dark)]">{t.clientName}</p>
               {t.role && <p className="text-xs text-gray-500">{t.role}</p>}

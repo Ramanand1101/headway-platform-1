@@ -8,9 +8,9 @@ export default function CompaniesGrid({ companies }) {
           key={company.name || i}
           className="flex flex-col items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-5 text-center backdrop-blur"
         >
-          <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-white text-sm font-extrabold text-[var(--tc-dark)]">
+          <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-white p-2 text-sm font-extrabold text-[var(--tc-dark)]">
             {company.logoUrl ? (
-              <img src={company.logoUrl} alt={company.name} className="h-full w-full object-cover" />
+              <img src={company.logoUrl} alt={company.name} className="h-full w-full object-contain" />
             ) : (
               company.name
                 ?.split(' ')

@@ -426,11 +426,12 @@ exports.getMyTestimonials = async (req, res, next) => {
 };
 
 // POST /api/advisor/me/testimonials — advisor adds a customer review
-// themselves (text only). Published immediately since the advisor is
-// vouching for it directly, unlike client-submitted testimonials.
+// themselves (text, plus an optional customer photo). Published immediately
+// since the advisor is vouching for it directly, unlike client-submitted
+// testimonials.
 exports.createMyTestimonial = async (req, res, next) => {
   try {
-    const { clientName, role, message, rating } = req.body;
+    const { clientName, role, photoUrl, message, rating } = req.body;
     if (!clientName || !message) {
       return res.status(400).json({ error: 'Customer name and review are required' });
     }
@@ -439,6 +440,7 @@ exports.createMyTestimonial = async (req, res, next) => {
       advisorId: req.user.advisorId,
       clientName,
       role,
+      photoUrl,
       message,
       rating,
       isVerified: true,
@@ -454,11 +456,11 @@ exports.createMyTestimonial = async (req, res, next) => {
 // PATCH /api/advisor/me/testimonials/:id
 exports.updateMyTestimonial = async (req, res, next) => {
   try {
-    const { clientName, role, message, rating } = req.body;
+    const { clientName, role, photoUrl, message, rating } = req.body;
 
     const testimonial = await Testimonial.findOneAndUpdate(
       { _id: req.params.id, advisorId: req.user.advisorId },
-      { $set: { clientName, role, message, rating } },
+      { $set: { clientName, role, photoUrl, message, rating } },
       { new: true, runValidators: true }
     );
     if (!testimonial) return res.status(404).json({ error: 'Review not found' });

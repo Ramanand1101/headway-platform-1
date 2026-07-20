@@ -283,8 +283,9 @@ export default function AdvisorDashboardPage() {
   const [achievementImageStatus, setAchievementImageStatus] = useState({});
   const [faqs, setFaqs] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [reviewDraft, setReviewDraft] = useState({ clientName: '', role: '', message: '', rating: 5 });
+  const [reviewDraft, setReviewDraft] = useState({ clientName: '', role: '', photoUrl: '', message: '', rating: 5 });
   const [reviewStatus, setReviewStatus] = useState({ savingId: '', adding: false, error: '' });
+  const [reviewPhotoStatus, setReviewPhotoStatus] = useState({});
   const [profileStatus, setProfileStatus] = useState({ saving: false, error: '', success: '' });
   const [slugEditorOpen, setSlugEditorOpen] = useState(false);
   const [slugInput, setSlugInput] = useState('');
@@ -604,6 +605,19 @@ export default function AdvisorDashboardPage() {
     setReviewDraft((prev) => ({ ...prev, [field]: value }));
   }
 
+  async function handleReviewDraftPhotoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReviewPhotoStatus((prev) => ({ ...prev, draft: { uploading: true, error: '' } }));
+    try {
+      const url = await uploadListImageFile(file);
+      updateReviewDraftField('photoUrl', url);
+      setReviewPhotoStatus((prev) => ({ ...prev, draft: { uploading: false, error: '' } }));
+    } catch (err) {
+      setReviewPhotoStatus((prev) => ({ ...prev, draft: { uploading: false, error: err.message } }));
+    }
+  }
+
   async function addReview() {
     if (!reviewDraft.clientName.trim() || !reviewDraft.message.trim()) return;
     setReviewStatus({ savingId: '', adding: true, error: '' });
@@ -618,12 +632,25 @@ export default function AdvisorDashboardPage() {
       return;
     }
     setReviews((prev) => [data.testimonial, ...prev]);
-    setReviewDraft({ clientName: '', role: '', message: '', rating: 5 });
+    setReviewDraft({ clientName: '', role: '', photoUrl: '', message: '', rating: 5 });
     setReviewStatus({ savingId: '', adding: false, error: '' });
   }
 
   function updateReviewLocal(i, field, value) {
     setReviews((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+  }
+
+  async function handleReviewPhotoChange(i, e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReviewPhotoStatus((prev) => ({ ...prev, [i]: { uploading: true, error: '' } }));
+    try {
+      const url = await uploadListImageFile(file);
+      updateReviewLocal(i, 'photoUrl', url);
+      setReviewPhotoStatus((prev) => ({ ...prev, [i]: { uploading: false, error: '' } }));
+    } catch (err) {
+      setReviewPhotoStatus((prev) => ({ ...prev, [i]: { uploading: false, error: err.message } }));
+    }
   }
 
   async function saveReview(i) {
@@ -635,6 +662,7 @@ export default function AdvisorDashboardPage() {
       body: JSON.stringify({
         clientName: review.clientName,
         role: review.role,
+        photoUrl: review.photoUrl,
         message: review.message,
         rating: review.rating
       })
@@ -2038,44 +2066,51 @@ export default function AdvisorDashboardPage() {
                       </p>
                       <div className="mt-4 space-y-3">
                         {companies.map((c, i) => (
-                          <div
-                            key={i}
-                            className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-3 sm:flex-row sm:items-center"
-                          >
-                            <div className="h-14 w-14 flex-none overflow-hidden rounded-lg bg-gray-100">
-                              {c.logoUrl ? (
-                                <img src={c.logoUrl} alt={c.name} className="h-full w-full object-cover" />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
-                                  Logo
-                                </div>
-                              )}
-                            </div>
-                            <input
-                              value={c.name}
-                              onChange={(e) => updateCompany(i, 'name', e.target.value)}
-                              placeholder="Company name, e.g. LIC of India"
-                              className={`sm:flex-1 ${profileInputClasses}`}
-                            />
-                            <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
-                              {companyLogoStatus[i]?.uploading ? 'Uploading...' : c.logoUrl ? 'Replace logo' : 'Upload logo'}
+                          <div key={i} className="rounded-xl border border-gray-200 bg-white p-3">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                              <div className="h-14 w-14 flex-none overflow-hidden rounded-lg bg-gray-100">
+                                {c.logoUrl ? (
+                                  <img src={c.logoUrl} alt={c.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
+                                    Logo
+                                  </div>
+                                )}
+                              </div>
                               <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleCompanyLogoChange(i, e)}
-                                disabled={companyLogoStatus[i]?.uploading}
-                                className="hidden"
+                                value={c.name}
+                                onChange={(e) => updateCompany(i, 'name', e.target.value)}
+                                placeholder="Company name, e.g. LIC of India"
+                                className={`sm:flex-1 ${profileInputClasses}`}
                               />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => removeCompany(i)}
-                              className="flex-none self-end rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100 sm:self-auto"
-                            >
-                              Remove
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => removeCompany(i)}
+                                className="flex-none self-end rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100 sm:self-auto"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <input
+                                value={c.logoUrl}
+                                onChange={(e) => updateCompany(i, 'logoUrl', e.target.value)}
+                                placeholder="Logo image URL (or upload one instead)"
+                                className={`sm:flex-1 ${profileInputClasses}`}
+                              />
+                              <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
+                                {companyLogoStatus[i]?.uploading ? 'Uploading...' : c.logoUrl ? 'Replace logo' : 'Upload logo'}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleCompanyLogoChange(i, e)}
+                                  disabled={companyLogoStatus[i]?.uploading}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
                             {companyLogoStatus[i]?.error && (
-                              <p className="w-full text-[0.65rem] text-red-600">{companyLogoStatus[i].error}</p>
+                              <p className="mt-1 text-[0.65rem] text-red-600">{companyLogoStatus[i].error}</p>
                             )}
                           </div>
                         ))}
@@ -2286,18 +2321,39 @@ export default function AdvisorDashboardPage() {
                     <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
                       <h3 className="text-sm font-extrabold text-ia-navy">Customer Reviews</h3>
                       <p className="mt-1 text-xs text-gray-500">
-                        Text reviews shown on your microsite — no photo needed.
+                        Text reviews shown on your microsite — customer photo is optional.
                       </p>
                       <div className="mt-4 space-y-3">
                         {reviews.map((r, i) => (
                           <div key={r._id} className="rounded-xl border border-gray-200 bg-white p-3">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                              <div className="h-14 w-14 flex-none overflow-hidden rounded-full bg-gray-100">
+                                {r.photoUrl ? (
+                                  <img src={r.photoUrl} alt={r.clientName} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
+                                    Photo
+                                  </div>
+                                )}
+                              </div>
                               <input
                                 value={r.clientName || ''}
                                 onChange={(e) => updateReviewLocal(i, 'clientName', e.target.value)}
                                 placeholder="Customer name"
                                 className={`sm:flex-1 ${profileInputClasses}`}
                               />
+                              <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
+                                {reviewPhotoStatus[i]?.uploading ? 'Uploading...' : r.photoUrl ? 'Replace photo' : 'Upload photo'}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleReviewPhotoChange(i, e)}
+                                  disabled={reviewPhotoStatus[i]?.uploading}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                            <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                               <input
                                 value={r.role || ''}
                                 onChange={(e) => updateReviewLocal(i, 'role', e.target.value)}
@@ -2307,7 +2363,7 @@ export default function AdvisorDashboardPage() {
                               <select
                                 value={r.rating ?? 5}
                                 onChange={(e) => updateReviewLocal(i, 'rating', Number(e.target.value))}
-                                className={profileInputClasses}
+                                className={`sm:w-32 ${profileInputClasses}`}
                               >
                                 {[5, 4, 3, 2, 1].map((n) => (
                                   <option key={n} value={n}>
@@ -2321,9 +2377,12 @@ export default function AdvisorDashboardPage() {
                               onChange={(e) => updateReviewLocal(i, 'message', e.target.value)}
                               placeholder="What did they say?"
                               rows={2}
-                              className={`mt-2 ${profileInputClasses}`}
+                              className={`mt-2.5 ${profileInputClasses}`}
                             />
-                            <div className="mt-2 flex justify-end gap-2">
+                            {reviewPhotoStatus[i]?.error && (
+                              <p className="mt-1 text-[0.65rem] text-red-600">{reviewPhotoStatus[i].error}</p>
+                            )}
+                            <div className="mt-2.5 flex justify-end gap-2">
                               <button
                                 type="button"
                                 onClick={() => saveReview(i)}
@@ -2344,13 +2403,42 @@ export default function AdvisorDashboardPage() {
                         ))}
 
                         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-3">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <div className="h-14 w-14 flex-none overflow-hidden rounded-full bg-gray-100">
+                              {reviewDraft.photoUrl ? (
+                                <img
+                                  src={reviewDraft.photoUrl}
+                                  alt={reviewDraft.clientName}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-[0.6rem] text-gray-400">
+                                  Photo
+                                </div>
+                              )}
+                            </div>
                             <input
                               value={reviewDraft.clientName}
                               onChange={(e) => updateReviewDraftField('clientName', e.target.value)}
                               placeholder="Customer name"
                               className={`sm:flex-1 ${profileInputClasses}`}
                             />
+                            <label className="flex-none cursor-pointer whitespace-nowrap text-xs font-bold text-ia-blue hover:underline">
+                              {reviewPhotoStatus.draft?.uploading
+                                ? 'Uploading...'
+                                : reviewDraft.photoUrl
+                                  ? 'Replace photo'
+                                  : 'Upload photo'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleReviewDraftPhotoChange}
+                                disabled={reviewPhotoStatus.draft?.uploading}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                          <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                             <input
                               value={reviewDraft.role}
                               onChange={(e) => updateReviewDraftField('role', e.target.value)}
@@ -2360,7 +2448,7 @@ export default function AdvisorDashboardPage() {
                             <select
                               value={reviewDraft.rating}
                               onChange={(e) => updateReviewDraftField('rating', Number(e.target.value))}
-                              className={profileInputClasses}
+                              className={`sm:w-32 ${profileInputClasses}`}
                             >
                               {[5, 4, 3, 2, 1].map((n) => (
                                 <option key={n} value={n}>
@@ -2374,9 +2462,12 @@ export default function AdvisorDashboardPage() {
                             onChange={(e) => updateReviewDraftField('message', e.target.value)}
                             placeholder="What did they say?"
                             rows={2}
-                            className={`mt-2 ${profileInputClasses}`}
+                            className={`mt-2.5 ${profileInputClasses}`}
                           />
-                          <div className="mt-2 flex justify-end">
+                          {reviewPhotoStatus.draft?.error && (
+                            <p className="mt-1 text-[0.65rem] text-red-600">{reviewPhotoStatus.draft.error}</p>
+                          )}
+                          <div className="mt-2.5 flex justify-end">
                             <button
                               type="button"
                               onClick={addReview}
