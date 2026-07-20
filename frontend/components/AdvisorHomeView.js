@@ -63,7 +63,9 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       ? advisor.services.map((title) => ({ title }))
       : defaultServices;
 
-  const achievementsImage = advisor.micrositeImages?.achievements || advisor.photoUrl;
+  // No fallback to the profile photo here on purpose — this banner should
+  // only appear when the advisor explicitly uploads one for Achievements.
+  const achievementsImage = advisor.micrositeImages?.achievements;
 
   const contactRows = [
     advisor.contactNumber && { label: 'Mobile Number', value: advisor.contactNumber, icon: '📞' },
@@ -189,21 +191,21 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {/* 7. Achievements */}
       {advisor.achievements?.length > 0 && (
         <section id="achievements" className="scroll-mt-20 bg-gray-50 px-6 py-20">
-          <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
-            <div data-field="micrositeImages.achievements" className="mx-auto w-full max-w-md">
-              {achievementsImage ? (
+          <div
+            className={`mx-auto max-w-6xl items-center gap-12 ${
+              achievementsImage ? 'grid grid-cols-1 lg:grid-cols-2' : ''
+            }`}
+          >
+            {achievementsImage && (
+              <div data-field="micrositeImages.achievements" className="mx-auto w-full max-w-md">
                 <img
                   src={achievementsImage}
                   alt={advisor.name}
                   referrerPolicy="no-referrer"
                   className="aspect-[4/3] w-full rounded-2xl object-cover shadow-sm"
                 />
-              ) : (
-                <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-[var(--tc-dark)] text-6xl font-extrabold text-white/20 shadow-sm">
-                  🏆
-                </div>
-              )}
-            </div>
+              </div>
+            )}
             <div>
               <span
                 data-field="micrositeContent.achievementsEyebrow"
