@@ -294,7 +294,7 @@ exports.uploadProfilePhoto = async (req, res, next) => {
   }
 };
 
-const MICROSITE_IMAGE_SECTIONS = ['hero', 'about', 'achievements', 'contact', 'vision', 'mission'];
+const MICROSITE_IMAGE_SECTIONS = ['hero', 'about', 'contact', 'vision', 'mission'];
 
 // POST /api/advisor/microsite-image/:section — advisor uploads a photo for
 // one specific microsite section (hero/about/achievements/contact/vision/

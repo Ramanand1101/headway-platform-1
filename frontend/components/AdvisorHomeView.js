@@ -64,10 +64,6 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       ? advisor.services.map((title) => ({ title }))
       : defaultServices;
 
-  // No fallback to the profile photo here on purpose — this banner should
-  // only appear when the advisor explicitly uploads one for Achievements.
-  const achievementsImage = advisor.micrositeImages?.achievements;
-
   const contactRows = [
     advisor.contactNumber && { label: 'Mobile Number', value: advisor.contactNumber, icon: '📞' },
     advisor.email && { label: 'Email ID', value: advisor.email, icon: '✉️' },
@@ -183,40 +179,24 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {/* 7. Achievements */}
       {advisor.achievements?.length > 0 && (
         <section id="achievements" className="scroll-mt-20 bg-gray-50 px-6 py-20">
-          <div
-            className={`mx-auto max-w-6xl items-center gap-12 ${
-              achievementsImage ? 'grid grid-cols-1 lg:grid-cols-2' : ''
-            }`}
-          >
-            {achievementsImage && (
-              <Reveal data-field="micrositeImages.achievements" className="mx-auto w-full max-w-md">
-                <img
-                  src={achievementsImage}
-                  alt={advisor.name}
-                  referrerPolicy="no-referrer"
-                  className="aspect-[4/3] w-full rounded-2xl object-cover shadow-sm"
-                />
-              </Reveal>
-            )}
-            <div>
-              <Reveal>
-                <span
-                  data-field="micrositeContent.achievementsEyebrow"
-                  className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
-                >
-                  {micrositeCopy(advisor, 'achievementsEyebrow')}
-                </span>
-                <h2
-                  data-field="micrositeContent.achievementsHeading"
-                  className="mt-3 text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl"
-                >
-                  {micrositeCopy(advisor, 'achievementsHeading')}
-                </h2>
-              </Reveal>
-              <Reveal delay={100} className="mt-7">
-                <AchievementsGrid achievements={advisor.achievements} />
-              </Reveal>
-            </div>
+          <div className="mx-auto max-w-6xl">
+            <Reveal className="text-center">
+              <span
+                data-field="micrositeContent.achievementsEyebrow"
+                className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
+              >
+                {micrositeCopy(advisor, 'achievementsEyebrow')}
+              </span>
+              <h2
+                data-field="micrositeContent.achievementsHeading"
+                className="mt-3 text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl"
+              >
+                {micrositeCopy(advisor, 'achievementsHeading')}
+              </h2>
+            </Reveal>
+            <Reveal delay={100} className="mt-10">
+              <AchievementsGrid achievements={advisor.achievements} />
+            </Reveal>
           </div>
         </section>
       )}

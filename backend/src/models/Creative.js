@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 // Admin-curated marketing images shared with every advisor's Content
 // Library, organized into a fixed set of insurance-line folders.
-const CREATIVE_CATEGORIES = ['life', 'health', 'general', 'mutual-funds'];
+const CREATIVE_CATEGORIES = ['life', 'health', 'general'];
 
 const creativeSchema = new mongoose.Schema(
   {

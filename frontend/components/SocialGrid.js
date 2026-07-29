@@ -1,9 +1,11 @@
+import { socialIcons } from './SocialIcons';
+
 const platformMeta = {
-  instagram: { label: 'Instagram', icon: '📷' },
-  facebook: { label: 'Facebook', icon: 'f' },
-  linkedin: { label: 'LinkedIn', icon: 'in' },
-  youtube: { label: 'YouTube', icon: '▶' },
-  whatsapp: { label: 'WhatsApp', icon: '💬' }
+  instagram: { label: 'Instagram' },
+  facebook: { label: 'Facebook' },
+  linkedin: { label: 'LinkedIn' },
+  youtube: { label: 'YouTube' },
+  whatsapp: { label: 'WhatsApp' }
 };
 
 export default function SocialGrid({ advisor }) {
@@ -22,20 +24,23 @@ export default function SocialGrid({ advisor }) {
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-      {entries.map(([key, url]) => (
-        <a
-          key={key}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-col items-center gap-2.5 rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-        >
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--tc-primary-tint)] text-lg font-extrabold text-[var(--tc-primary)]">
-            {platformMeta[key].icon}
-          </div>
-          <span className="text-sm font-bold text-[var(--tc-dark)]">{platformMeta[key].label}</span>
-        </a>
-      ))}
+      {entries.map(([key, url]) => {
+        const Icon = socialIcons[key];
+        return (
+          <a
+            key={key}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center gap-2.5 rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+          >
+            <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl">
+              <Icon className="h-12 w-12" />
+            </div>
+            <span className="text-sm font-bold text-[var(--tc-dark)]">{platformMeta[key].label}</span>
+          </a>
+        );
+      })}
     </div>
   );
 }

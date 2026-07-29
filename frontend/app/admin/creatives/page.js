@@ -5,8 +5,7 @@ import AdminSidebar from '../../../components/AdminSidebar';
 const CATEGORIES = [
   { key: 'life', label: 'Life' },
   { key: 'health', label: 'Health' },
-  { key: 'general', label: 'General' },
-  { key: 'mutual-funds', label: 'Mutual Funds' }
+  { key: 'general', label: 'General' }
 ];
 
 export default function CreativesLibraryPage() {

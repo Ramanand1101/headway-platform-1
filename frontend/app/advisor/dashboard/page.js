@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import Logo from '../../../components/Logo';
+import TagInput from '../../../components/TagInput';
+import { socialIcons } from '../../../components/SocialIcons';
 import { micrositeThemes } from '../../../lib/micrositeThemes';
 import { decodeToken } from '../../../lib/auth';
 import { micrositeCopyDefaults } from '../../../lib/advisorMicrositeCopyDefaults';
@@ -251,13 +253,10 @@ export default function AdvisorDashboardPage() {
     aboutMe: '',
     contactNumber: '',
     whatsappNumber: '',
-    specialization: '',
-    services: '',
     email: '',
     officeAddress: '',
     irdaiLicenseNumber: '',
     yearsExperience: '',
-    credentials: '',
     vision: '',
     mission: '',
     missionPillars: '',
@@ -277,6 +276,9 @@ export default function AdvisorDashboardPage() {
   // this; unset keys just fall back to the default copy on the microsite.
   const [micrositeContentForm, setMicrositeContentForm] = useState({});
   const [serviceOfferings, setServiceOfferings] = useState([]);
+  const [specializationTags, setSpecializationTags] = useState([]);
+  const [serviceTags, setServiceTags] = useState([]);
+  const [credentialTags, setCredentialTags] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [companyLogoStatus, setCompanyLogoStatus] = useState({});
   const [achievements, setAchievements] = useState([]);
@@ -352,13 +354,10 @@ export default function AdvisorDashboardPage() {
             aboutMe: data.advisor.aboutMe || '',
             contactNumber: data.advisor.contactNumber || '',
             whatsappNumber: data.advisor.whatsappNumber || '',
-            specialization: (data.advisor.specialization || []).join(', '),
-            services: (data.advisor.services || []).join(', '),
             email: data.advisor.email || '',
             officeAddress: data.advisor.officeAddress || '',
             irdaiLicenseNumber: data.advisor.irdaiLicenseNumber || '',
             yearsExperience: data.advisor.yearsExperience || '',
-            credentials: (data.advisor.credentials || []).join(', '),
             vision: data.advisor.vision || '',
             mission: data.advisor.mission || '',
             missionPillars: (data.advisor.missionPillars || []).join(', '),
@@ -372,6 +371,9 @@ export default function AdvisorDashboardPage() {
             gmbMapsLink: data.advisor.googleBusiness?.mapsLink || '',
             themeKey: data.advisor.themeKey || 'navy-teal'
           });
+          setSpecializationTags(data.advisor.specialization || []);
+          setServiceTags(data.advisor.services || []);
+          setCredentialTags(data.advisor.credentials || []);
           setMicrositeImages(data.advisor.micrositeImages || {});
           setMicrositeContentForm(data.advisor.micrositeContent || {});
           setLibraryImages(data.advisor.contentLibraryImages || []);
@@ -473,13 +475,13 @@ export default function AdvisorDashboardPage() {
       aboutMe: profileForm.aboutMe,
       contactNumber: profileForm.contactNumber,
       whatsappNumber: profileForm.whatsappNumber,
-      specialization: profileForm.specialization.split(',').map((s) => s.trim()).filter(Boolean),
-      services: profileForm.services.split(',').map((s) => s.trim()).filter(Boolean),
+      specialization: specializationTags,
+      services: serviceTags,
       email: profileForm.email,
       officeAddress: profileForm.officeAddress,
       irdaiLicenseNumber: profileForm.irdaiLicenseNumber,
       yearsExperience: profileForm.yearsExperience,
-      credentials: profileForm.credentials.split(',').map((s) => s.trim()).filter(Boolean),
+      credentials: credentialTags,
       vision: profileForm.vision,
       mission: profileForm.mission,
       missionPillars: profileForm.missionPillars.split(',').map((s) => s.trim()).filter(Boolean),
@@ -516,6 +518,9 @@ export default function AdvisorDashboardPage() {
   }, [
     previewReadyTick,
     profileForm,
+    specializationTags,
+    serviceTags,
+    credentialTags,
     serviceOfferings,
     companies,
     achievements,
@@ -913,7 +918,7 @@ export default function AdvisorDashboardPage() {
     }
   }
 
-  // Admin-curated creatives (Life/Health/General/Mutual Funds), shared with
+  // Admin-curated creatives (Life/Health/General), shared with
   // every advisor. Loaded lazily when the Content Library tab is open.
   useEffect(() => {
     if (activeTab !== 'library') return;
@@ -1003,22 +1008,13 @@ export default function AdvisorDashboardPage() {
         aboutMe: profileForm.aboutMe.trim(),
         contactNumber: profileForm.contactNumber.trim(),
         whatsappNumber: profileForm.whatsappNumber.trim(),
-        specialization: profileForm.specialization
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
-        services: profileForm.services
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
+        specialization: specializationTags,
+        services: serviceTags,
         email: profileForm.email.trim(),
         officeAddress: profileForm.officeAddress.trim(),
         irdaiLicenseNumber: profileForm.irdaiLicenseNumber.trim(),
         yearsExperience: profileForm.yearsExperience.trim(),
-        credentials: profileForm.credentials
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean),
+        credentials: credentialTags,
         vision: profileForm.vision.trim(),
         mission: profileForm.mission.trim(),
         missionPillars: profileForm.missionPillars
@@ -1734,13 +1730,13 @@ export default function AdvisorDashboardPage() {
                   <div className="mt-7 rounded-2xl border border-gray-100 bg-gray-50 p-5">
                     <h3 className="text-sm font-extrabold text-ia-navy">Microsite photos</h3>
                     <p className="mt-1 text-xs text-gray-500">
-                      Optional — each section falls back to your profile photo above until you upload its own.
+                      Update your profile photos — optional, each section falls back to your profile photo above
+                      until you upload its own.
                     </p>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {[
-                        { key: 'hero', label: 'Hero banner', size: '1200×900px, 4:3 landscape' },
-                        { key: 'about', label: 'About Me photo', size: '1000×1000px, square' },
-                        { key: 'achievements', label: 'Achievements photo', size: '1200×900px, 4:3 landscape' }
+                        { key: 'hero', label: 'Landing page photo (Hero banner)', size: '1200×900px, 4:3 landscape' },
+                        { key: 'about', label: 'About Me photo', size: '1000×1000px, square' }
                       ].map((slot) => (
                         <div
                           key={slot.key}
@@ -1900,20 +1896,26 @@ export default function AdvisorDashboardPage() {
                     </div>
 
                     <div>
-                      <label className={profileLabelClasses}>Specialization (comma separated)</label>
-                      <input
-                        value={profileForm.specialization}
-                        onChange={(e) => updateProfileField('specialization', e.target.value)}
-                        className={`mt-1.5 ${profileInputClasses}`}
+                      <label className={profileLabelClasses}>Specialization</label>
+                      <TagInput
+                        value={specializationTags}
+                        onChange={setSpecializationTags}
+                        placeholder="Type a specialization and press Enter"
+                        className="mt-1.5"
                       />
                     </div>
 
                     <div>
-                      <label className={profileLabelClasses}>Services (comma separated)</label>
-                      <input
-                        value={profileForm.services}
-                        onChange={(e) => updateProfileField('services', e.target.value)}
-                        className={`mt-1.5 ${profileInputClasses}`}
+                      <label className={profileLabelClasses}>Services</label>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        Suggestions come from your Service cards below — pick the same names so they stay consistent.
+                      </p>
+                      <TagInput
+                        value={serviceTags}
+                        onChange={setServiceTags}
+                        placeholder="Type a service and press Enter"
+                        suggestions={serviceOfferings.map((o) => o.title).filter(Boolean)}
+                        className="mt-1.5"
                       />
                     </div>
 
@@ -1957,12 +1959,12 @@ export default function AdvisorDashboardPage() {
                         />
                       </div>
                       <div>
-                        <label className={profileLabelClasses}>Credential badges (comma separated)</label>
-                        <input
-                          value={profileForm.credentials}
-                          onChange={(e) => updateProfileField('credentials', e.target.value)}
-                          placeholder="IRDAI Licensed, MDRT Member"
-                          className={`mt-1.5 ${profileInputClasses}`}
+                        <label className={profileLabelClasses}>Designation / Club membership badges</label>
+                        <TagInput
+                          value={credentialTags}
+                          onChange={setCredentialTags}
+                          placeholder="e.g. IRDAI Licensed, MDRT Member"
+                          className="mt-1.5"
                         />
                       </div>
                     </div>
@@ -2611,11 +2613,11 @@ export default function AdvisorDashboardPage() {
                         >
                           {connected ? 'CONNECTED' : p.available ? 'SETUP NEEDED' : 'COMING SOON'}
                         </span>
-                        <div className={`mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl text-2xl text-white shadow-lg ${p.color}`}>
-                          {p.key === 'instagram' && '📷'}
-                          {p.key === 'facebook' && 'f'}
-                          {p.key === 'linkedin' && 'in'}
-                          {p.key === 'youtube' && '▶'}
+                        <div className="mx-auto mb-3 grid h-14 w-14 place-items-center overflow-hidden rounded-2xl shadow-lg">
+                          {socialIcons[p.key] && (() => {
+                            const Icon = socialIcons[p.key];
+                            return <Icon className="h-14 w-14" />;
+                          })()}
                         </div>
                         <h4 className="text-sm font-bold">{p.name}</h4>
                         <p className="mt-1 min-h-[32px] text-xs text-gray-500">
@@ -3042,8 +3044,7 @@ export default function AdvisorDashboardPage() {
                     {[
                       { key: 'life', label: 'Life' },
                       { key: 'health', label: 'Health' },
-                      { key: 'general', label: 'General' },
-                      { key: 'mutual-funds', label: 'Mutual Funds' }
+                      { key: 'general', label: 'General' }
                     ].map((cat) => (
                       <button
                         key={cat.key}
