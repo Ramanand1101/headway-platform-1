@@ -1,4 +1,5 @@
 import { micrositeCopy } from '../lib/advisorMicrositeCopyDefaults';
+import Reveal from './Reveal';
 
 export default function AdvisorAbout({ advisor }) {
   const role = advisor.specialization?.[0] ? `${advisor.specialization[0]} Specialist` : 'Independent Insurance Consultant';
@@ -26,13 +27,13 @@ export default function AdvisorAbout({ advisor }) {
         </h2>
 
         <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
-          <div data-field="micrositeImages.about" className="relative mx-auto w-full max-w-sm">
+          <Reveal data-field="micrositeImages.about" className="relative mx-auto w-full max-w-sm">
             {aboutImage ? (
               <img
                 src={aboutImage}
                 alt={advisor.name}
                 referrerPolicy="no-referrer"
-                className="aspect-square w-full rounded-2xl object-cover shadow-sm"
+                className="aspect-square w-full rounded-2xl object-cover shadow-sm transition-transform duration-500 hover:scale-[1.02]"
               />
             ) : (
               <div className="flex aspect-square w-full items-center justify-center rounded-2xl bg-[var(--tc-dark)] text-6xl font-extrabold text-white/20">
@@ -44,7 +45,7 @@ export default function AdvisorAbout({ advisor }) {
                 {advisor.yearsExperience} Years Experience
               </span>
             )}
-          </div>
+          </Reveal>
 
           <div data-field="aboutMe">
             {advisor.aboutMe || advisor.bio ? (

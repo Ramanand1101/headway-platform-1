@@ -104,7 +104,8 @@ const adminNavItems = [
   { href: '/admin/advisors/new', label: 'Add advisor', Icon: UserPlusIcon },
   { href: '/admin/content', label: 'Generate content', Icon: SparklesIcon },
   { href: '/admin/content/write', label: 'Write blog', Icon: PencilIcon },
-  { href: '/admin/homepage', label: 'Homepage editor', Icon: PhotoIcon }
+  { href: '/admin/homepage', label: 'Homepage editor', Icon: PhotoIcon },
+  { href: '/admin/creatives', label: 'Creatives library', Icon: SparklesIcon }
 ];
 
 const advisorNavItems = [

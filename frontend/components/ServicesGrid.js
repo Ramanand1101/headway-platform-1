@@ -79,8 +79,10 @@ export default function ServicesGrid({ items }) {
         const Icon = iconFor(item.title || '', i);
         const color = colorRotation[i % colorRotation.length];
         return (
-          <a key={i} href="#contact" className="group bg-white p-7 transition hover:bg-gray-50">
-            <div className={`grid h-11 w-11 place-items-center rounded-xl ${color.bg} ${color.text}`}>
+          <a key={i} href="#contact" className="group relative bg-white p-7 transition hover:z-10 hover:bg-gray-50 hover:shadow-lg">
+            <div
+              className={`grid h-11 w-11 place-items-center rounded-xl ${color.bg} ${color.text} transition-transform duration-300 group-hover:scale-110`}
+            >
               <Icon />
             </div>
             <h4 className="mt-4 text-base font-bold text-[var(--tc-dark)]">{item.title}</h4>

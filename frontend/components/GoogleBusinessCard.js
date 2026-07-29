@@ -1,3 +1,5 @@
+import CountUp from './CountUp';
+
 export default function GoogleBusinessCard({ advisorName, googleBusiness, bare = false }) {
   const gmb = googleBusiness || {};
   const wrapperClasses = bare ? 'bg-white p-7' : 'rounded-2xl border border-gray-100 bg-white p-7 shadow-sm';
@@ -9,7 +11,9 @@ export default function GoogleBusinessCard({ advisorName, googleBusiness, bare =
       )}
       {gmb.rating && (
         <div className={`flex items-center gap-4 ${bare ? '' : 'mt-4'}`}>
-          <p className="text-3xl font-extrabold text-[var(--tc-dark)]">{gmb.rating}</p>
+          <p className="text-3xl font-extrabold text-[var(--tc-dark)]">
+            <CountUp value={gmb.rating} decimals={1} />
+          </p>
           <div>
             <div className="flex gap-0.5 text-[var(--tc-primary)]">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -32,7 +36,7 @@ export default function GoogleBusinessCard({ advisorName, googleBusiness, bare =
             href={gmb.reviewLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-[var(--tc-dark)] px-5 py-2.5 text-xs font-bold text-white transition hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--tc-dark)] px-5 py-2.5 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:opacity-90 hover:shadow-md"
           >
             Write a Review
           </a>

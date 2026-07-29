@@ -6,9 +6,9 @@ export default function CompaniesGrid({ companies }) {
       {companies.map((company, i) => (
         <div
           key={company.name || i}
-          className="flex flex-col items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-5 text-center backdrop-blur"
+          className="flex flex-col items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-5 text-center backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/10"
         >
-          <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-white p-2 text-sm font-extrabold text-[var(--tc-dark)]">
+          <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-white p-2 text-sm font-extrabold text-[var(--tc-dark)] shadow-sm">
             {company.logoUrl ? (
               <img src={company.logoUrl} alt={company.name} className="h-full w-full object-contain" />
             ) : (

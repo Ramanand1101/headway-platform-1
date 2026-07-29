@@ -389,6 +389,29 @@ exports.uploadContentLibraryImages = async (req, res, next) => {
   }
 };
 
+// POST /api/advisor/content-library/from-url — advisor adds a shared
+// creative (from the admin-curated library) straight to their own Content
+// Library by URL, without re-uploading the file.
+exports.addContentLibraryImageFromUrl = async (req, res, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: 'Image url is required' });
+    }
+
+    const advisor = await Advisor.findByIdAndUpdate(
+      req.user.advisorId,
+      { $addToSet: { contentLibraryImages: url } },
+      { new: true }
+    );
+    if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    res.json({ advisor });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // DELETE /api/advisor/content-library — advisor removes one photo from
 // their Content Library by URL.
 exports.deleteContentLibraryImage = async (req, res, next) => {

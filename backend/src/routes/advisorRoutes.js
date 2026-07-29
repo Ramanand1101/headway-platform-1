@@ -19,6 +19,7 @@ const {
   uploadMicrositeImage,
   deleteMicrositeImage,
   uploadContentLibraryImages,
+  addContentLibraryImageFromUrl,
   deleteContentLibraryImage,
   uploadListImage,
   getMyTestimonials,
@@ -97,6 +98,7 @@ router.post(
   uploadPhotos.array('images', 10),
   uploadContentLibraryImages
 );
+router.post('/content-library/from-url', authenticate, addContentLibraryImageFromUrl);
 router.delete('/content-library', authenticate, deleteContentLibraryImage);
 router.post('/list-image', authenticate, uploadPhoto.single('image'), uploadListImage);
 

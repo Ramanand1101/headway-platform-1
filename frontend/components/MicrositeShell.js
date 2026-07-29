@@ -33,6 +33,7 @@ function LogoMark() {
 // reflect unsaved edits instantly, instead of the server-fetched advisor.
 export default function MicrositeShell({ initialAdvisor, children }) {
   const [advisor, setAdvisor] = useState(initialAdvisor);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
@@ -48,6 +49,17 @@ export default function MicrositeShell({ initialAdvisor, children }) {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Gives the header a frosted-glass look with a soft shadow once the page
+  // has scrolled past the hero, instead of a flat white bar the whole time.
+  useEffect(() => {
+    function handleScroll() {
+      setScrolled(window.scrollY > 24);
+    }
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const advisorName = advisor?.name || 'Headway Advisor';
   const theme = getMicrositeTheme(advisor?.themeKey);
   const socialLinks = Object.entries(advisor?.socialLinks || {}).filter(([, url]) => url);
@@ -56,7 +68,13 @@ export default function MicrositeShell({ initialAdvisor, children }) {
     <div className="flex min-h-screen flex-col bg-white text-[var(--tc-dark)]" style={themeCssVars(theme)}>
       <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${theme.font.google}&display=swap`} />
       <input type="checkbox" id="mobile-nav-toggle" className="peer hidden" />
-      <header className="sticky top-0 z-20 border-b border-gray-100 bg-white">
+      <header
+        className={`sticky top-0 z-20 border-b transition-all duration-300 ${
+          scrolled
+            ? 'border-gray-100 bg-white/80 shadow-sm backdrop-blur-md'
+            : 'border-transparent bg-white'
+        }`}
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2 tracking-tight text-[var(--tc-dark)]">
             <LogoMark />
@@ -73,9 +91,10 @@ export default function MicrositeShell({ initialAdvisor, children }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-semibold text-gray-600 hover:text-[var(--tc-primary)]"
+                className="group relative text-sm font-semibold text-gray-600 hover:text-[var(--tc-primary)]"
               >
                 {link.label}
+                <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-[var(--tc-primary)] transition-all duration-300 group-hover:w-full" />
               </Link>
             ))}
           </nav>
@@ -86,7 +105,7 @@ export default function MicrositeShell({ initialAdvisor, children }) {
                 href={`https://wa.me/${advisor.whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden items-center gap-2 rounded-full bg-[var(--tc-dark)] px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:opacity-90 sm:inline-flex"
+                className="hidden items-center gap-2 rounded-full bg-[var(--tc-dark)] px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:-translate-y-0.5 hover:opacity-90 sm:inline-flex"
               >
                 Free Consult <span aria-hidden>↗</span>
               </a>

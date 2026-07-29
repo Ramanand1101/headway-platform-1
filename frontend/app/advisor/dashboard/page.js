@@ -304,6 +304,11 @@ export default function AdvisorDashboardPage() {
   const previewIframeRef = useRef(null);
   const [previewReadyTick, setPreviewReadyTick] = useState(0);
 
+  const [creativeCategory, setCreativeCategory] = useState('life');
+  const [creatives, setCreatives] = useState([]);
+  const [creativesLoading, setCreativesLoading] = useState(false);
+  const [creativeAddStatus, setCreativeAddStatus] = useState({});
+
   const [igMedia, setIgMedia] = useState([]);
   const [igInsights, setIgInsights] = useState([]);
   const [igDataErrors, setIgDataErrors] = useState({ media: '', insights: '', conversations: '' });
@@ -905,6 +910,36 @@ export default function AdvisorDashboardPage() {
     const data = await res.json();
     if (res.ok) {
       setLibraryImages(data.advisor.contentLibraryImages || []);
+    }
+  }
+
+  // Admin-curated creatives (Life/Health/General/Mutual Funds), shared with
+  // every advisor. Loaded lazily when the Content Library tab is open.
+  useEffect(() => {
+    if (activeTab !== 'library') return;
+    setCreativesLoading(true);
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives?category=${creativeCategory}`, {
+      headers: authHeaders()
+    })
+      .then((res) => res.json())
+      .then((data) => setCreatives(data.creatives || []))
+      .finally(() => setCreativesLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, creativeCategory]);
+
+  async function addCreativeToLibrary(creative) {
+    setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'adding' }));
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/content-library/from-url`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ url: creative.imageUrl })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setLibraryImages(data.advisor.contentLibraryImages || []);
+      setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'added' }));
+    } else {
+      setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
     }
   }
 
@@ -2997,6 +3032,60 @@ export default function AdvisorDashboardPage() {
                 <p className="mb-5 text-sm text-gray-500">
                   Upload photos here to use in your reels, carousels and posters.
                 </p>
+
+                <div className="mb-10 rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                  <h3 className="text-sm font-extrabold text-ia-navy">Creatives</h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Ready-made marketing images curated by the team — add any of these to your own library below.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {[
+                      { key: 'life', label: 'Life' },
+                      { key: 'health', label: 'Health' },
+                      { key: 'general', label: 'General' },
+                      { key: 'mutual-funds', label: 'Mutual Funds' }
+                    ].map((cat) => (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setCreativeCategory(cat.key)}
+                        className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                          creativeCategory === cat.key
+                            ? 'bg-ia-blue text-white'
+                            : 'bg-white text-gray-600 shadow-sm hover:bg-ia-gold-tint/40'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {creativesLoading ? (
+                    <p className="mt-4 text-xs text-gray-400">Loading...</p>
+                  ) : creatives.length === 0 ? (
+                    <p className="mt-4 text-xs text-gray-400">Nothing in this folder yet.</p>
+                  ) : (
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                      {creatives.map((creative) => (
+                        <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white">
+                          <img src={creative.imageUrl} alt="" className="aspect-square w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => addCreativeToLibrary(creative)}
+                            disabled={creativeAddStatus[creative._id] === 'adding' || creativeAddStatus[creative._id] === 'added'}
+                            className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-xs font-bold text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-100"
+                          >
+                            {creativeAddStatus[creative._id] === 'adding'
+                              ? 'Adding...'
+                              : creativeAddStatus[creative._id] === 'added'
+                                ? 'Added ✓'
+                                : '+ Add to my library'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <div className="mb-5">
                   <label className="inline-block cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold shadow-sm transition hover:bg-gray-50">

@@ -1,4 +1,5 @@
 import { micrositeCopy } from '../lib/advisorMicrositeCopyDefaults';
+import Reveal from './Reveal';
 
 export default function VisionMission({ advisor, vision, mission, missionPillars, visionImage, missionImage }) {
   if (!vision && !mission) return null;
@@ -6,7 +7,7 @@ export default function VisionMission({ advisor, vision, mission, missionPillars
   return (
     <section className="border-y border-gray-100 bg-white px-6 py-20">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-10 text-center">
+        <Reveal className="mb-10 text-center" as="div">
           <span
             data-field="micrositeContent.visionMissionEyebrow"
             className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
@@ -22,11 +23,11 @@ export default function VisionMission({ advisor, vision, mission, missionPillars
           <p data-field="micrositeContent.visionMissionSubtext" className="mx-auto mt-2 max-w-lg text-gray-500">
             {micrositeCopy(advisor, 'visionMissionSubtext')}
           </p>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {vision && (
-            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
               {visionImage && (
                 <img
                   data-field="micrositeImages.vision"
@@ -52,7 +53,7 @@ export default function VisionMission({ advisor, vision, mission, missionPillars
             </div>
           )}
           {mission && (
-            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
               {missionImage && (
                 <img
                   data-field="micrositeImages.mission"

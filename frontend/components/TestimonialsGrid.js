@@ -8,8 +8,14 @@ export default function TestimonialsGrid({ testimonials }) {
       {testimonials.map((t, i) => (
         <div
           key={t._id}
-          className="w-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]"
+          className="relative w-full overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]"
         >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-2 -top-4 select-none text-7xl font-serif text-gray-50"
+          >
+            &rdquo;
+          </span>
           {typeof t.rating === 'number' && (
             <div className="mb-3.5 flex gap-0.5 text-[var(--tc-primary)]">
               {Array.from({ length: 5 }).map((_, j) => (

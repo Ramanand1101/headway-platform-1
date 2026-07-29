@@ -13,6 +13,7 @@ import SocialGrid from './SocialGrid';
 import TestimonialsGrid from './TestimonialsGrid';
 import BlogTeaser from './BlogTeaser';
 import ContactForm from './ContactForm';
+import Reveal from './Reveal';
 import { defaultVision, defaultMission, defaultMissionPillars, defaultServices } from '../lib/advisorMicrositeDefaults';
 import { micrositeCopy } from '../lib/advisorMicrositeCopyDefaults';
 
@@ -95,7 +96,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {serviceCards.length > 0 && (
         <section id="services" className="scroll-mt-20 px-6 py-20">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-10 text-center">
+            <Reveal className="mb-10 text-center" as="div">
               <span
                 data-field="micrositeContent.servicesEyebrow"
                 className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
@@ -111,17 +112,23 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
               <p data-field="micrositeContent.servicesSubtext" className="mx-auto mt-2 max-w-lg text-gray-500">
                 {micrositeCopy(advisor, 'servicesSubtext')}
               </p>
-            </div>
-            <ServicesGrid items={serviceCards} />
+            </Reveal>
+            <Reveal delay={100}>
+              <ServicesGrid items={serviceCards} />
+            </Reveal>
           </div>
         </section>
       )}
 
       {/* 5. Companies I Work With */}
       {advisor.companiesWorkedWith?.length > 0 && (
-        <section id="companies" className="scroll-mt-20 bg-[var(--tc-dark)] px-6 py-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="mb-10 text-center">
+        <section id="companies" className="relative scroll-mt-20 overflow-hidden bg-[var(--tc-dark)] px-6 py-20">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-[var(--tc-primary)]/10 blur-3xl"
+          />
+          <div className="relative mx-auto max-w-6xl">
+            <Reveal className="mb-10 text-center" as="div">
               <span
                 data-field="micrositeContent.companiesEyebrow"
                 className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
@@ -137,8 +144,10 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
               <p data-field="micrositeContent.companiesSubtext" className="mx-auto mt-2 max-w-lg text-white/60">
                 {micrositeCopy(advisor, 'companiesSubtext')}
               </p>
-            </div>
-            <CompaniesGrid companies={advisor.companiesWorkedWith} />
+            </Reveal>
+            <Reveal delay={100}>
+              <CompaniesGrid companies={advisor.companiesWorkedWith} />
+            </Reveal>
           </div>
         </section>
       )}
@@ -147,7 +156,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {testimonials.length > 0 && (
         <section id="testimonials" className="scroll-mt-20 px-6 py-20">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-10 text-center">
+            <Reveal className="mb-10 text-center" as="div">
               <span
                 data-field="micrositeContent.testimonialsEyebrow"
                 className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
@@ -163,8 +172,10 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
               <p data-field="micrositeContent.testimonialsSubtext" className="mx-auto mt-2 max-w-lg text-gray-500">
                 {micrositeCopy(advisor, 'testimonialsSubtext')}
               </p>
-            </div>
-            <TestimonialsGrid testimonials={testimonials} />
+            </Reveal>
+            <Reveal delay={100}>
+              <TestimonialsGrid testimonials={testimonials} />
+            </Reveal>
           </div>
         </section>
       )}
@@ -178,31 +189,33 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
             }`}
           >
             {achievementsImage && (
-              <div data-field="micrositeImages.achievements" className="mx-auto w-full max-w-md">
+              <Reveal data-field="micrositeImages.achievements" className="mx-auto w-full max-w-md">
                 <img
                   src={achievementsImage}
                   alt={advisor.name}
                   referrerPolicy="no-referrer"
                   className="aspect-[4/3] w-full rounded-2xl object-cover shadow-sm"
                 />
-              </div>
+              </Reveal>
             )}
             <div>
-              <span
-                data-field="micrositeContent.achievementsEyebrow"
-                className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
-              >
-                {micrositeCopy(advisor, 'achievementsEyebrow')}
-              </span>
-              <h2
-                data-field="micrositeContent.achievementsHeading"
-                className="mt-3 text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl"
-              >
-                {micrositeCopy(advisor, 'achievementsHeading')}
-              </h2>
-              <div className="mt-7">
+              <Reveal>
+                <span
+                  data-field="micrositeContent.achievementsEyebrow"
+                  className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
+                >
+                  {micrositeCopy(advisor, 'achievementsEyebrow')}
+                </span>
+                <h2
+                  data-field="micrositeContent.achievementsHeading"
+                  className="mt-3 text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl"
+                >
+                  {micrositeCopy(advisor, 'achievementsHeading')}
+                </h2>
+              </Reveal>
+              <Reveal delay={100} className="mt-7">
                 <AchievementsGrid achievements={advisor.achievements} />
-              </div>
+              </Reveal>
             </div>
           </div>
         </section>
@@ -212,13 +225,15 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {posts?.length > 0 && (
         <section id="blog" className="scroll-mt-20 px-6 py-20">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-10 text-center">
+            <Reveal className="mb-10 text-center" as="div">
               <span className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]">From My Blog</span>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl">
                 Insurance Insights, Explained Simply
               </h2>
-            </div>
-            <BlogTeaser posts={posts} />
+            </Reveal>
+            <Reveal delay={100}>
+              <BlogTeaser posts={posts} />
+            </Reveal>
           </div>
         </section>
       )}
@@ -226,7 +241,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {/* 8. Contact Me */}
       <section id="contact" className="scroll-mt-20 bg-gray-50 px-6 py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-10 text-center">
+          <Reveal className="mb-10 text-center" as="div">
             <span
               data-field="micrositeContent.contactEyebrow"
               className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
@@ -242,9 +257,12 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
             <p data-field="micrositeContent.contactSubtext" className="mx-auto mt-2 max-w-lg text-gray-500">
               {micrositeCopy(advisor, 'contactSubtext')}
             </p>
-          </div>
+          </Reveal>
 
-          <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 shadow-sm lg:grid-cols-[380px_1fr]">
+          <Reveal
+            delay={100}
+            className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-lg lg:grid-cols-[380px_1fr]"
+          >
             <div className="relative flex flex-col justify-center overflow-hidden bg-[var(--tc-dark)] p-8 text-white">
               <div className="pointer-events-none absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-white/5" />
               <h3 data-field="micrositeContent.contactInfoTitle" className="text-xl font-bold">
@@ -283,7 +301,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
                 <ContactForm advisorSlug={advisorSlug} interestOptions={advisor.services || []} />
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -294,7 +312,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
         advisor.officeAddress) && (
         <section className="px-6 py-20">
           <div className="mx-auto max-w-5xl">
-            <div className="mb-10 text-center">
+            <Reveal className="mb-10 text-center" as="div">
               <span
                 data-field="micrositeContent.googleEyebrow"
                 className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
@@ -310,8 +328,11 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
               <p data-field="micrositeContent.googleSubtext" className="mx-auto mt-2 max-w-lg text-gray-500">
                 {micrositeCopy(advisor, 'googleSubtext')}
               </p>
-            </div>
-            <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 shadow-sm lg:grid-cols-2">
+            </Reveal>
+            <Reveal
+              delay={100}
+              className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-lg lg:grid-cols-2"
+            >
               <GoogleBusinessCard advisorName={advisor.name} googleBusiness={advisor.googleBusiness} bare />
               {advisor.officeAddress && (
                 <iframe
@@ -322,7 +343,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
                   className="min-h-[280px] w-full border-0"
                 />
               )}
-            </div>
+            </Reveal>
           </div>
         </section>
       )}
@@ -330,7 +351,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {/* 10. Follow Me on Social Media */}
       <section id="social" className="scroll-mt-20 bg-gray-50 px-6 py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-10 text-center">
+          <Reveal className="mb-10 text-center" as="div">
             <span
               data-field="micrositeContent.socialEyebrow"
               className="text-sm font-bold uppercase tracking-widest text-[var(--tc-primary)]"
@@ -343,8 +364,10 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
             >
               {micrositeCopy(advisor, 'socialHeading')}
             </h2>
-          </div>
-          <SocialGrid advisor={advisor} />
+          </Reveal>
+          <Reveal delay={100}>
+            <SocialGrid advisor={advisor} />
+          </Reveal>
         </div>
       </section>
 
@@ -352,7 +375,7 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {advisor.faqs?.length > 0 && (
         <section id="faqs" className="scroll-mt-20 bg-gray-50 px-6 py-20">
           <div className="mx-auto max-w-3xl">
-            <div className="mb-10 text-center">
+            <Reveal className="mb-10 text-center" as="div">
               <h2
                 data-field="micrositeContent.faqHeading"
                 className="text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl"
@@ -362,8 +385,10 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
               <p data-field="micrositeContent.faqSubtext" className="mt-2 italic text-gray-500">
                 {micrositeCopy(advisor, 'faqSubtext')}
               </p>
-            </div>
-            <FAQAccordion faqs={advisor.faqs} />
+            </Reveal>
+            <Reveal delay={100}>
+              <FAQAccordion faqs={advisor.faqs} />
+            </Reveal>
           </div>
         </section>
       )}
