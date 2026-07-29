@@ -5,6 +5,7 @@ const cloudinary = require('cloudinary').v2;
 const Advisor = require('../models/Advisor');
 const Testimonial = require('../models/Testimonial');
 const User = require('../models/User');
+const { generateProfileBlurb } = require('../services/contentGenerator');
 
 // Subdomains that must never be assignable to an advisor — mirrors
 // frontend/middleware.js's RESERVED_SUBDOMAINS plus a couple of backend-only
@@ -526,6 +527,26 @@ exports.deleteMyTestimonial = async (req, res, next) => {
     if (!testimonial) return res.status(404).json({ error: 'Review not found' });
 
     res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/advisor/generate-profile-text — the dashboard's "magic wand"
+// button next to Short Bio / About Me. Drafts text from the advisor's
+// existing profile fields; the advisor edits/saves it like anything else.
+exports.generateProfileText = async (req, res, next) => {
+  try {
+    const { field } = req.body;
+    if (!['bio', 'aboutMe'].includes(field)) {
+      return res.status(400).json({ error: 'Invalid field' });
+    }
+
+    const advisor = await Advisor.findById(req.user.advisorId);
+    if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    const text = await generateProfileBlurb(advisor, field);
+    res.json({ text: text.trim() });
   } catch (err) {
     next(err);
   }

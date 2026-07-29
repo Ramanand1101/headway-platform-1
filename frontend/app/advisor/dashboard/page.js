@@ -276,6 +276,7 @@ export default function AdvisorDashboardPage() {
   // this; unset keys just fall back to the default copy on the microsite.
   const [micrositeContentForm, setMicrositeContentForm] = useState({});
   const [serviceOfferings, setServiceOfferings] = useState([]);
+  const [profileTextGenStatus, setProfileTextGenStatus] = useState({});
   const [specializationTags, setSpecializationTags] = useState([]);
   const [serviceTags, setServiceTags] = useState([]);
   const [credentialTags, setCredentialTags] = useState([]);
@@ -532,6 +533,24 @@ export default function AdvisorDashboardPage() {
 
   function updateProfileField(field, value) {
     setProfileForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  // "Magic wand" — drafts Short Bio / About Me from the advisor's existing
+  // profile fields. Result lands in the normal textarea, still fully editable.
+  async function generateProfileText(field) {
+    setProfileTextGenStatus((prev) => ({ ...prev, [field]: { generating: true, error: '' } }));
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/generate-profile-text`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ field })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setProfileTextGenStatus((prev) => ({ ...prev, [field]: { generating: false, error: data.error || 'Could not generate text' } }));
+      return;
+    }
+    updateProfileField(field, data.text);
+    setProfileTextGenStatus((prev) => ({ ...prev, [field]: { generating: false, error: '' } }));
   }
 
   function updateMicrositeContentField(field, value) {
@@ -1872,7 +1891,18 @@ export default function AdvisorDashboardPage() {
                     </div>
 
                     <div id="field-bio" className="scroll-mt-24">
-                      <label className={profileLabelClasses}>Short bio (shown next to your name on the homepage)</label>
+                      <div className="flex items-center justify-between">
+                        <label className={profileLabelClasses}>Short bio (shown next to your name on the homepage)</label>
+                        <button
+                          type="button"
+                          onClick={() => generateProfileText('bio')}
+                          disabled={profileTextGenStatus.bio?.generating}
+                          title="Auto-generate from your profile"
+                          className="flex-none rounded-lg bg-ia-gold-tint/40 px-2.5 py-1 text-xs font-bold text-ia-blue transition hover:bg-ia-gold-tint disabled:opacity-50"
+                        >
+                          {profileTextGenStatus.bio?.generating ? 'Generating...' : '✨ Auto-generate'}
+                        </button>
+                      </div>
                       <textarea
                         value={profileForm.bio}
                         onChange={(e) => updateProfileField('bio', e.target.value)}
@@ -1881,10 +1911,24 @@ export default function AdvisorDashboardPage() {
                           highlightedField === 'field-bio' ? 'border-ia-blue ring-2 ring-ia-blue/40' : ''
                         }`}
                       />
+                      {profileTextGenStatus.bio?.error && (
+                        <p className="mt-1 text-xs text-red-600">{profileTextGenStatus.bio.error}</p>
+                      )}
                     </div>
 
                     <div id="field-aboutMe" className="scroll-mt-24">
-                      <label className={profileLabelClasses}>About Me (the longer story shown in your About section)</label>
+                      <div className="flex items-center justify-between">
+                        <label className={profileLabelClasses}>About Me (the longer story shown in your About section)</label>
+                        <button
+                          type="button"
+                          onClick={() => generateProfileText('aboutMe')}
+                          disabled={profileTextGenStatus.aboutMe?.generating}
+                          title="Auto-generate from your profile"
+                          className="flex-none rounded-lg bg-ia-gold-tint/40 px-2.5 py-1 text-xs font-bold text-ia-blue transition hover:bg-ia-gold-tint disabled:opacity-50"
+                        >
+                          {profileTextGenStatus.aboutMe?.generating ? 'Generating...' : '✨ Auto-generate'}
+                        </button>
+                      </div>
                       <textarea
                         value={profileForm.aboutMe}
                         onChange={(e) => updateProfileField('aboutMe', e.target.value)}
@@ -1893,6 +1937,9 @@ export default function AdvisorDashboardPage() {
                           highlightedField === 'field-aboutMe' ? 'border-ia-blue ring-2 ring-ia-blue/40' : ''
                         }`}
                       />
+                      {profileTextGenStatus.aboutMe?.error && (
+                        <p className="mt-1 text-xs text-red-600">{profileTextGenStatus.aboutMe.error}</p>
+                      )}
                     </div>
 
                     <div>

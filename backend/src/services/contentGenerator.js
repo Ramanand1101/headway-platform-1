@@ -37,6 +37,39 @@ async function callModel(prompt) {
   return data.choices?.[0]?.message?.content || '';
 }
 
+function buildProfileBlurbPrompt(advisor, field) {
+  const specialization = (advisor.specialization || []).join(', ') || 'insurance planning';
+  const services = (advisor.services || []).join(', ');
+  const experience = advisor.yearsExperience ? `${advisor.yearsExperience} years of experience` : '';
+  const credentials = (advisor.credentials || []).join(', ');
+
+  const context = `Advisor name: ${advisor.name}. City: ${advisor.city || 'India'}. Specializes in: ${specialization}.${
+    services ? ` Services offered: ${services}.` : ''
+  }${experience ? ` ${experience}.` : ''}${credentials ? ` Credentials: ${credentials}.` : ''}`;
+
+  if (field === 'bio') {
+    return `${context}
+Write a short, warm one-to-two sentence tagline (25-40 words) for this Indian insurance
+advisor's website homepage, shown right next to their name.
+Tone: confident, simple, no jargon, no emoji, no markdown.
+Write in first person ("I help...").
+Return only the tagline text, nothing else — no quotes, no preamble.`;
+  }
+
+  return `${context}
+Write a warm, trustworthy "About Me" paragraph (90-130 words) for this Indian insurance
+advisor's website, written in first person.
+Tone: simple, confident, client-first, no jargon, no emoji, no markdown, no bullet points.
+Return only the paragraph text, nothing else — no quotes, no preamble.`;
+}
+
+// Generates a short bio tagline or a longer About Me paragraph from the
+// advisor's existing profile fields (name/city/specialization/services/
+// experience/credentials) — powers the dashboard's "magic wand" buttons.
+async function generateProfileBlurb(advisor, field) {
+  return callModel(buildProfileBlurbPrompt(advisor, field));
+}
+
 // Drafts a post and returns { title, body } WITHOUT saving it — used by the
 // "Write blog" admin page so the draft can be reviewed/edited before publish.
 async function draftContent(advisor, topic) {
@@ -60,4 +93,4 @@ async function generateContent(advisor, { topic, publish = false } = {}) {
   });
 }
 
-module.exports = { generateContent, draftContent };
+module.exports = { generateContent, draftContent, generateProfileBlurb };

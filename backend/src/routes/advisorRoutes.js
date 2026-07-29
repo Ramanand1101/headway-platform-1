@@ -13,6 +13,7 @@ const {
   onboardAdvisor,
   getMyProfile,
   updateAdvisorProfile,
+  generateProfileText,
   checkSlugAvailability,
   updateAdvisorSlug,
   uploadProfilePhoto,
@@ -84,6 +85,7 @@ router.get('/me', authenticate, getMyProfile);
 router.get('/slug-availability', authenticate, checkSlugAvailability);
 router.patch('/slug', authenticate, updateAdvisorSlug);
 router.patch('/profile', authenticate, updateAdvisorProfile);
+router.post('/generate-profile-text', authenticate, generateProfileText);
 router.post('/photo', authenticate, uploadPhoto.single('photo'), uploadProfilePhoto);
 router.post(
   '/microsite-image/:section',
