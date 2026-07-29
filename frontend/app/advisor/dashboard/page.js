@@ -312,6 +312,9 @@ export default function AdvisorDashboardPage() {
   const [creativesLoading, setCreativesLoading] = useState(false);
   const [creativeAddStatus, setCreativeAddStatus] = useState({});
 
+  const [companyDirectory, setCompanyDirectory] = useState([]);
+  const [companyDirectoryOpen, setCompanyDirectoryOpen] = useState(false);
+
   const [igMedia, setIgMedia] = useState([]);
   const [igInsights, setIgInsights] = useState([]);
   const [igDataErrors, setIgDataErrors] = useState({ media: '', insights: '', conversations: '' });
@@ -575,6 +578,29 @@ export default function AdvisorDashboardPage() {
   }
   function removeCompany(i) {
     setCompanies((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  // Admin-curated company logos — loaded lazily the first time the advisor
+  // opens the picker, so it doesn't fetch on every dashboard load.
+  function loadCompanyDirectory() {
+    if (companyDirectory.length > 0) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((data) => setCompanyDirectory(data.companies || []));
+  }
+
+  function toggleCompanyDirectory() {
+    setCompanyDirectoryOpen((prev) => {
+      if (!prev) loadCompanyDirectory();
+      return !prev;
+    });
+  }
+
+  // Adds a directory pick as a new, already-filled company row — the advisor
+  // can still edit the name/logo afterward, same as any manually added row.
+  function addCompanyFromDirectory(entry) {
+    if (companies.some((c) => c.name.trim().toLowerCase() === entry.name.toLowerCase())) return;
+    setCompanies((prev) => [...prev, { name: entry.name, logoUrl: entry.logoUrl }]);
   }
 
   function addAchievement() {
@@ -2165,17 +2191,62 @@ export default function AdvisorDashboardPage() {
                     <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
                       <div className="flex items-center justify-between">
                         <label className={profileLabelClasses}>Company working with</label>
-                        <button
-                          type="button"
-                          onClick={addCompany}
-                          className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40"
-                        >
-                          + Add company
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={toggleCompanyDirectory}
+                            className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40"
+                          >
+                            {companyDirectoryOpen ? 'Hide directory' : 'Choose from directory'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={addCompany}
+                            className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40"
+                          >
+                            + Add company
+                          </button>
+                        </div>
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
                         Insurers you're empanelled with, shown with their logo on your microsite.
                       </p>
+
+                      {companyDirectoryOpen && (
+                        <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3">
+                          <p className="mb-3 text-xs text-gray-500">
+                            Pick a logo to add it below — you can still edit the name or replace the logo afterward.
+                          </p>
+                          {companyDirectory.length === 0 ? (
+                            <p className="text-xs text-gray-400">No companies in the directory yet.</p>
+                          ) : (
+                            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                              {companyDirectory.map((entry) => {
+                                const alreadyAdded = companies.some(
+                                  (c) => c.name.trim().toLowerCase() === entry.name.toLowerCase()
+                                );
+                                return (
+                                  <button
+                                    key={entry._id}
+                                    type="button"
+                                    onClick={() => addCompanyFromDirectory(entry)}
+                                    disabled={alreadyAdded}
+                                    className="flex flex-col items-center gap-1.5 rounded-lg border border-gray-100 p-2.5 text-center transition hover:border-ia-blue hover:bg-ia-gold-tint/20 disabled:opacity-40"
+                                  >
+                                    <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-lg bg-gray-50 p-1">
+                                      <img src={entry.logoUrl} alt={entry.name} className="h-full w-full object-contain" />
+                                    </div>
+                                    <span className="text-[0.65rem] font-bold text-gray-700 leading-tight">
+                                      {alreadyAdded ? 'Added ✓' : entry.name}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="mt-4 space-y-3">
                         {companies.map((c, i) => (
                           <div key={i} className="rounded-xl border border-gray-200 bg-white p-3">

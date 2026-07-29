@@ -18,6 +18,7 @@ const leadRoutes = require('./routes/leadRoutes');
 const instagramRoutes = require('./routes/instagramRoutes');
 const facebookRoutes = require('./routes/facebookRoutes');
 const creativeRoutes = require('./routes/creativeRoutes');
+const companyDirectoryRoutes = require('./routes/companyDirectoryRoutes');
 
 connectDB();
 
@@ -45,6 +46,7 @@ app.use('/api/leads', leadRoutes);
 app.use('/api/advisor/instagram', instagramRoutes);
 app.use('/api/advisor/facebook', facebookRoutes);
 app.use('/api/creatives', creativeRoutes);
+app.use('/api/companies', companyDirectoryRoutes);
 
 app.get('/', (req, res) => res.json({ message: 'Welcome to Makeuforward Platform' }));
 

@@ -1,8 +1,8 @@
 const ContentPost = require('../models/ContentPost');
 
-// TEMPORARY: using GitHub Models (OpenAI-compatible) via GITHUB_MODELS_TOKEN
-// until an Anthropic API key is available. Switch back to the Anthropic
-// Messages API (see git history) once CLAUDE_API_KEY is set.
+// Uses a real OpenAI key once OPENAI_API_KEY is set in the environment.
+// Falls back to GitHub Models (OpenAI-compatible, same gpt-4o-mini model)
+// via GITHUB_MODELS_TOKEN so nothing breaks while that key isn't set yet.
 
 function buildPrompt(advisor, topic) {
   const subject = topic ? `about "${topic}"` : 'sharing one practical financial tip';
@@ -17,17 +17,22 @@ symbols, no emoji. For a numbered list just use "1. ", "2. " etc. on their own l
 }
 
 async function callModel(prompt) {
-  const response = await fetch('https://models.github.ai/inference/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.GITHUB_MODELS_TOKEN}`
-    },
-    body: JSON.stringify({
-      model: 'openai/gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+  const useOpenAi = Boolean(process.env.OPENAI_API_KEY);
+
+  const response = await fetch(
+    useOpenAi ? 'https://api.openai.com/v1/chat/completions' : 'https://models.github.ai/inference/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${useOpenAi ? process.env.OPENAI_API_KEY : process.env.GITHUB_MODELS_TOKEN}`
+      },
+      body: JSON.stringify({
+        model: useOpenAi ? 'gpt-4o-mini' : 'openai/gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    }
+  );
 
   const data = await response.json();
   if (!response.ok) {
