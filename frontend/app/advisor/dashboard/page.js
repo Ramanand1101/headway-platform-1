@@ -314,6 +314,8 @@ export default function AdvisorDashboardPage() {
 
   const [companyDirectory, setCompanyDirectory] = useState([]);
   const [companyDirectoryOpen, setCompanyDirectoryOpen] = useState(false);
+  const [companyDirectoryCategory, setCompanyDirectoryCategory] = useState('life');
+  const [companyDirectoryLoading, setCompanyDirectoryLoading] = useState(false);
 
   const [igMedia, setIgMedia] = useState([]);
   const [igInsights, setIgInsights] = useState([]);
@@ -581,19 +583,25 @@ export default function AdvisorDashboardPage() {
   }
 
   // Admin-curated company logos — loaded lazily the first time the advisor
-  // opens the picker, so it doesn't fetch on every dashboard load.
-  function loadCompanyDirectory() {
-    if (companyDirectory.length > 0) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies`, { headers: authHeaders() })
+  // opens the picker (and again whenever the category tab changes).
+  function loadCompanyDirectory(category) {
+    setCompanyDirectoryLoading(true);
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies?category=${category}`, { headers: authHeaders() })
       .then((res) => res.json())
-      .then((data) => setCompanyDirectory(data.companies || []));
+      .then((data) => setCompanyDirectory(data.companies || []))
+      .finally(() => setCompanyDirectoryLoading(false));
   }
 
   function toggleCompanyDirectory() {
     setCompanyDirectoryOpen((prev) => {
-      if (!prev) loadCompanyDirectory();
+      if (!prev) loadCompanyDirectory(companyDirectoryCategory);
       return !prev;
     });
+  }
+
+  function selectCompanyDirectoryCategory(category) {
+    setCompanyDirectoryCategory(category);
+    loadCompanyDirectory(category);
   }
 
   // Adds a directory pick as a new, already-filled company row — the advisor
@@ -2217,8 +2225,30 @@ export default function AdvisorDashboardPage() {
                           <p className="mb-3 text-xs text-gray-500">
                             Pick a logo to add it below — you can still edit the name or replace the logo afterward.
                           </p>
-                          {companyDirectory.length === 0 ? (
-                            <p className="text-xs text-gray-400">No companies in the directory yet.</p>
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            {[
+                              { key: 'life', label: 'Life' },
+                              { key: 'health', label: 'Health' },
+                              { key: 'general', label: 'General' }
+                            ].map((cat) => (
+                              <button
+                                key={cat.key}
+                                type="button"
+                                onClick={() => selectCompanyDirectoryCategory(cat.key)}
+                                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                                  companyDirectoryCategory === cat.key
+                                    ? 'bg-ia-blue text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              >
+                                {cat.label}
+                              </button>
+                            ))}
+                          </div>
+                          {companyDirectoryLoading ? (
+                            <p className="text-xs text-gray-400">Loading...</p>
+                          ) : companyDirectory.length === 0 ? (
+                            <p className="text-xs text-gray-400">No companies in this folder yet.</p>
                           ) : (
                             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
                               {companyDirectory.map((entry) => {

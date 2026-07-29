@@ -1,24 +1,38 @@
 const cloudinary = require('cloudinary').v2;
 const CompanyDirectory = require('../models/CompanyDirectory');
 
-// GET /api/companies — any logged-in advisor/admin browses the shared
-// company directory to pick a name+logo for their own "Company working with".
+const { CATEGORIES } = CompanyDirectory;
+
+// GET /api/companies?category=life — any logged-in advisor/admin browses the
+// shared company directory to pick a name+logo for their own "Company
+// working with", optionally filtered to one folder.
 exports.listCompanies = async (req, res, next) => {
   try {
-    const companies = await CompanyDirectory.find().sort({ name: 1 });
-    res.json({ companies });
+    const filter = {};
+    if (req.query.category) {
+      if (!CATEGORIES.includes(req.query.category)) {
+        return res.status(400).json({ error: 'Invalid category' });
+      }
+      filter.category = req.query.category;
+    }
+
+    const companies = await CompanyDirectory.find(filter).sort({ name: 1 });
+    res.json({ companies, categories: CATEGORIES });
   } catch (err) {
     next(err);
   }
 };
 
 // POST /api/companies  (admin-only) — adds one company with its logo to the
-// shared directory.
+// shared directory, under a Life/Health/General folder.
 exports.createCompany = async (req, res, next) => {
   try {
-    const { name } = req.body;
+    const { name, category } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Company name is required' });
+    }
+    if (!CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
     }
     if (!req.file) {
       return res.status(400).json({ error: 'Logo file is required' });
@@ -26,12 +40,12 @@ exports.createCompany = async (req, res, next) => {
 
     const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     const uploaded = await cloudinary.uploader.upload(dataUri, {
-      folder: 'company-directory',
+      folder: `company-directory/${category}`,
       public_id: `${Date.now()}`,
       resource_type: 'image'
     });
 
-    const company = await CompanyDirectory.create({ name: name.trim(), logoUrl: uploaded.secure_url });
+    const company = await CompanyDirectory.create({ name: name.trim(), logoUrl: uploaded.secure_url, category });
     res.status(201).json({ company });
   } catch (err) {
     next(err);

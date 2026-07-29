@@ -2,7 +2,14 @@
 import { useEffect, useState } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 
+const CATEGORIES = [
+  { key: 'life', label: 'Life' },
+  { key: 'health', label: 'Health' },
+  { key: 'general', label: 'General' }
+];
+
 export default function CompanyDirectoryPage() {
+  const [activeCategory, setActiveCategory] = useState('life');
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -14,9 +21,9 @@ export default function CompanyDirectoryPage() {
     return { Authorization: `Bearer ${token}`, ...extra };
   }
 
-  function loadCompanies() {
+  function loadCompanies(category) {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies`, { headers: authHeaders() })
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies?category=${category}`, { headers: authHeaders() })
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Could not load companies');
@@ -28,8 +35,10 @@ export default function CompanyDirectoryPage() {
   }
 
   useEffect(() => {
-    loadCompanies();
-  }, []);
+    setError('');
+    loadCompanies(activeCategory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory]);
 
   async function handleUpload(e) {
     const file = e.target.files?.[0];
@@ -45,6 +54,7 @@ export default function CompanyDirectoryPage() {
     const formData = new FormData();
     formData.append('logo', file);
     formData.append('name', nameDraft.trim());
+    formData.append('category', activeCategory);
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies`, {
       method: 'POST',
@@ -81,10 +91,24 @@ export default function CompanyDirectoryPage() {
             sourcing and uploading the same logos themselves.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="mt-6 flex flex-wrap gap-2 border-b border-gray-100 pb-4">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setActiveCategory(cat.key)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  activeCategory === cat.key ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="flex-1">
               <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">
-                Company name
+                Company name ({CATEGORIES.find((c) => c.key === activeCategory)?.label} folder)
               </label>
               <input
                 value={nameDraft}
@@ -128,7 +152,7 @@ export default function CompanyDirectoryPage() {
           </div>
 
           {!loading && companies.length === 0 && (
-            <p className="mt-6 text-sm text-gray-400">No companies yet — add one above.</p>
+            <p className="mt-6 text-sm text-gray-400">No companies in this folder yet — upload one above.</p>
           )}
         </div>
       </main>
