@@ -1895,6 +1895,7 @@ export default function AdvisorDashboardPage() {
                         <input
                           value={profileForm.name}
                           onChange={(e) => updateProfileField('name', e.target.value)}
+                          placeholder="e.g. Vinod Kumar"
                           required
                           className={`mt-1.5 ${profileInputClasses} ${
                             highlightedField === 'field-name' ? 'border-ia-blue ring-2 ring-ia-blue/40' : ''
@@ -1906,6 +1907,7 @@ export default function AdvisorDashboardPage() {
                         <input
                           value={profileForm.city}
                           onChange={(e) => updateProfileField('city', e.target.value)}
+                          placeholder="e.g. Gurgaon"
                           className={`mt-1.5 ${profileInputClasses}`}
                         />
                       </div>
@@ -1917,6 +1919,7 @@ export default function AdvisorDashboardPage() {
                         <input
                           value={profileForm.contactNumber}
                           onChange={(e) => updateProfileField('contactNumber', e.target.value)}
+                          placeholder="e.g. 9876543210"
                           className={`mt-1.5 ${profileInputClasses}`}
                         />
                       </div>
@@ -1925,6 +1928,7 @@ export default function AdvisorDashboardPage() {
                         <input
                           value={profileForm.whatsappNumber}
                           onChange={(e) => updateProfileField('whatsappNumber', e.target.value)}
+                          placeholder="e.g. 919876543210 (with country code)"
                           className={`mt-1.5 ${profileInputClasses}`}
                         />
                       </div>
@@ -1946,6 +1950,7 @@ export default function AdvisorDashboardPage() {
                       <textarea
                         value={profileForm.bio}
                         onChange={(e) => updateProfileField('bio', e.target.value)}
+                        placeholder="e.g. I help families choose the right insurance cover, without the jargon."
                         rows={3}
                         className={`mt-1.5 ${profileInputClasses} ${
                           highlightedField === 'field-bio' ? 'border-ia-blue ring-2 ring-ia-blue/40' : ''
@@ -1972,6 +1977,7 @@ export default function AdvisorDashboardPage() {
                       <textarea
                         value={profileForm.aboutMe}
                         onChange={(e) => updateProfileField('aboutMe', e.target.value)}
+                        placeholder="Tell clients who you are, how long you've been advising, and how you help them — 2-3 sentences works well."
                         rows={5}
                         className={`mt-1.5 ${profileInputClasses} ${
                           highlightedField === 'field-aboutMe' ? 'border-ia-blue ring-2 ring-ia-blue/40' : ''
@@ -2044,6 +2050,7 @@ export default function AdvisorDashboardPage() {
                           type="email"
                           value={profileForm.email}
                           onChange={(e) => updateProfileField('email', e.target.value)}
+                          placeholder="e.g. vinod@example.com"
                           className={`mt-1.5 ${profileInputClasses}`}
                         />
                       </div>
@@ -2052,6 +2059,7 @@ export default function AdvisorDashboardPage() {
                         <input
                           value={profileForm.irdaiLicenseNumber}
                           onChange={(e) => updateProfileField('irdaiLicenseNumber', e.target.value)}
+                          placeholder="e.g. ABCD12345"
                           className={`mt-1.5 ${profileInputClasses}`}
                         />
                       </div>
@@ -2062,6 +2070,7 @@ export default function AdvisorDashboardPage() {
                       <input
                         value={profileForm.officeAddress}
                         onChange={(e) => updateProfileField('officeAddress', e.target.value)}
+                        placeholder="e.g. 15A, Sector 14, Gurgaon"
                         className={`mt-1.5 ${profileInputClasses}`}
                       />
                     </div>
@@ -2096,6 +2105,7 @@ export default function AdvisorDashboardPage() {
                           <textarea
                             value={profileForm.vision}
                             onChange={(e) => updateProfileField('vision', e.target.value)}
+                            placeholder="e.g. To make every family in my city financially secure."
                             rows={2}
                             className={`mt-1.5 ${profileInputClasses} ${
                               highlightedField === 'field-vision' ? 'border-ia-blue ring-2 ring-ia-blue/40' : ''
@@ -2107,6 +2117,7 @@ export default function AdvisorDashboardPage() {
                           <textarea
                             value={profileForm.mission}
                             onChange={(e) => updateProfileField('mission', e.target.value)}
+                            placeholder="e.g. To simplify insurance for every client, with honest, no-pressure advice."
                             rows={2}
                             className={`mt-1.5 ${profileInputClasses} ${
                               highlightedField === 'field-mission' ? 'border-ia-blue ring-2 ring-ia-blue/40' : ''
@@ -2375,6 +2386,7 @@ export default function AdvisorDashboardPage() {
                           <input
                             value={profileForm.linkedin}
                             onChange={(e) => updateProfileField('linkedin', e.target.value)}
+                            placeholder="https://linkedin.com/in/your-profile"
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
@@ -2383,6 +2395,7 @@ export default function AdvisorDashboardPage() {
                           <input
                             value={profileForm.facebook}
                             onChange={(e) => updateProfileField('facebook', e.target.value)}
+                            placeholder="https://facebook.com/your-page"
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
@@ -2391,6 +2404,7 @@ export default function AdvisorDashboardPage() {
                           <input
                             value={profileForm.youtube}
                             onChange={(e) => updateProfileField('youtube', e.target.value)}
+                            placeholder="https://youtube.com/@your-channel"
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
@@ -2418,6 +2432,7 @@ export default function AdvisorDashboardPage() {
                             max="5"
                             value={profileForm.gmbRating}
                             onChange={(e) => updateProfileField('gmbRating', e.target.value)}
+                            placeholder="4.8"
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
@@ -2428,6 +2443,7 @@ export default function AdvisorDashboardPage() {
                             min="0"
                             value={profileForm.gmbReviewCount}
                             onChange={(e) => updateProfileField('gmbReviewCount', e.target.value)}
+                            placeholder="e.g. 120"
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
@@ -2436,6 +2452,7 @@ export default function AdvisorDashboardPage() {
                           <input
                             value={profileForm.gmbReviewLink}
                             onChange={(e) => updateProfileField('gmbReviewLink', e.target.value)}
+                            placeholder="https://g.page/r/your-business/review"
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
@@ -2444,6 +2461,7 @@ export default function AdvisorDashboardPage() {
                           <input
                             value={profileForm.gmbMapsLink}
                             onChange={(e) => updateProfileField('gmbMapsLink', e.target.value)}
+                            placeholder="https://maps.app.goo.gl/..."
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
