@@ -83,10 +83,11 @@ exports.draftForAdvisor = async (req, res, next) => {
   }
 };
 
-// POST /api/content/manual/:advisorId  (admin-only — hand-written post, publishes immediately)
+// POST /api/content/manual/:advisorId  (admin-only — hand-written post; pass
+// publish: false to save as a draft instead of going live immediately)
 exports.createManualPost = async (req, res, next) => {
   try {
-    const { title, body, imageUrl } = req.body || {};
+    const { title, body, imageUrl, tags, categories, publish = true } = req.body || {};
     if (!title || !body) {
       return res.status(400).json({ error: 'Title and body are required' });
     }
@@ -99,11 +100,34 @@ exports.createManualPost = async (req, res, next) => {
       title,
       body,
       imageUrl,
-      status: 'published',
-      publishedAt: new Date(),
+      tags,
+      categories,
+      status: publish ? 'published' : 'draft',
+      publishedAt: publish ? new Date() : undefined,
       generatedBy: 'manual'
     });
     res.status(201).json({ post });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/content/:id  (admin-only — edit an existing post; also used to
+// move a draft to published by passing publish: true)
+exports.updatePost = async (req, res, next) => {
+  try {
+    const { title, body, imageUrl, tags, categories, publish } = req.body || {};
+    const update = { title, body, imageUrl, tags, categories };
+    if (publish === true) {
+      update.status = 'published';
+      update.publishedAt = new Date();
+    } else if (publish === false) {
+      update.status = 'draft';
+    }
+
+    const post = await ContentPost.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json({ post });
   } catch (err) {
     next(err);
   }

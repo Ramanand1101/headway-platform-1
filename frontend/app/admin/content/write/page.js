@@ -1,6 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AdminSidebar from '../../../../components/AdminSidebar';
+import RichTextEditor from '../../../../components/RichTextEditor';
+import TagInput from '../../../../components/TagInput';
+import { plainTextToParagraphHtml, stripHtml } from '../../../../lib/blogContent';
+
+const CATEGORY_OPTIONS = ['Life Insurance', 'Health Insurance', 'General Insurance', 'Investment & Mutual Funds'];
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-IN', {
@@ -10,13 +15,13 @@ function formatDate(dateString) {
   });
 }
 
+const emptyDraft = { id: null, title: '', body: '', imageUrl: '', tags: [], categories: [] };
+
 export default function WriteBlogPage() {
   const [advisors, setAdvisors] = useState([]);
   const [advisorId, setAdvisorId] = useState('');
   const [topic, setTopic] = useState('');
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [draft, setDraft] = useState(emptyDraft);
   const [posts, setPosts] = useState([]);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState('');
@@ -29,13 +34,24 @@ export default function WriteBlogPage() {
     return { Authorization: `Bearer ${token}`, ...extra };
   }
 
+  function updateDraft(field, value) {
+    setDraft((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function toggleCategory(cat) {
+    setDraft((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(cat)
+        ? prev.categories.filter((c) => c !== cat)
+        : [...prev.categories, cat]
+    }));
+  }
+
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor`, { headers: authHeaders() })
       .then(async (res) => {
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Could not load advisors');
-        }
+        if (!res.ok) throw new Error(data.error || 'Could not load advisors');
         return data;
       })
       .then((data) => {
@@ -45,12 +61,17 @@ export default function WriteBlogPage() {
       .catch((err) => setAdvisorsError(err.message));
   }, []);
 
-  useEffect(() => {
+  function loadPosts() {
     if (!advisorId) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/all/${advisorId}`, { headers: authHeaders() })
       .then((res) => res.json())
       .then((data) => setPosts(data.posts || []));
-  }, [advisorId, status.success]);
+  }
+
+  useEffect(() => {
+    loadPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [advisorId]);
 
   async function handleDraft() {
     setDrafting(true);
@@ -69,43 +90,16 @@ export default function WriteBlogPage() {
       return;
     }
 
-    setTitle(data.draft.title);
-    setBody(data.draft.body);
-    setImageUrl(data.draft.imageUrl || '');
+    setDraft((prev) => ({
+      ...prev,
+      title: data.draft.title,
+      body: plainTextToParagraphHtml(data.draft.body),
+      imageUrl: data.draft.imageUrl || prev.imageUrl
+    }));
     setDrafting(false);
   }
 
-  // Regenerates just the image for whatever title/topic is currently set —
-  // handy if the auto-generated one from "Draft with AI" doesn't fit.
-  async function handleRegenerateImage() {
-    setImageStatus({ working: true, error: '' });
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/draft/${advisorId}`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ topic: topic || title })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setImageStatus({ working: false, error: data.error || 'Could not generate image' });
-      return;
-    }
-    if (!data.draft.imageUrl) {
-      setImageStatus({
-        working: false,
-        error: 'No image came back — check OPENAI_API_KEY is set on the backend.'
-      });
-      return;
-    }
-    setImageUrl(data.draft.imageUrl);
-    setImageStatus({ working: false, error: '' });
-  }
-
-  async function handleImageUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
-    setImageStatus({ working: true, error: '' });
-
+  async function uploadImageFile(file) {
     const formData = new FormData();
     formData.append('image', file);
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/list-image`, {
@@ -114,35 +108,111 @@ export default function WriteBlogPage() {
       body: formData
     });
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not upload image');
+    return data.url;
+  }
+
+  async function handleRegenerateImage() {
+    setImageStatus({ working: true, error: '' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/draft/${advisorId}`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ topic: topic || draft.title })
+    });
+    const data = await res.json();
     if (!res.ok) {
-      setImageStatus({ working: false, error: data.error || 'Could not upload image' });
+      setImageStatus({ working: false, error: data.error || 'Could not generate image' });
       return;
     }
-    setImageUrl(data.url);
+    if (!data.draft.imageUrl) {
+      setImageStatus({ working: false, error: 'No image came back — check OPENAI_API_KEY is set on the backend.' });
+      return;
+    }
+    updateDraft('imageUrl', data.draft.imageUrl);
     setImageStatus({ working: false, error: '' });
   }
 
-  async function handlePublish(e) {
-    e.preventDefault();
+  async function handleFeaturedImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImageStatus({ working: true, error: '' });
+    try {
+      const url = await uploadImageFile(file);
+      updateDraft('imageUrl', url);
+      setImageStatus({ working: false, error: '' });
+    } catch (err) {
+      setImageStatus({ working: false, error: err.message });
+    }
+  }
+
+  // "Add Media" in the toolbar — inserts an image inline at the cursor
+  // instead of setting the featured image.
+  async function handleInsertMedia() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      setImageStatus({ working: true, error: '' });
+      try {
+        const url = await uploadImageFile(file);
+        updateDraft('body', `${draft.body}<img src="${url}" alt="" />`);
+        setImageStatus({ working: false, error: '' });
+      } catch (err) {
+        setImageStatus({ working: false, error: err.message });
+      }
+    };
+    input.click();
+  }
+
+  async function savePost(publish) {
     setStatus({ loading: true, error: '', success: '' });
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/manual/${advisorId}`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ title, body, imageUrl })
-    });
+    const body = {
+      title: draft.title,
+      body: draft.body,
+      imageUrl: draft.imageUrl,
+      tags: draft.tags,
+      categories: draft.categories,
+      publish
+    };
+
+    const res = await fetch(
+      draft.id
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/content/${draft.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/content/manual/${advisorId}`,
+      {
+        method: draft.id ? 'PATCH' : 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body)
+      }
+    );
     const data = await res.json();
 
     if (!res.ok) {
-      setStatus({ loading: false, error: data.error || 'Could not publish', success: '' });
+      setStatus({ loading: false, error: data.error || 'Could not save', success: '' });
       return;
     }
 
-    setStatus({ loading: false, error: '', success: 'Published to the blog.' });
+    setStatus({ loading: false, error: '', success: publish ? 'Published to the blog.' : 'Saved as draft.' });
     setTopic('');
-    setTitle('');
-    setBody('');
-    setImageUrl('');
+    setDraft(emptyDraft);
+    loadPosts();
+  }
+
+  function handleEditPost(post) {
+    setDraft({
+      id: post._id,
+      title: post.title,
+      body: /<[a-z][\s\S]*>/i.test(post.body) ? post.body : plainTextToParagraphHtml(post.body),
+      imageUrl: post.imageUrl || '',
+      tags: post.tags || [],
+      categories: post.categories || []
+    });
+    setStatus({ loading: false, error: '', success: '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function handleDelete(postId) {
@@ -151,19 +221,32 @@ export default function WriteBlogPage() {
       headers: authHeaders()
     });
     setPosts((prev) => prev.filter((p) => p._id !== postId));
+    if (draft.id === postId) setDraft(emptyDraft);
   }
 
   const inputClasses =
     'w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500';
 
+  const wordCount = stripHtml(draft.body).split(/\s+/).filter(Boolean).length;
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar />
       <main className="flex-1 px-6 py-16">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-            Write a blog post
-          </h1>
+        <div className="mx-auto max-w-4xl">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+              {draft.id ? 'Edit post' : 'Write a blog post'}
+            </h1>
+            {draft.id && (
+              <button
+                onClick={() => setDraft(emptyDraft)}
+                className="text-sm font-medium text-gray-500 hover:text-gray-700"
+              >
+                + New post instead
+              </button>
+            )}
+          </div>
           <p className="mt-2 text-gray-500">
             Let AI draft it — text and a matching image, in one click — then edit and publish. Or write it fully
             yourself.
@@ -217,13 +300,13 @@ export default function WriteBlogPage() {
             </p>
           </div>
 
-          <form onSubmit={handlePublish} className="mt-6 space-y-5">
+          <div className="mt-6 space-y-5">
             <div>
               <label className="text-sm font-medium text-gray-700">Featured image</label>
               <div className="mt-1 flex items-center gap-3">
                 <div className="h-20 w-32 flex-none overflow-hidden rounded-lg bg-gray-100">
-                  {imageUrl ? (
-                    <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                  {draft.imageUrl ? (
+                    <img src={draft.imageUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[0.65rem] text-gray-400">
                       No image
@@ -241,12 +324,12 @@ export default function WriteBlogPage() {
                   </button>
                   <label className="cursor-pointer rounded-lg border border-gray-200 px-3 py-1.5 text-center text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50">
                     Upload my own
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    <input type="file" accept="image/*" onChange={handleFeaturedImageUpload} className="hidden" />
                   </label>
-                  {imageUrl && (
+                  {draft.imageUrl && (
                     <button
                       type="button"
-                      onClick={() => setImageUrl('')}
+                      onClick={() => updateDraft('imageUrl', '')}
                       className="text-xs font-bold text-red-500 hover:underline"
                     >
                       Remove
@@ -260,33 +343,72 @@ export default function WriteBlogPage() {
             <div>
               <label className="text-sm font-medium text-gray-700">Title</label>
               <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={draft.title}
+                onChange={(e) => updateDraft('title', e.target.value)}
                 placeholder="5 tax-saving tips before March"
-                required
                 className={`mt-1 ${inputClasses}`}
               />
             </div>
 
             <div>
               <label className="text-sm font-medium text-gray-700">Post</label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={10}
-                placeholder="Write the full post here, or draft with AI above and edit it."
-                required
-                className={`mt-1 ${inputClasses}`}
-              />
+              <div className="mt-1">
+                <RichTextEditor
+                  value={draft.body}
+                  onChange={(html) => updateDraft('body', html)}
+                  onAddImage={handleInsertMedia}
+                  placeholder="Write the full post here, or draft with AI above and edit it."
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-400">{wordCount} words</p>
             </div>
 
-            <button
-              type="submit"
-              disabled={status.loading || !advisorId}
-              className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
-            >
-              {status.loading ? 'Publishing...' : 'Publish'}
-            </button>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Tags</label>
+                <TagInput
+                  value={draft.tags}
+                  onChange={(tags) => updateDraft('tags', tags)}
+                  placeholder="Type a tag and press Enter"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Categories</label>
+                <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-2">
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <label key={cat} className="flex items-center gap-1.5 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={draft.categories.includes(cat)}
+                        onChange={() => toggleCategory(cat)}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      {cat}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => savePost(true)}
+                disabled={status.loading || !advisorId || !draft.title || !draft.body}
+                className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
+              >
+                {status.loading ? 'Saving...' : draft.id ? 'Update & Publish' : 'Publish'}
+              </button>
+              <button
+                type="button"
+                onClick={() => savePost(false)}
+                disabled={status.loading || !advisorId || !draft.title || !draft.body}
+                className="rounded-lg border border-gray-200 px-6 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
+              >
+                Save Draft
+              </button>
+            </div>
 
             {status.error && <p className="text-sm text-red-600">{status.error}</p>}
             {status.success && (
@@ -294,7 +416,7 @@ export default function WriteBlogPage() {
                 {status.success}
               </p>
             )}
-          </form>
+          </div>
 
           {posts.length > 0 && (
             <div className="mt-12">
@@ -307,7 +429,10 @@ export default function WriteBlogPage() {
                     key={post._id}
                     className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
                   >
-                    <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleEditPost(post)}
+                      className="flex flex-1 items-center gap-3 text-left"
+                    >
                       <div className="h-12 w-16 flex-none overflow-hidden rounded-lg bg-gray-100">
                         {post.imageUrl && <img src={post.imageUrl} alt="" className="h-full w-full object-cover" />}
                       </div>
@@ -317,7 +442,7 @@ export default function WriteBlogPage() {
                           {post.status} · {formatDate(post.publishedAt || post.createdAt)}
                         </p>
                       </div>
-                    </div>
+                    </button>
                     <button
                       onClick={() => handleDelete(post._id)}
                       className="flex-none text-sm text-red-500 hover:text-red-700"

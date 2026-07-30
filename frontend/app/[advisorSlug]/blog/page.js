@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { fetchAdvisorContent } from '../../../lib/api';
+import { stripHtml } from '../../../lib/blogContent';
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-IN', {
@@ -10,8 +11,8 @@ function formatDate(dateString) {
 }
 
 function excerpt(text, length = 160) {
-  if (!text) return '';
-  return text.length > length ? `${text.slice(0, length).trim()}…` : text;
+  const plain = stripHtml(text);
+  return plain.length > length ? `${plain.slice(0, length).trim()}…` : plain;
 }
 
 export default async function BlogPage({ params }) {

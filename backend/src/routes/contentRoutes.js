@@ -12,6 +12,7 @@ const {
   generateForAdvisor,
   draftForAdvisor,
   createManualPost,
+  updatePost,
   deletePost,
   getMyPosts,
   generateMyContent,
@@ -40,6 +41,7 @@ router.get('/all/:advisorId', authenticate, requireAdmin, listAllForAdvisor);
 router.post('/generate/:advisorId', authenticate, requireAdmin, generateForAdvisor);
 router.post('/draft/:advisorId', authenticate, requireAdmin, draftForAdvisor);
 router.post('/manual/:advisorId', authenticate, requireAdmin, createManualPost);
+router.patch('/:id', authenticate, requireAdmin, updatePost);
 router.delete('/:id', authenticate, requireAdmin, deletePost);
 
 module.exports = router;

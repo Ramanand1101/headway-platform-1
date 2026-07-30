@@ -1,12 +1,13 @@
 import Link from 'next/link';
+import { stripHtml } from '../lib/blogContent';
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function excerpt(text, length = 120) {
-  if (!text) return '';
-  return text.length > length ? `${text.slice(0, length).trim()}…` : text;
+  const plain = stripHtml(text);
+  return plain.length > length ? `${plain.slice(0, length).trim()}…` : plain;
 }
 
 export default function BlogTeaser({ posts }) {

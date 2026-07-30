@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { fetchBlogPost } from '../../../../lib/api';
+import { isHtmlContent } from '../../../../lib/blogContent';
 
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-IN', {
@@ -36,9 +37,16 @@ export default async function BlogPostPage({ params }) {
             className="mt-8 aspect-[16/9] w-full rounded-2xl object-cover shadow-sm"
           />
         )}
-        <div className="mt-8 space-y-4 whitespace-pre-line text-lg leading-relaxed text-gray-700">
-          {post.body}
-        </div>
+        {isHtmlContent(post.body) ? (
+          <div
+            className="blog-body mt-8 text-lg leading-relaxed text-gray-700"
+            dangerouslySetInnerHTML={{ __html: post.body }}
+          />
+        ) : (
+          <div className="mt-8 space-y-4 whitespace-pre-line text-lg leading-relaxed text-gray-700">
+            {post.body}
+          </div>
+        )}
       </article>
     </main>
   );

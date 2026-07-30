@@ -12,6 +12,8 @@ const contentPostSchema = new mongoose.Schema(
     slug: { type: String, index: true },
     body: String,
     imageUrl: String,
+    tags: [String],
+    categories: [String],
     status: {
       type: String,
       enum: ['draft', 'pending_review', 'published'],

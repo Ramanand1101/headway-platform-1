@@ -21,3 +21,46 @@
 body {
   color: #1f2937;
 }
+
+/* RichTextEditor's contentEditable area + rendered blog post bodies share
+   these rules so a post looks the same while being written as it does live. */
+.rte-content:empty::before,
+.blog-body:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+}
+.rte-content ul,
+.blog-body ul {
+  list-style: disc;
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+.rte-content ol,
+.blog-body ol {
+  list-style: decimal;
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+.rte-content blockquote,
+.blog-body blockquote {
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 3px solid #d1d5db;
+  color: #4b5563;
+  font-style: italic;
+}
+.rte-content a,
+.blog-body a {
+  color: var(--tc-primary, #2563eb);
+  text-decoration: underline;
+}
+.rte-content p,
+.blog-body p {
+  margin: 0.75em 0;
+}
+.rte-content img,
+.blog-body img {
+  max-width: 100%;
+  border-radius: 0.75rem;
+  margin: 1em 0;
+}
