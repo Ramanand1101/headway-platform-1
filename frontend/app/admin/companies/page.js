@@ -8,13 +8,24 @@ const CATEGORIES = [
   { key: 'general', label: 'General' }
 ];
 
+// Turns "hdfc-life.png" / "LIC_of_India.jpg" into a readable company name —
+// lets a whole folder of logo files get named automatically on bulk upload.
+function deriveNameFromFilename(filename) {
+  const base = filename.replace(/\.[^/.]+$/, '');
+  const spaced = base.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return spaced
+    .split(' ')
+    .map((word) => (word === word.toLowerCase() ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+    .join(' ');
+}
+
 export default function CompanyDirectoryPage() {
   const [activeCategory, setActiveCategory] = useState('life');
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [nameDraft, setNameDraft] = useState('');
-  const [uploadStatus, setUploadStatus] = useState({ uploading: false, error: '' });
+  const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: '', error: '' });
 
   function authHeaders(extra = {}) {
     const token = localStorage.getItem('token');
@@ -40,36 +51,50 @@ export default function CompanyDirectoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory]);
 
+  // Handles both a manual multi-select and a whole-folder pick — either way
+  // it's just a FileList of images. A single file keeps the typed name (if
+  // any); anything more auto-names each logo from its filename.
   async function handleUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
     e.target.value = '';
+    if (!files.length) return;
 
-    if (!nameDraft.trim()) {
-      setUploadStatus({ uploading: false, error: 'Type the company name first, then choose a logo file.' });
-      return;
+    const useTypedName = files.length === 1 && nameDraft.trim();
+
+    setUploadStatus({ uploading: true, progress: `Uploading 1 of ${files.length}...`, error: '' });
+    const created = [];
+
+    for (let i = 0; i < files.length; i += 1) {
+      const file = files[i];
+      const name = useTypedName ? nameDraft.trim() : deriveNameFromFilename(file.name);
+      setUploadStatus({ uploading: true, progress: `Uploading ${i + 1} of ${files.length} — ${name}`, error: '' });
+
+      const formData = new FormData();
+      formData.append('logo', file);
+      formData.append('name', name);
+      formData.append('category', activeCategory);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadStatus({
+          uploading: false,
+          progress: '',
+          error: `${data.error || 'Upload failed'} (stopped at "${file.name}", ${created.length} of ${files.length} added)`
+        });
+        setCompanies((prev) => [...prev, ...created].sort((a, b) => a.name.localeCompare(b.name)));
+        return;
+      }
+      created.push(data.company);
     }
 
-    setUploadStatus({ uploading: true, error: '' });
-    const formData = new FormData();
-    formData.append('logo', file);
-    formData.append('name', nameDraft.trim());
-    formData.append('category', activeCategory);
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/companies`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: formData
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setUploadStatus({ uploading: false, error: data.error || 'Could not upload logo' });
-      return;
-    }
-
-    setCompanies((prev) => [...prev, data.company].sort((a, b) => a.name.localeCompare(b.name)));
+    setCompanies((prev) => [...prev, ...created].sort((a, b) => a.name.localeCompare(b.name)));
     setNameDraft('');
-    setUploadStatus({ uploading: false, error: '' });
+    setUploadStatus({ uploading: false, progress: '', error: '' });
   }
 
   async function handleDelete(id) {
@@ -105,28 +130,46 @@ export default function CompanyDirectoryPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex-1">
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">
-                Company name ({CATEGORIES.find((c) => c.key === activeCategory)?.label} folder)
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1">
+                <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">
+                  Company name — {CATEGORIES.find((c) => c.key === activeCategory)?.label} folder (only used for a
+                  single file; bulk uploads auto-name from the filename)
+                </label>
+                <input
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  placeholder="e.g. LIC of India"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary-500"
+                />
+              </div>
+              <label className="cursor-pointer rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700">
+                {uploadStatus.uploading ? 'Uploading...' : '+ Upload logos'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleUpload}
+                  disabled={uploadStatus.uploading}
+                  className="hidden"
+                />
               </label>
-              <input
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                placeholder="e.g. LIC of India"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary-500"
-              />
+              <label className="cursor-pointer rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                {uploadStatus.uploading ? 'Uploading...' : '📁 Upload whole folder'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  webkitdirectory=""
+                  directory=""
+                  onChange={handleUpload}
+                  disabled={uploadStatus.uploading}
+                  className="hidden"
+                />
+              </label>
             </div>
-            <label className="cursor-pointer rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700">
-              {uploadStatus.uploading ? 'Uploading...' : '+ Upload logo'}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleUpload}
-                disabled={uploadStatus.uploading}
-                className="hidden"
-              />
-            </label>
+            {uploadStatus.uploading && <p className="mt-3 text-xs text-gray-500">{uploadStatus.progress}</p>}
           </div>
           {uploadStatus.error && <p className="mt-2 text-sm text-red-600">{uploadStatus.error}</p>}
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -152,7 +195,7 @@ export default function CompanyDirectoryPage() {
           </div>
 
           {!loading && companies.length === 0 && (
-            <p className="mt-6 text-sm text-gray-400">No companies in this folder yet — upload one above.</p>
+            <p className="mt-6 text-sm text-gray-400">No companies in this folder yet — upload some above.</p>
           )}
         </div>
       </main>

@@ -1781,10 +1781,9 @@ export default function AdvisorDashboardPage() {
                   </div>
 
                   <div className="mt-7 rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                    <h3 className="text-sm font-extrabold text-ia-navy">Microsite photos</h3>
+                    <h3 className="text-sm font-extrabold text-ia-navy">Update your Profile Photos</h3>
                     <p className="mt-1 text-xs text-gray-500">
-                      Update your profile photos — optional, each section falls back to your profile photo above
-                      until you upload its own.
+                      Optional — each section falls back to your profile photo above until you upload its own.
                     </p>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {[
