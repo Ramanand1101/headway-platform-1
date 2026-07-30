@@ -90,8 +90,8 @@ export default function AdvisorHomeView({
         vision={advisor.vision || advisorDefaults?.vision || defaultVision}
         mission={advisor.mission || advisorDefaults?.mission || defaultMission}
         missionPillars={advisor.missionPillars?.length ? advisor.missionPillars : defaultMissionPillars}
-        visionImage={advisor.micrositeImages?.vision}
-        missionImage={advisor.micrositeImages?.mission}
+        visionImage={advisor.micrositeImages?.vision || advisorDefaults?.visionImage}
+        missionImage={advisor.micrositeImages?.mission || advisorDefaults?.missionImage}
       />
 
       {/* 4. Services */}

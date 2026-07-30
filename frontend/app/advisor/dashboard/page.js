@@ -384,7 +384,11 @@ export default function AdvisorDashboardPage() {
           });
           setSpecializationTags(data.advisor.specialization || []);
           setCredentialTags(data.advisor.credentials || []);
-          setMicrositeImages(data.advisor.micrositeImages || {});
+          setMicrositeImages({
+            ...data.advisor.micrositeImages,
+            vision: data.advisor.micrositeImages?.vision || adminDefaults.visionImage || undefined,
+            mission: data.advisor.micrositeImages?.mission || adminDefaults.missionImage || undefined
+          });
           setMicrositeContentForm(data.advisor.micrositeContent || {});
           setLibraryImages(data.advisor.contentLibraryImages || []);
           setServiceOfferings(
