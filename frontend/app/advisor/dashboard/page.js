@@ -3237,7 +3237,10 @@ export default function AdvisorDashboardPage() {
                             <img
                               src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
                               alt=""
-                              className="aspect-square w-full object-cover"
+                              onClick={() =>
+                                setLibraryPreviewUrl(unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl))
+                              }
+                              className="aspect-square w-full cursor-zoom-in object-cover"
                             />
                             <button
                               type="button"
