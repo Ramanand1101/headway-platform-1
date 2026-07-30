@@ -2,18 +2,29 @@
 import { useEffect, useState } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 
-// Admin-set default Vision & Mission text + photos — every advisor's
-// dashboard prefills these until they replace or clear them with their own.
-// Stored generically via SiteContent (page key: "advisor-defaults"), same
-// mechanism as the homepage editor.
+// Admin-set default Vision & Mission text/photos + FAQs — every advisor's
+// dashboard prefills these until they replace, edit or clear them with their
+// own. Stored generically via SiteContent (page key: "advisor-defaults"),
+// same mechanism as the homepage editor.
 export default function AdvisorDefaultsPage() {
   const [vision, setVision] = useState('');
   const [mission, setMission] = useState('');
   const [visionImage, setVisionImage] = useState('');
   const [missionImage, setMissionImage] = useState('');
+  const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState({ saving: false, error: '', success: '' });
   const [imageStatus, setImageStatus] = useState({});
+
+  function addFaq() {
+    setFaqs((prev) => [...prev, { question: '', answer: '' }]);
+  }
+  function updateFaq(i, field, value) {
+    setFaqs((prev) => prev.map((f, idx) => (idx === i ? { ...f, [field]: value } : f)));
+  }
+  function removeFaq(i) {
+    setFaqs((prev) => prev.filter((_, idx) => idx !== i));
+  }
 
   function authHeaders(extra = {}) {
     const token = localStorage.getItem('token');
@@ -28,6 +39,7 @@ export default function AdvisorDefaultsPage() {
         setMission(data.content?.mission || '');
         setVisionImage(data.content?.visionImage || '');
         setMissionImage(data.content?.missionImage || '');
+        setFaqs(data.content?.faqs || []);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -66,7 +78,13 @@ export default function AdvisorDefaultsPage() {
       method: 'PUT',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
-        data: { vision: vision.trim(), mission: mission.trim(), visionImage, missionImage }
+        data: {
+          vision: vision.trim(),
+          mission: mission.trim(),
+          visionImage,
+          missionImage,
+          faqs: faqs.filter((f) => f.question.trim())
+        }
       })
     });
     const data = await res.json();
@@ -82,10 +100,10 @@ export default function AdvisorDefaultsPage() {
       <AdminSidebar />
       <main className="flex-1 px-6 py-16">
         <div className="mx-auto max-w-3xl">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Advisor default Vision &amp; Mission</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Advisor defaults</h1>
           <p className="mt-2 text-gray-500">
-            Shown pre-filled in every advisor&apos;s Edit Profile until they replace it with their own or clear it.
-            Advisors who&apos;ve already saved their own text/photo are unaffected.
+            Vision, Mission and FAQs shown pre-filled in every advisor&apos;s Edit Profile until they replace, edit
+            or clear them with their own. Advisors who&apos;ve already saved their own are unaffected.
           </p>
 
           {loading ? (
@@ -180,6 +198,51 @@ export default function AdvisorDefaultsPage() {
                 {imageStatus.missionImage?.error && (
                   <p className="mt-1 text-xs text-red-600">{imageStatus.missionImage.error}</p>
                 )}
+              </div>
+
+              <div className="border-t border-gray-100 pt-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Default FAQs</label>
+                  <button
+                    type="button"
+                    onClick={addFaq}
+                    className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-200"
+                  >
+                    + Add FAQ
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-400">
+                  Every advisor starts with these — they can edit or delete any of them from their own dashboard.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {faqs.map((faq, i) => (
+                    <div key={i} className="flex gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                      <div className="flex-1 space-y-2">
+                        <input
+                          value={faq.question}
+                          onChange={(e) => updateFaq(i, 'question', e.target.value)}
+                          placeholder="Question"
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-500"
+                        />
+                        <textarea
+                          value={faq.answer}
+                          onChange={(e) => updateFaq(i, 'answer', e.target.value)}
+                          placeholder="Answer"
+                          rows={2}
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFaq(i)}
+                        className="flex-none self-start rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  {faqs.length === 0 && <p className="text-xs text-gray-400">No default FAQs yet.</p>}
+                </div>
               </div>
 
               <button

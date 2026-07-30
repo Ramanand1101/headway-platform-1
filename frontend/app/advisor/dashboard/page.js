@@ -396,7 +396,7 @@ export default function AdvisorDashboardPage() {
           );
           setCompanies(data.advisor.companiesWorkedWith || []);
           setAchievements(data.advisor.achievements || []);
-          setFaqs(data.advisor.faqs || []);
+          setFaqs(data.advisor.faqs?.length ? data.advisor.faqs : adminDefaults.faqs || []);
         }
       });
 

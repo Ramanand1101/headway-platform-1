@@ -70,6 +70,8 @@ export default function AdvisorHomeView({
       ? advisor.services.map((title) => ({ title }))
       : defaultServices;
 
+  const faqs = advisor.faqs?.length ? advisor.faqs : advisorDefaults?.faqs || [];
+
   const contactRows = [
     advisor.contactNumber && { label: 'Mobile Number', value: advisor.contactNumber, icon: '📞' },
     advisor.email && { label: 'Email ID', value: advisor.email, icon: '✉️' },
@@ -358,7 +360,7 @@ export default function AdvisorHomeView({
       </section>
 
       {/* FAQs — kept last */}
-      {advisor.faqs?.length > 0 && (
+      {faqs.length > 0 && (
         <section id="faqs" className="scroll-mt-20 bg-gray-50 px-6 py-20">
           <div className="mx-auto max-w-3xl">
             <Reveal className="mb-10 text-center" as="div">
@@ -373,7 +375,7 @@ export default function AdvisorHomeView({
               </p>
             </Reveal>
             <Reveal delay={100}>
-              <FAQAccordion faqs={advisor.faqs} />
+              <FAQAccordion faqs={faqs} />
             </Reveal>
           </div>
         </section>
