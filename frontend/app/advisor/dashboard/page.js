@@ -8,6 +8,7 @@ import { micrositeThemes } from '../../../lib/micrositeThemes';
 import { decodeToken } from '../../../lib/auth';
 import { micrositeCopyDefaults } from '../../../lib/advisorMicrositeCopyDefaults';
 import { defaultVision, defaultMission } from '../../../lib/advisorMicrositeDefaults';
+import { watermarkedUrl } from '../../../lib/watermark';
 
 function MenuIcon(props) {
   return (
@@ -1001,9 +1002,11 @@ export default function AdvisorDashboardPage() {
     });
     const data = await res.json();
     if (res.ok) {
+      setAdvisor(data.advisor);
       setLibraryImages(data.advisor.contentLibraryImages || []);
       setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'added' }));
     } else {
+      showToast(data.error || 'Could not unlock this image', true);
       setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
     }
   }
@@ -3197,7 +3200,8 @@ export default function AdvisorDashboardPage() {
                 <div className="mb-10 rounded-2xl border border-gray-100 bg-gray-50 p-5">
                   <h3 className="text-sm font-extrabold text-ia-navy">Creatives</h3>
                   <p className="mt-1 text-xs text-gray-500">
-                    Ready-made marketing images curated by the team — add any of these to your own library below.
+                    Ready-made marketing images curated by the team — shown watermarked until you unlock one (1
+                    content credit each) to add it to your own library below.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {[
@@ -3226,23 +3230,32 @@ export default function AdvisorDashboardPage() {
                     <p className="mt-4 text-xs text-gray-400">Nothing in this folder yet.</p>
                   ) : (
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                      {creatives.map((creative) => (
-                        <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white">
-                          <img src={creative.imageUrl} alt="" className="aspect-square w-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => addCreativeToLibrary(creative)}
-                            disabled={creativeAddStatus[creative._id] === 'adding' || creativeAddStatus[creative._id] === 'added'}
-                            className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-xs font-bold text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-100"
-                          >
-                            {creativeAddStatus[creative._id] === 'adding'
-                              ? 'Adding...'
-                              : creativeAddStatus[creative._id] === 'added'
-                                ? 'Added ✓'
-                                : '+ Add to my library'}
-                          </button>
-                        </div>
-                      ))}
+                      {creatives.map((creative) => {
+                        const unlocked = creativeAddStatus[creative._id] === 'added';
+                        return (
+                          <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white">
+                            <img
+                              src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
+                              alt=""
+                              className="aspect-square w-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => addCreativeToLibrary(creative)}
+                              disabled={creativeAddStatus[creative._id] === 'adding' || unlocked}
+                              className={`absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-xs font-bold text-white transition disabled:opacity-100 ${
+                                unlocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                              }`}
+                            >
+                              {creativeAddStatus[creative._id] === 'adding'
+                                ? 'Unlocking...'
+                                : unlocked
+                                  ? 'Unlocked ✓'
+                                  : '🔓 Unlock (1 credit)'}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

@@ -390,9 +390,10 @@ exports.uploadContentLibraryImages = async (req, res, next) => {
   }
 };
 
-// POST /api/advisor/content-library/from-url — advisor adds a shared
+// POST /api/advisor/content-library/from-url — advisor unlocks a shared
 // creative (from the admin-curated library) straight to their own Content
-// Library by URL, without re-uploading the file.
+// Library by URL, without re-uploading the file. Costs 1 content credit —
+// the browsing grid shows these watermarked until unlocked this way.
 exports.addContentLibraryImageFromUrl = async (req, res, next) => {
   try {
     const { url } = req.body;
@@ -400,12 +401,21 @@ exports.addContentLibraryImageFromUrl = async (req, res, next) => {
       return res.status(400).json({ error: 'Image url is required' });
     }
 
-    const advisor = await Advisor.findByIdAndUpdate(
-      req.user.advisorId,
-      { $addToSet: { contentLibraryImages: url } },
-      { new: true }
-    );
+    const advisor = await Advisor.findById(req.user.advisorId);
     if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    if (advisor.contentCredits <= 0) {
+      return res.status(402).json({
+        error: 'No content credits left. Recharge to unlock more images.',
+        creditsExhausted: true
+      });
+    }
+
+    if (!advisor.contentLibraryImages.includes(url)) {
+      advisor.contentLibraryImages.push(url);
+      advisor.contentCredits -= 1;
+    }
+    await advisor.save();
 
     res.json({ advisor });
   } catch (err) {
