@@ -37,3 +37,12 @@ export async function fetchAdvisorTestimonials(slug) {
   if (!res.ok) return { testimonials: [] };
   return res.json();
 }
+
+// Generic admin-editable content store (see SiteContent model) — used here
+// for the admin-set default Vision/Mission text every advisor starts with.
+export async function fetchSiteContent(page) {
+  const res = await fetch(`${API_URL}/api/site/content/${page}`, { cache: 'no-store' });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.content;
+}

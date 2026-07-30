@@ -21,7 +21,13 @@ import { micrositeCopy } from '../lib/advisorMicrositeCopyDefaults';
 // In live-preview mode (embedded from the advisor dashboard) it overrides
 // that state via postMessage instead of the server-fetched initial values,
 // so edits show up instantly before the advisor saves.
-export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTestimonials, initialPosts }) {
+export default function AdvisorHomeView({
+  advisorSlug,
+  initialAdvisor,
+  initialTestimonials,
+  initialPosts,
+  advisorDefaults
+}) {
   const [advisor, setAdvisor] = useState(initialAdvisor);
   const [testimonials, setTestimonials] = useState(initialTestimonials);
   const [posts] = useState(initialPosts);
@@ -81,8 +87,8 @@ export default function AdvisorHomeView({ advisorSlug, initialAdvisor, initialTe
       {/* 2 & 3. Vision + Mission */}
       <VisionMission
         advisor={advisor}
-        vision={advisor.vision || defaultVision}
-        mission={advisor.mission || defaultMission}
+        vision={advisor.vision || advisorDefaults?.vision || defaultVision}
+        mission={advisor.mission || advisorDefaults?.mission || defaultMission}
         missionPillars={advisor.missionPillars?.length ? advisor.missionPillars : defaultMissionPillars}
         visionImage={advisor.micrositeImages?.vision}
         missionImage={advisor.micrositeImages?.mission}

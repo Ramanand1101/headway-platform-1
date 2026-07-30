@@ -348,9 +348,14 @@ export default function AdvisorDashboardPage() {
   }
 
   function loadAll() {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me`, { headers: authHeaders() })
-      .then((res) => res.json())
-      .then((data) => {
+    Promise.all([
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/me`, { headers: authHeaders() }).then((res) => res.json()),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/site/content/advisor-defaults`)
+        .then((res) => res.json())
+        .catch(() => ({ content: null }))
+    ])
+      .then(([data, defaultsRes]) => {
+        const adminDefaults = defaultsRes?.content || {};
         setAdvisor(data.advisor);
         if (data.advisor) {
           setProfileForm({
@@ -364,8 +369,8 @@ export default function AdvisorDashboardPage() {
             officeAddress: data.advisor.officeAddress || '',
             irdaiLicenseNumber: data.advisor.irdaiLicenseNumber || '',
             yearsExperience: data.advisor.yearsExperience || '',
-            vision: data.advisor.vision || defaultVision,
-            mission: data.advisor.mission || defaultMission,
+            vision: data.advisor.vision || adminDefaults.vision || defaultVision,
+            mission: data.advisor.mission || adminDefaults.mission || defaultMission,
             missionPillars: (data.advisor.missionPillars || []).join(', '),
             linkedin: data.advisor.socialLinks?.linkedin || '',
             facebook: data.advisor.socialLinks?.facebook || '',
