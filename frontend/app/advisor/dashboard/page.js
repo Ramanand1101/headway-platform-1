@@ -7,6 +7,7 @@ import { socialIcons } from '../../../components/SocialIcons';
 import { micrositeThemes } from '../../../lib/micrositeThemes';
 import { decodeToken } from '../../../lib/auth';
 import { micrositeCopyDefaults } from '../../../lib/advisorMicrositeCopyDefaults';
+import { defaultVision, defaultMission } from '../../../lib/advisorMicrositeDefaults';
 
 function MenuIcon(props) {
   return (
@@ -278,7 +279,6 @@ export default function AdvisorDashboardPage() {
   const [serviceOfferings, setServiceOfferings] = useState([]);
   const [profileTextGenStatus, setProfileTextGenStatus] = useState({});
   const [specializationTags, setSpecializationTags] = useState([]);
-  const [serviceTags, setServiceTags] = useState([]);
   const [credentialTags, setCredentialTags] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [companyLogoStatus, setCompanyLogoStatus] = useState({});
@@ -364,8 +364,8 @@ export default function AdvisorDashboardPage() {
             officeAddress: data.advisor.officeAddress || '',
             irdaiLicenseNumber: data.advisor.irdaiLicenseNumber || '',
             yearsExperience: data.advisor.yearsExperience || '',
-            vision: data.advisor.vision || '',
-            mission: data.advisor.mission || '',
+            vision: data.advisor.vision || defaultVision,
+            mission: data.advisor.mission || defaultMission,
             missionPillars: (data.advisor.missionPillars || []).join(', '),
             linkedin: data.advisor.socialLinks?.linkedin || '',
             facebook: data.advisor.socialLinks?.facebook || '',
@@ -378,7 +378,6 @@ export default function AdvisorDashboardPage() {
             themeKey: data.advisor.themeKey || 'navy-teal'
           });
           setSpecializationTags(data.advisor.specialization || []);
-          setServiceTags(data.advisor.services || []);
           setCredentialTags(data.advisor.credentials || []);
           setMicrositeImages(data.advisor.micrositeImages || {});
           setMicrositeContentForm(data.advisor.micrositeContent || {});
@@ -482,7 +481,7 @@ export default function AdvisorDashboardPage() {
       contactNumber: profileForm.contactNumber,
       whatsappNumber: profileForm.whatsappNumber,
       specialization: specializationTags,
-      services: serviceTags,
+      services: serviceOfferings.map((o) => o.title.trim()).filter(Boolean),
       email: profileForm.email,
       officeAddress: profileForm.officeAddress,
       irdaiLicenseNumber: profileForm.irdaiLicenseNumber,
@@ -525,7 +524,6 @@ export default function AdvisorDashboardPage() {
     previewReadyTick,
     profileForm,
     specializationTags,
-    serviceTags,
     credentialTags,
     serviceOfferings,
     companies,
@@ -1062,7 +1060,7 @@ export default function AdvisorDashboardPage() {
         contactNumber: profileForm.contactNumber.trim(),
         whatsappNumber: profileForm.whatsappNumber.trim(),
         specialization: specializationTags,
-        services: serviceTags,
+        services: serviceOfferings.map((o) => o.title.trim()).filter(Boolean),
         email: profileForm.email.trim(),
         officeAddress: profileForm.officeAddress.trim(),
         irdaiLicenseNumber: profileForm.irdaiLicenseNumber.trim(),
@@ -1985,18 +1983,49 @@ export default function AdvisorDashboardPage() {
                       />
                     </div>
 
-                    <div>
-                      <label className={profileLabelClasses}>Services</label>
-                      <p className="mt-0.5 text-xs text-gray-400">
-                        Suggestions come from your Service cards below — pick the same names so they stay consistent.
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-extrabold text-ia-navy">Services</h3>
+                        <button
+                          type="button"
+                          onClick={addServiceOffering}
+                          className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40"
+                        >
+                          + Add service
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Shown as cards on your microsite — these titles are also used as your plain services list
+                        wherever that's needed (e.g. the contact form's interest dropdown).
                       </p>
-                      <TagInput
-                        value={serviceTags}
-                        onChange={setServiceTags}
-                        placeholder="Type a service and press Enter"
-                        suggestions={serviceOfferings.map((o) => o.title).filter(Boolean)}
-                        className="mt-1.5"
-                      />
+                      <div className="mt-4 space-y-3">
+                        {serviceOfferings.map((o, i) => (
+                          <div key={i} className="flex gap-3 rounded-xl border border-gray-200 bg-white p-3">
+                            <div className="flex-1 space-y-2">
+                              <input
+                                value={o.title}
+                                onChange={(e) => updateServiceOffering(i, 'title', e.target.value)}
+                                placeholder="Title, e.g. Term Life Insurance"
+                                className={profileInputClasses}
+                              />
+                              <textarea
+                                value={o.description}
+                                onChange={(e) => updateServiceOffering(i, 'description', e.target.value)}
+                                placeholder="Short description"
+                                rows={2}
+                                className={profileInputClasses}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeServiceOffering(i)}
+                              className="flex-none self-start rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="grid gap-5 sm:grid-cols-2">
@@ -2409,50 +2438,6 @@ export default function AdvisorDashboardPage() {
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-extrabold text-ia-navy">Service cards</h3>
-                        <button
-                          type="button"
-                          onClick={addServiceOffering}
-                          className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ia-blue shadow-sm hover:bg-ia-gold-tint/40"
-                        >
-                          + Add service
-                        </button>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Shown as cards on your microsite. Leave empty to just show the plain services list above.
-                      </p>
-                      <div className="mt-4 space-y-3">
-                        {serviceOfferings.map((o, i) => (
-                          <div key={i} className="flex gap-3 rounded-xl border border-gray-200 bg-white p-3">
-                            <div className="flex-1 space-y-2">
-                              <input
-                                value={o.title}
-                                onChange={(e) => updateServiceOffering(i, 'title', e.target.value)}
-                                placeholder="Title, e.g. Term Life Insurance"
-                                className={profileInputClasses}
-                              />
-                              <textarea
-                                value={o.description}
-                                onChange={(e) => updateServiceOffering(i, 'description', e.target.value)}
-                                placeholder="Short description"
-                                rows={2}
-                                className={profileInputClasses}
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeServiceOffering(i)}
-                              className="flex-none self-start rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
                       </div>
                     </div>
 
