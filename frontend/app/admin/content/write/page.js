@@ -16,17 +16,21 @@ export default function WriteBlogPage() {
   const [topic, setTopic] = useState('');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [posts, setPosts] = useState([]);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState('');
+  const [imageStatus, setImageStatus] = useState({ working: false, error: '' });
   const [status, setStatus] = useState({ loading: false, error: '', success: '' });
   const [advisorsError, setAdvisorsError] = useState('');
 
-  useEffect(() => {
+  function authHeaders(extra = {}) {
     const token = localStorage.getItem('token');
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    return { Authorization: `Bearer ${token}`, ...extra };
+  }
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor`, { headers: authHeaders() })
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
@@ -43,10 +47,7 @@ export default function WriteBlogPage() {
 
   useEffect(() => {
     if (!advisorId) return;
-    const token = localStorage.getItem('token');
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/all/${advisorId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/all/${advisorId}`, { headers: authHeaders() })
       .then((res) => res.json())
       .then((data) => setPosts(data.posts || []));
   }, [advisorId, status.success]);
@@ -55,18 +56,11 @@ export default function WriteBlogPage() {
     setDrafting(true);
     setDraftError('');
 
-    const token = localStorage.getItem('token');
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/content/draft/${advisorId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ topic })
-      }
-    );
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/draft/${advisorId}`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ topic })
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -77,25 +71,66 @@ export default function WriteBlogPage() {
 
     setTitle(data.draft.title);
     setBody(data.draft.body);
+    setImageUrl(data.draft.imageUrl || '');
     setDrafting(false);
+  }
+
+  // Regenerates just the image for whatever title/topic is currently set —
+  // handy if the auto-generated one from "Draft with AI" doesn't fit.
+  async function handleRegenerateImage() {
+    setImageStatus({ working: true, error: '' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/draft/${advisorId}`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ topic: topic || title })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setImageStatus({ working: false, error: data.error || 'Could not generate image' });
+      return;
+    }
+    if (!data.draft.imageUrl) {
+      setImageStatus({
+        working: false,
+        error: 'No image came back — check OPENAI_API_KEY is set on the backend.'
+      });
+      return;
+    }
+    setImageUrl(data.draft.imageUrl);
+    setImageStatus({ working: false, error: '' });
+  }
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImageStatus({ working: true, error: '' });
+
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/list-image`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setImageStatus({ working: false, error: data.error || 'Could not upload image' });
+      return;
+    }
+    setImageUrl(data.url);
+    setImageStatus({ working: false, error: '' });
   }
 
   async function handlePublish(e) {
     e.preventDefault();
     setStatus({ loading: true, error: '', success: '' });
 
-    const token = localStorage.getItem('token');
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/content/manual/${advisorId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ title, body })
-      }
-    );
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/manual/${advisorId}`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ title, body, imageUrl })
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -107,13 +142,13 @@ export default function WriteBlogPage() {
     setTopic('');
     setTitle('');
     setBody('');
+    setImageUrl('');
   }
 
   async function handleDelete(postId) {
-    const token = localStorage.getItem('token');
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/${postId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: authHeaders()
     });
     setPosts((prev) => prev.filter((p) => p._id !== postId));
   }
@@ -130,11 +165,12 @@ export default function WriteBlogPage() {
             Write a blog post
           </h1>
           <p className="mt-2 text-gray-500">
-            Let AI draft it, then edit and publish — or write it fully yourself.
+            Let AI draft it — text and a matching image, in one click — then edit and publish. Or write it fully
+            yourself.
           </p>
 
           <div className="mt-8">
-            <label className="text-sm font-medium text-gray-700">Advisor</label>
+            <label className="text-sm font-medium text-gray-700">Advisor (website)</label>
             {advisorsError ? (
               <p className="mt-1 text-sm text-red-600">
                 {advisorsError} — try logging out and back in.
@@ -157,7 +193,7 @@ export default function WriteBlogPage() {
 
           <div className="mt-5 rounded-2xl border border-primary-100 bg-primary-50 p-5">
             <label className="text-sm font-medium text-primary-900">
-              Draft with AI (optional)
+              Draft with AI — text + image (optional)
             </label>
             <div className="mt-2 flex flex-wrap gap-3">
               <input
@@ -182,6 +218,45 @@ export default function WriteBlogPage() {
           </div>
 
           <form onSubmit={handlePublish} className="mt-6 space-y-5">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Featured image</label>
+              <div className="mt-1 flex items-center gap-3">
+                <div className="h-20 w-32 flex-none overflow-hidden rounded-lg bg-gray-100">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[0.65rem] text-gray-400">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleRegenerateImage}
+                    disabled={imageStatus.working || !advisorId}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
+                  >
+                    {imageStatus.working ? 'Working...' : '✨ Generate with AI'}
+                  </button>
+                  <label className="cursor-pointer rounded-lg border border-gray-200 px-3 py-1.5 text-center text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                    Upload my own
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  </label>
+                  {imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl('')}
+                      className="text-xs font-bold text-red-500 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+              {imageStatus.error && <p className="mt-1 text-xs text-red-600">{imageStatus.error}</p>}
+            </div>
+
             <div>
               <label className="text-sm font-medium text-gray-700">Title</label>
               <input
@@ -230,17 +305,22 @@ export default function WriteBlogPage() {
                 {posts.map((post) => (
                   <div
                     key={post._id}
-                    className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{post.title}</p>
-                      <p className="text-xs text-gray-400">
-                        {post.status} · {formatDate(post.publishedAt || post.createdAt)}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-16 flex-none overflow-hidden rounded-lg bg-gray-100">
+                        {post.imageUrl && <img src={post.imageUrl} alt="" className="h-full w-full object-cover" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{post.title}</p>
+                        <p className="text-xs text-gray-400">
+                          {post.status} · {formatDate(post.publishedAt || post.createdAt)}
+                        </p>
+                      </div>
                     </div>
                     <button
                       onClick={() => handleDelete(post._id)}
-                      className="text-sm text-red-500 hover:text-red-700"
+                      className="flex-none text-sm text-red-500 hover:text-red-700"
                     >
                       Delete
                     </button>

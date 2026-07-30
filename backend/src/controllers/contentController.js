@@ -86,7 +86,7 @@ exports.draftForAdvisor = async (req, res, next) => {
 // POST /api/content/manual/:advisorId  (admin-only — hand-written post, publishes immediately)
 exports.createManualPost = async (req, res, next) => {
   try {
-    const { title, body } = req.body || {};
+    const { title, body, imageUrl } = req.body || {};
     if (!title || !body) {
       return res.status(400).json({ error: 'Title and body are required' });
     }
@@ -98,6 +98,7 @@ exports.createManualPost = async (req, res, next) => {
       advisorId: advisor._id,
       title,
       body,
+      imageUrl,
       status: 'published',
       publishedAt: new Date(),
       generatedBy: 'manual'
@@ -188,7 +189,7 @@ exports.draftMyContent = async (req, res, next) => {
 // POST /api/content/mine/manual  (advisor — hand-written post, publishes immediately, no credit used)
 exports.createMyManualPost = async (req, res, next) => {
   try {
-    const { title, body } = req.body || {};
+    const { title, body, imageUrl } = req.body || {};
     if (!title || !body) {
       return res.status(400).json({ error: 'Title and body are required' });
     }
@@ -197,6 +198,7 @@ exports.createMyManualPost = async (req, res, next) => {
       advisorId: req.user.advisorId,
       title,
       body,
+      imageUrl,
       status: 'published',
       publishedAt: new Date(),
       generatedBy: 'manual'

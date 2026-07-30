@@ -35,18 +35,27 @@ export default async function BlogPage({ params }) {
             <Link
               key={post._id}
               href={`/blog/${post.slug}`}
-              className="group flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                {formatDate(post.publishedAt || post.createdAt)}
-              </p>
-              <h2 className="mt-2 text-lg font-bold text-[var(--tc-dark)] group-hover:text-[var(--tc-primary)]">
-                {post.title}
-              </h2>
-              <p className="mt-2 flex-1 text-sm text-gray-600">{excerpt(post.body)}</p>
-              <span className="mt-4 text-sm font-bold text-[var(--tc-primary)]">
-                Read more →
-              </span>
+              {post.imageUrl && (
+                <img
+                  src={post.imageUrl}
+                  alt={post.title}
+                  className="h-48 w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              )}
+              <div className="flex flex-1 flex-col p-6">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                  {formatDate(post.publishedAt || post.createdAt)}
+                </p>
+                <h2 className="mt-2 text-lg font-bold text-[var(--tc-dark)] group-hover:text-[var(--tc-primary)]">
+                  {post.title}
+                </h2>
+                <p className="mt-2 flex-1 text-sm text-gray-600">{excerpt(post.body)}</p>
+                <span className="mt-4 text-sm font-bold text-[var(--tc-primary)]">
+                  Read more →
+                </span>
+              </div>
             </Link>
           ))}
         </div>

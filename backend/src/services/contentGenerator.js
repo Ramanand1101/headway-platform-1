@@ -1,3 +1,4 @@
+const cloudinary = require('cloudinary').v2;
 const ContentPost = require('../models/ContentPost');
 
 // Uses a real OpenAI key once OPENAI_API_KEY is set in the environment.
@@ -42,6 +43,48 @@ async function callModel(prompt) {
   return data.choices?.[0]?.message?.content || '';
 }
 
+// Generates a featured image for a blog post with OpenAI's image model and
+// re-hosts it on Cloudinary immediately — gpt-image-1 only returns base64
+// (no hosted URL), and even DALL-E's temporary URLs expire after about an
+// hour, so storing anything but a Cloudinary URL would break the post later.
+// Best-effort: needs OPENAI_API_KEY; returns null (no image) on any failure
+// so a blog draft is never blocked by image generation trouble.
+async function generateBlogImage(title, topic) {
+  if (!process.env.OPENAI_API_KEY) return null;
+
+  try {
+    const subject = topic || title;
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: `A clean, professional editorial featured image for a blog post about "${subject}",
+related to Indian personal finance and insurance. Photorealistic or soft modern flat-illustration
+style, warm and trustworthy tone, no text or words anywhere in the image, no logos.`,
+        n: 1,
+        size: '1024x1024'
+      })
+    });
+    const data = await response.json();
+    const image = data.data?.[0];
+    const source = image?.url || (image?.b64_json && `data:image/png;base64,${image.b64_json}`);
+    if (!source) return null;
+
+    const uploaded = await cloudinary.uploader.upload(source, {
+      folder: 'blog-images',
+      public_id: `${Date.now()}`,
+      resource_type: 'image'
+    });
+    return uploaded.secure_url;
+  } catch {
+    return null;
+  }
+}
+
 function buildProfileBlurbPrompt(advisor, field) {
   const specialization = (advisor.specialization || []).join(', ') || 'insurance planning';
   const services = (advisor.services || []).join(', ');
@@ -75,11 +118,13 @@ async function generateProfileBlurb(advisor, field) {
   return callModel(buildProfileBlurbPrompt(advisor, field));
 }
 
-// Drafts a post and returns { title, body } WITHOUT saving it — used by the
+// Drafts a post (title/body/imageUrl) WITHOUT saving it — used by the
 // "Write blog" admin page so the draft can be reviewed/edited before publish.
 async function draftContent(advisor, topic) {
   const body = await callModel(buildPrompt(advisor, topic));
-  return { title: topic || `${advisor.name} — Monthly Update`, body };
+  const title = topic || `${advisor.name} — Monthly Update`;
+  const imageUrl = await generateBlogImage(title, topic);
+  return { title, body, imageUrl };
 }
 
 // Drafts a post for one advisor and saves it. By default it's saved as
@@ -87,11 +132,14 @@ async function draftContent(advisor, topic) {
 // publish: true to skip review and make it live immediately.
 async function generateContent(advisor, { topic, publish = false } = {}) {
   const body = await callModel(buildPrompt(advisor, topic));
+  const title = topic || `${advisor.name} — Monthly Update`;
+  const imageUrl = await generateBlogImage(title, topic);
 
   return ContentPost.create({
     advisorId: advisor._id,
-    title: topic || `${advisor.name} — Monthly Update`,
+    title,
     body,
+    imageUrl,
     status: publish ? 'published' : 'pending_review',
     publishedAt: publish ? new Date() : undefined,
     generatedBy: 'ai'

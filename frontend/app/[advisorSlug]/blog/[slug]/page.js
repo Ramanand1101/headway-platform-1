@@ -29,6 +29,13 @@ export default async function BlogPostPage({ params }) {
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--tc-dark)] sm:text-4xl">
           {post.title}
         </h1>
+        {post.imageUrl && (
+          <img
+            src={post.imageUrl}
+            alt={post.title}
+            className="mt-8 aspect-[16/9] w-full rounded-2xl object-cover shadow-sm"
+          />
+        )}
         <div className="mt-8 space-y-4 whitespace-pre-line text-lg leading-relaxed text-gray-700">
           {post.body}
         </div>
