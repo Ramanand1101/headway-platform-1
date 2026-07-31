@@ -6,9 +6,9 @@
 export function watermarkedUrl(url) {
   if (!url || !url.includes('/upload/')) return url;
 
-  // Dense, high-opacity tile + a slight quality drop — screenshots can't be
-  // blocked on the web (that only exists for DRM video), so this is the
-  // real deterrent: unusable without unlocking, same as any stock photo site.
-  const layer = 'l_text:Arial_30_bold:PREVIEW,co_rgb:FFFFFF,o_55,a_-30,fl_layer_apply,fl_tiled';
-  return url.replace('/upload/', `/upload/${layer}/q_auto:low/`);
+  // Big, sparse diagonal repeats — same look as a stock-photo site's "PROOF"
+  // watermark: clearly unusable without unlocking, but the image underneath
+  // still reads fine so the advisor knows what they'd be unlocking.
+  const layer = 'l_text:Arial_70_bold:PREVIEW,co_rgb:FFFFFF,o_40,a_-30,fl_layer_apply,fl_tiled';
+  return url.replace('/upload/', `/upload/${layer}/`);
 }

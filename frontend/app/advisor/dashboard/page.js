@@ -299,6 +299,7 @@ export default function AdvisorDashboardPage() {
   const [micrositeImageStatus, setMicrositeImageStatus] = useState({});
   const [libraryImages, setLibraryImages] = useState([]);
   const [libraryPreviewUrl, setLibraryPreviewUrl] = useState(null);
+  const [previewCreative, setPreviewCreative] = useState(null);
   const [libraryUploadStatus, setLibraryUploadStatus] = useState({
     uploading: false,
     error: '',
@@ -443,7 +444,10 @@ export default function AdvisorDashboardPage() {
   useEffect(() => {
     if (!libraryPreviewUrl) return;
     function handleKeyDown(e) {
-      if (e.key === 'Escape') setLibraryPreviewUrl(null);
+      if (e.key === 'Escape') {
+        setLibraryPreviewUrl(null);
+        setPreviewCreative(null);
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -1005,6 +1009,15 @@ export default function AdvisorDashboardPage() {
       setAdvisor(data.advisor);
       setLibraryImages(data.advisor.contentLibraryImages || []);
       setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'added' }));
+      // If this creative is open in the preview modal, swap it to the clean
+      // unlocked image and drop the Unlock button instead of closing the modal.
+      setPreviewCreative((prev) => {
+        if (prev?._id === creative._id) {
+          setLibraryPreviewUrl(creative.imageUrl);
+          return null;
+        }
+        return prev;
+      });
     } else {
       showToast(data.error || 'Could not unlock this image', true);
       setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
@@ -3232,30 +3245,41 @@ export default function AdvisorDashboardPage() {
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                       {creatives.map((creative) => {
                         const unlocked = creativeAddStatus[creative._id] === 'added';
+
+                        function openPreview() {
+                          if (unlocked) {
+                            setLibraryPreviewUrl(creative.imageUrl);
+                            setPreviewCreative(null);
+                          } else {
+                            setLibraryPreviewUrl(watermarkedUrl(creative.imageUrl));
+                            setPreviewCreative(creative);
+                          }
+                        }
+
                         return (
                           <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white">
                             <img
                               src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
                               alt=""
-                              onClick={() =>
-                                setLibraryPreviewUrl(unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl))
-                              }
+                              onClick={openPreview}
                               className="aspect-square w-full cursor-zoom-in object-cover"
                             />
                             <button
                               type="button"
-                              onClick={() => addCreativeToLibrary(creative)}
-                              disabled={creativeAddStatus[creative._id] === 'adding' || unlocked}
-                              className={`absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-xs font-bold text-white transition disabled:opacity-100 ${
-                                unlocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                              onClick={openPreview}
+                              className={`absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-bold text-white opacity-0 transition group-hover:opacity-100 ${
+                                unlocked ? 'pointer-events-none' : ''
                               }`}
                             >
-                              {creativeAddStatus[creative._id] === 'adding'
-                                ? 'Unlocking...'
-                                : unlocked
-                                  ? 'Unlocked ✓'
-                                  : '🔓 Unlock (1 credit)'}
+                              {!unlocked && (
+                                <span className="rounded-lg bg-black/70 px-3 py-1.5">👁 Click to Preview</span>
+                              )}
                             </button>
+                            {unlocked && (
+                              <span className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-center text-xs font-bold text-white">
+                                Unlocked ✓
+                              </span>
+                            )}
                           </div>
                         );
                       })}
@@ -3324,12 +3348,18 @@ export default function AdvisorDashboardPage() {
 
                 {libraryPreviewUrl && (
                   <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
-                    onClick={() => setLibraryPreviewUrl(null)}
+                    className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/80 p-6"
+                    onClick={() => {
+                      setLibraryPreviewUrl(null);
+                      setPreviewCreative(null);
+                    }}
                   >
                     <button
                       type="button"
-                      onClick={() => setLibraryPreviewUrl(null)}
+                      onClick={() => {
+                        setLibraryPreviewUrl(null);
+                        setPreviewCreative(null);
+                      }}
                       className="absolute right-5 top-5 rounded-full bg-white/10 px-3 py-1.5 text-lg font-bold text-white hover:bg-white/20"
                     >
                       ✕
@@ -3338,8 +3368,23 @@ export default function AdvisorDashboardPage() {
                       src={libraryPreviewUrl}
                       alt="Content library preview"
                       onClick={(e) => e.stopPropagation()}
-                      className="max-h-full max-w-full rounded-lg object-contain"
+                      className="max-h-[80vh] max-w-full rounded-lg object-contain"
                     />
+                    {previewCreative && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addCreativeToLibrary(previewCreative);
+                        }}
+                        disabled={creativeAddStatus[previewCreative._id] === 'adding'}
+                        className="rounded-xl bg-ia-blue px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-ia-blue-soft disabled:opacity-60"
+                      >
+                        {creativeAddStatus[previewCreative._id] === 'adding'
+                          ? 'Unlocking...'
+                          : '🔓 Unlock (1 credit)'}
+                      </button>
+                    )}
                   </div>
                 )}
               </section>
