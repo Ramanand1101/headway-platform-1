@@ -101,9 +101,9 @@ const profileInputClasses =
 const profileLabelClasses = 'text-sm font-semibold text-gray-700';
 
 const pricingPlans = [
-  { name: 'Starter', amount: '₹500', credits: '50 Credits · 5 posts' },
-  { name: 'Growth', amount: '₹1,000', credits: '110 Credits · 11 posts', bonus: '(+10%)', popular: true },
-  { name: 'Authority', amount: '₹2,000', credits: '240 Credits · 24 posts', bonus: '(+20%)' }
+  { name: 'Starter', amount: '₹299', credits: '30 Credits', features: 'Creative images' },
+  { name: 'Growth', amount: '₹499', credits: '55 Credits', bonus: '(+10%)', features: 'Image + Carousel', popular: true },
+  { name: 'Authority', amount: '₹999', credits: '120 Credits', bonus: '(+20%)', features: 'Image + Carousel + Reel' }
 ];
 
 const socialPlatforms = [
@@ -3489,6 +3489,7 @@ export default function AdvisorDashboardPage() {
                       <div className="mt-1.5 text-sm font-bold text-ia-green">
                         {plan.credits} {plan.bonus && <span className="text-ia-blue">{plan.bonus}</span>}
                       </div>
+                      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-gray-500">{plan.features}</p>
                       <button
                         type="button"
                         onClick={() =>
