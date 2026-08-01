@@ -358,40 +358,6 @@ exports.deleteMicrositeImage = async (req, res, next) => {
   }
 };
 
-// POST /api/advisor/content-library — advisor uploads one or more photos to
-// their Content Library for use in reels/carousels/posters.
-exports.uploadContentLibraryImages = async (req, res, next) => {
-  try {
-    const files = req.files || [];
-    if (!files.length) {
-      return res.status(400).json({ error: 'At least one photo file is required' });
-    }
-
-    const uploadedUrls = await Promise.all(
-      files.map(async (file, index) => {
-        const dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-        const uploaded = await cloudinary.uploader.upload(dataUri, {
-          folder: 'advisor-content-library',
-          public_id: `${req.user.advisorId}-${Date.now()}-${index}`,
-          resource_type: 'image'
-        });
-        return uploaded.secure_url;
-      })
-    );
-
-    const advisor = await Advisor.findByIdAndUpdate(
-      req.user.advisorId,
-      { $push: { contentLibraryImages: { $each: uploadedUrls } } },
-      { new: true }
-    );
-    if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
-
-    res.json({ advisor });
-  } catch (err) {
-    next(err);
-  }
-};
-
 // POST /api/advisor/content-library/from-url — advisor unlocks a shared
 // creative (from the admin-curated library) straight to their own Content
 // Library, without re-uploading the file. Previewing is always free; this
@@ -429,28 +395,6 @@ exports.addContentLibraryImageFromUrl = async (req, res, next) => {
     await advisor.save();
 
     res.json({ advisor, url: creative.imageUrl });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// DELETE /api/advisor/content-library — advisor removes one photo from
-// their Content Library by URL.
-exports.deleteContentLibraryImage = async (req, res, next) => {
-  try {
-    const { url } = req.body;
-    if (!url) {
-      return res.status(400).json({ error: 'Image url is required' });
-    }
-
-    const advisor = await Advisor.findByIdAndUpdate(
-      req.user.advisorId,
-      { $pull: { contentLibraryImages: url } },
-      { new: true }
-    );
-    if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
-
-    res.json({ advisor });
   } catch (err) {
     next(err);
   }

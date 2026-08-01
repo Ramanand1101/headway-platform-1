@@ -68,8 +68,9 @@ const advisorSchema = new mongoose.Schema(
     // Separate credit pool for the social content library (reels/carousels/
     // image posts) shown on the advisor dashboard — unrelated to aiCredits.
     contentCredits: { type: Number, default: 50 },
-    // Photos the advisor has uploaded to their Content Library for use in
-    // reels/carousels/posters.
+    // URLs of admin-curated Creatives this advisor has unlocked (paid for
+    // via share/download — see addContentLibraryImageFromUrl). Content
+    // Library is admin-curated only; advisors don't upload their own.
     contentLibraryImages: [String],
     contactNumber: String,
     whatsappNumber: String,

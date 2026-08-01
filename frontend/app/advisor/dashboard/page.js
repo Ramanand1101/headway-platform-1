@@ -287,15 +287,11 @@ export default function AdvisorDashboardPage() {
   const [photoStatus, setPhotoStatus] = useState({ uploading: false, error: '' });
   const [micrositeImages, setMicrositeImages] = useState({});
   const [micrositeImageStatus, setMicrositeImageStatus] = useState({});
+  // URLs the advisor has unlocked from the admin-curated Content Library
+  // (paid via share/download — see unlockCreativeForAction). Content
+  // Library is admin-curated only; advisors don't upload their own photos.
   const [libraryImages, setLibraryImages] = useState([]);
-  const [libraryPreviewUrl, setLibraryPreviewUrl] = useState(null);
   const [previewCreative, setPreviewCreative] = useState(null);
-  const [libraryUploadStatus, setLibraryUploadStatus] = useState({
-    uploading: false,
-    error: '',
-    progress: '',
-    percent: 0
-  });
   const previewIframeRef = useRef(null);
   const [previewReadyTick, setPreviewReadyTick] = useState(0);
 
@@ -396,16 +392,15 @@ export default function AdvisorDashboardPage() {
   }
 
   useEffect(() => {
-    if (!libraryPreviewUrl) return;
+    if (!previewCreative) return;
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
-        setLibraryPreviewUrl(null);
         setPreviewCreative(null);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [libraryPreviewUrl]);
+  }, [previewCreative]);
 
   // The preview iframe (the advisor's own microsite in ?preview=1 mode)
   // announces itself via postMessage once mounted; every time it does
@@ -885,157 +880,6 @@ export default function AdvisorDashboardPage() {
 
     setMicrositeImages(data.advisor.micrositeImages || {});
     setMicrositeImageStatus((prev) => ({ ...prev, [section]: { uploading: false, error: '' } }));
-  }
-
-  const LIBRARY_MAX_DIMENSION = 1920; // longest side, in px — plenty for reels/carousels
-  const LIBRARY_TARGET_BYTES = 1.5 * 1024 * 1024; // aim to land comfortably under the 4MB server limit
-
-  function loadImageFromFile(file) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        resolve(img);
-      };
-      img.onerror = (err) => {
-        URL.revokeObjectURL(url);
-        reject(err);
-      };
-      img.src = url;
-    });
-  }
-
-  function canvasToBlob(canvas, quality) {
-    return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
-  }
-
-  // Resizes/re-encodes a photo client-side before upload so large camera
-  // photos don't hit the server's per-file size limit or eat mobile data.
-  // Animated GIFs are left untouched (canvas would flatten them to one frame).
-  async function compressImageForLibrary(file) {
-    if (file.type === 'image/gif' || file.size <= LIBRARY_TARGET_BYTES) return file;
-
-    try {
-      const img = await loadImageFromFile(file);
-      const scale = Math.min(1, LIBRARY_MAX_DIMENSION / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      let quality = 0.82;
-      let blob = await canvasToBlob(canvas, quality);
-      while (blob && blob.size > LIBRARY_TARGET_BYTES && quality > 0.4) {
-        quality -= 0.12;
-        blob = await canvasToBlob(canvas, quality);
-      }
-
-      if (!blob || blob.size >= file.size) return file;
-
-      const jpgName = file.name.replace(/\.\w+$/, '') + '.jpg';
-      return new File([blob], jpgName, { type: 'image/jpeg' });
-    } catch {
-      return file; // couldn't decode (e.g. unsupported format) — fall back to the original
-    }
-  }
-
-  // fetch() has no upload-progress event, so byte-level progress needs XHR.
-  function uploadFileWithProgress(url, formData, headers, onProgress) {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', url);
-      Object.entries(headers).forEach(([key, value]) => xhr.setRequestHeader(key, value));
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) onProgress(event.loaded);
-      };
-      xhr.onload = () => {
-        let data = {};
-        try {
-          data = JSON.parse(xhr.responseText);
-        } catch {
-          // non-JSON error body (e.g. a platform-level 413); fall through with data = {}
-        }
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(data);
-        } else {
-          reject(new Error(data.error || `Upload failed (${xhr.status})`));
-        }
-      };
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.send(formData);
-    });
-  }
-
-  async function handleLibraryImagesChange(e) {
-    const rawFiles = Array.from(e.target.files || []);
-    if (!rawFiles.length) return;
-
-    setLibraryUploadStatus({ uploading: true, error: '', progress: 'Preparing photos...', percent: 0 });
-
-    const files = [];
-    for (let i = 0; i < rawFiles.length; i += 1) {
-      files.push(await compressImageForLibrary(rawFiles[i]));
-    }
-
-    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
-    let bytesDoneBeforeCurrent = 0;
-
-    // Uploaded one at a time (not batched into a single request) so a
-    // multi-photo selection never exceeds the hosting platform's per-request
-    // body size limit, regardless of how many files the advisor picks.
-    for (let i = 0; i < files.length; i += 1) {
-      const file = files[i];
-      const formData = new FormData();
-      formData.append('images', file);
-
-      const reportProgress = (loaded) => {
-        const percent = Math.min(100, Math.round(((bytesDoneBeforeCurrent + loaded) / totalBytes) * 100));
-        setLibraryUploadStatus({
-          uploading: true,
-          error: '',
-          percent,
-          progress: `Uploading ${i + 1} of ${files.length} — ${percent}% done, ${100 - percent}% left`
-        });
-      };
-      reportProgress(0);
-
-      try {
-        const data = await uploadFileWithProgress(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/advisor/content-library`,
-          formData,
-          authHeaders(),
-          reportProgress
-        );
-        setLibraryImages(data.advisor.contentLibraryImages || []);
-      } catch (err) {
-        setLibraryUploadStatus({
-          uploading: false,
-          error: err.message || `Could not upload ${file.name}`,
-          progress: '',
-          percent: 0
-        });
-        e.target.value = '';
-        return;
-      }
-
-      bytesDoneBeforeCurrent += file.size;
-    }
-
-    setLibraryUploadStatus({ uploading: false, error: '', progress: '', percent: 0 });
-    e.target.value = '';
-  }
-
-  async function handleLibraryImageDelete(url) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/content-library`, {
-      method: 'DELETE',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ url })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setLibraryImages(data.advisor.contentLibraryImages || []);
-    }
   }
 
   // Admin-curated creatives (Images/Carousels/Reels × Life/Health/General),
@@ -2776,90 +2620,6 @@ export default function AdvisorDashboardPage() {
                     </div>
                   )}
                 </div>
-
-                <div className="mb-5">
-                  <h3 className="mb-1.5 text-sm font-extrabold text-ia-navy">My Uploads</h3>
-                  <p className="mb-3 text-xs text-gray-500">
-                    Your own raw photos — free to upload and store, used as building blocks for your posts.
-                  </p>
-                  <label className="inline-block cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold shadow-sm transition hover:bg-gray-50">
-                    {libraryUploadStatus.uploading ? 'Uploading...' : '+ Upload photos'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleLibraryImagesChange}
-                      disabled={libraryUploadStatus.uploading}
-                      className="hidden"
-                    />
-                  </label>
-                  {libraryUploadStatus.error && (
-                    <p className="mt-2 text-sm text-red-500">{libraryUploadStatus.error}</p>
-                  )}
-                </div>
-
-                {libraryUploadStatus.uploading && (
-                  <div className="mb-5 max-w-sm">
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-                      <div
-                        className="h-2 rounded-full bg-indigo-600 transition-all duration-150"
-                        style={{ width: `${libraryUploadStatus.percent}%` }}
-                      />
-                    </div>
-                    <p className="mt-1.5 text-xs text-gray-500">{libraryUploadStatus.progress}</p>
-                  </div>
-                )}
-
-                {libraryImages.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center">
-                    <p className="text-3xl">🎬</p>
-                    <p className="mt-3 font-semibold">No photos uploaded yet</p>
-                    <p className="mx-auto mt-1.5 max-w-md text-sm text-gray-500">
-                      Upload one or more photos to use in your personalised reels, carousels and posters.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                    {libraryImages.map((url) => (
-                      <div key={url} className="group relative overflow-hidden rounded-xl border border-gray-200">
-                        <img
-                          src={url}
-                          alt="Content library upload"
-                          onClick={() => setLibraryPreviewUrl(url)}
-                          className="aspect-square w-full cursor-zoom-in object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleLibraryImageDelete(url)}
-                          className="absolute right-1.5 top-1.5 hidden rounded-full bg-black/60 px-2 py-1 text-xs font-bold text-white group-hover:block"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {libraryPreviewUrl && (
-                  <div
-                    className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/80 p-6"
-                    onClick={() => setLibraryPreviewUrl(null)}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setLibraryPreviewUrl(null)}
-                      className="absolute right-5 top-5 rounded-full bg-white/10 px-3 py-1.5 text-lg font-bold text-white hover:bg-white/20"
-                    >
-                      ✕
-                    </button>
-                    <img
-                      src={libraryPreviewUrl}
-                      alt="Content library preview"
-                      onClick={(e) => e.stopPropagation()}
-                      className="max-h-[80vh] max-w-full rounded-lg object-contain"
-                    />
-                  </div>
-                )}
 
                 {previewCreative && (
                   <div

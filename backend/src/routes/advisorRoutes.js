@@ -19,9 +19,7 @@ const {
   uploadProfilePhoto,
   uploadMicrositeImage,
   deleteMicrositeImage,
-  uploadContentLibraryImages,
   addContentLibraryImageFromUrl,
-  deleteContentLibraryImage,
   uploadListImage,
   getMyTestimonials,
   createMyTestimonial,
@@ -41,21 +39,6 @@ const uploadPhoto = multer({
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(Object.assign(new Error('File must be an image'), { status: 400 }));
-    }
-    cb(null, true);
-  }
-});
-
-// Content library photos are uploaded one file per request (see the
-// dashboard's sequential upload loop), so this can allow a larger per-file
-// size than the other single-request uploaders while staying under the
-// hosting platform's ~4.5MB request body limit.
-const uploadPhotos = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 4 * 1024 * 1024, files: 10 },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(Object.assign(new Error('Files must be images'), { status: 400 }));
     }
     cb(null, true);
   }
@@ -94,14 +77,7 @@ router.post(
   uploadMicrositeImage
 );
 router.delete('/microsite-image/:section', authenticate, deleteMicrositeImage);
-router.post(
-  '/content-library',
-  authenticate,
-  uploadPhotos.array('images', 10),
-  uploadContentLibraryImages
-);
 router.post('/content-library/from-url', authenticate, addContentLibraryImageFromUrl);
-router.delete('/content-library', authenticate, deleteContentLibraryImage);
 router.post('/list-image', authenticate, uploadPhoto.single('image'), uploadListImage);
 
 router.get('/me/testimonials', authenticate, getMyTestimonials);
