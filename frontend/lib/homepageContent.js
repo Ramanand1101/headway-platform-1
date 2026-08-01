@@ -105,7 +105,7 @@ export const defaultHomepageContent = {
       { bold: '50 free credits on signup', rest: '— enough for your first 5 social media posts, on us' },
       {
         bold: 'Pay only when you publish',
-        rest: '— every activity (reel, carousel or image post) costs a flat 10 credits'
+        rest: '— every activity (reel, carousel or image post) costs '
       },
       {
         bold: 'No hidden charges',
