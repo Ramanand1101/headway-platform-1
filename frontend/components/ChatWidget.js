@@ -1,12 +1,24 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 
+const ACTION_LABELS = {
+  set_bio: 'Insert into Short Bio',
+  set_about_me: 'Insert into About Me',
+  add_faq: 'Add this FAQ'
+};
+
 // Floating chat bubble backed by the dedicated GPT wired up in
 // backend/src/services/chatbotService.js. Keeps the OpenAI thread id in
 // localStorage so a visitor's conversation survives across messages/reloads
 // in the same browser. `offset` lets a page nudge the bubble up when
 // another floating button (e.g. WhatsApp) already sits at bottom-6 right-6.
-export default function ChatWidget({ offset = false }) {
+//
+// `context` and `onAction` are dashboard-only: passing context="dashboard"
+// unlocks the assistant's profile-editing tools (set_bio/set_about_me/
+// add_faq); when it proposes one, this renders an Insert button under its
+// message and calls onAction({ type, args }) only when the advisor clicks
+// it — the assistant never writes to the profile on its own.
+export default function ChatWidget({ offset = false, context, onAction }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', text: "Hi! I'm here to help — ask me anything." }
@@ -35,7 +47,7 @@ export default function ChatWidget({ offset = false }) {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chatbot/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, message: text })
+        body: JSON.stringify({ threadId, message: text, context })
       });
       const data = await res.json();
 
@@ -45,12 +57,24 @@ export default function ChatWidget({ offset = false }) {
       }
 
       if (data.threadId) localStorage.setItem('chatbotThreadId', data.threadId);
-      setMessages((prev) => [...prev, { role: 'assistant', text: data.reply }]);
+      const actions = (data.actions || []).map((a) => ({ ...a, applied: false }));
+      setMessages((prev) => [...prev, { role: 'assistant', text: data.reply, actions }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: 'Could not reach the assistant. Please try again.' }]);
     } finally {
       setSending(false);
     }
+  }
+
+  function applyAction(messageIndex, actionIndex, action) {
+    onAction?.(action);
+    setMessages((prev) =>
+      prev.map((m, i) =>
+        i === messageIndex
+          ? { ...m, actions: m.actions.map((a, ai) => (ai === actionIndex ? { ...a, applied: true } : a)) }
+          : m
+      )
+    );
   }
 
   return (
@@ -76,13 +100,29 @@ export default function ChatWidget({ offset = false }) {
           <div className="bg-ia-navy px-4 py-3 text-sm font-bold text-white">Chat with us</div>
           <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto p-3">
             {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                  m.role === 'user' ? 'ml-auto bg-ia-blue text-white' : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {m.text}
+              <div key={i} className={m.role === 'user' ? 'ml-auto max-w-[85%]' : 'max-w-[85%]'}>
+                <div
+                  className={`rounded-xl px-3 py-2 text-sm ${
+                    m.role === 'user' ? 'bg-ia-blue text-white' : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {m.text}
+                </div>
+                {m.actions?.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {m.actions.map((action, ai) => (
+                      <button
+                        key={ai}
+                        type="button"
+                        disabled={action.applied}
+                        onClick={() => applyAction(i, ai, action)}
+                        className="rounded-lg bg-ia-green px-2.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+                      >
+                        {action.applied ? '✓ Added' : ACTION_LABELS[action.type] || 'Insert'}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {sending && <div className="max-w-[85%] rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-400">...</div>}

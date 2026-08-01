@@ -805,6 +805,24 @@ export default function AdvisorDashboardPage() {
     showToast('Posted to your blog.');
   }
 
+  // Applies a chatbot-proposed profile edit (see components/ChatWidget.js)
+  // only when the advisor clicks its Insert button — never automatically.
+  function handleChatAction(action) {
+    if (action.type === 'set_bio' && action.args?.text) {
+      updateProfileField('bio', action.args.text);
+      setActiveTab('profile');
+      showToast('Inserted into Short Bio — remember to Save changes.');
+    } else if (action.type === 'set_about_me' && action.args?.text) {
+      updateProfileField('aboutMe', action.args.text);
+      setActiveTab('profile');
+      showToast('Inserted into About Me — remember to Save changes.');
+    } else if (action.type === 'add_faq' && action.args?.question && action.args?.answer) {
+      setFaqs((prev) => [...prev, { question: action.args.question, answer: action.args.answer }]);
+      setActiveTab('profile');
+      showToast('FAQ added — remember to Save changes.');
+    }
+  }
+
   async function handleBlogDelete(id) {
     setMyBlogPosts((prev) => prev.filter((p) => p._id !== id));
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/mine/${id}`, {
@@ -3086,7 +3104,7 @@ export default function AdvisorDashboardPage() {
         {toast.msg}
       </div>
 
-      <ChatWidget />
+      <ChatWidget context="dashboard" onAction={handleChatAction} />
     </div>
   );
 }
