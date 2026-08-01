@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 const ACTION_LABELS = {
   set_bio: 'Insert into Short Bio',
   set_about_me: 'Insert into About Me',
-  add_faq: 'Add this FAQ'
+  add_faq: 'Add this FAQ',
+  set_vision: 'Insert into Vision',
+  set_mission: 'Insert into Mission'
 };
 
 // Floating chat bubble backed by the dedicated GPT wired up in
@@ -13,12 +15,15 @@ const ACTION_LABELS = {
 // in the same browser. `offset` lets a page nudge the bubble up when
 // another floating button (e.g. WhatsApp) already sits at bottom-6 right-6.
 //
-// `context` and `onAction` are dashboard-only: passing context="dashboard"
-// unlocks the assistant's profile-editing tools (set_bio/set_about_me/
-// add_faq); when it proposes one, this renders an Insert button under its
-// message and calls onAction({ type, args }) only when the advisor clicks
-// it — the assistant never writes to the profile on its own.
-export default function ChatWidget({ offset = false, context, onAction }) {
+// `context`, `advisorContext` and `onAction` are dashboard-only: passing
+// context="dashboard" unlocks the assistant's profile-editing tools
+// (set_bio/set_about_me/add_faq/set_vision/set_mission) and, via
+// advisorContext, lets it draft with the advisor's real name/city/
+// experience instead of generic placeholders. When it proposes an edit,
+// this renders an Insert button under its message and calls
+// onAction({ type, args }) only when the advisor clicks it — the assistant
+// never writes to the profile on its own.
+export default function ChatWidget({ offset = false, context, advisorContext, onAction }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', text: "Hi! I'm here to help — ask me anything." }
@@ -47,7 +52,7 @@ export default function ChatWidget({ offset = false, context, onAction }) {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chatbot/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, message: text, context })
+        body: JSON.stringify({ threadId, message: text, context, advisorContext })
       });
       const data = await res.json();
 

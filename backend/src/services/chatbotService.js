@@ -98,10 +98,51 @@ const PROFILE_TOOLS = [
         required: ['question', 'answer']
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'set_vision',
+      description:
+        "Draft the advisor's Vision statement shown on their microsite. Only call this when the advisor explicitly asks you to write/draft/update their vision statement.",
+      parameters: {
+        type: 'object',
+        properties: { text: { type: 'string', description: 'The vision statement, 1-2 sentences.' } },
+        required: ['text']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'set_mission',
+      description:
+        "Draft the advisor's Mission statement shown on their microsite. Only call this when the advisor explicitly asks you to write/draft/update their mission statement.",
+      parameters: {
+        type: 'object',
+        properties: { text: { type: 'string', description: 'The mission statement, 1-2 sentences.' } },
+        required: ['text']
+      }
+    }
   }
 ];
 
-const PROFILE_TOOLS_INSTRUCTIONS = `You can help the advisor fill in parts of their profile by calling these tools: set_bio, set_about_me, add_faq. Only call a tool when the advisor clearly asks you to write/draft/update that specific piece of content for their profile — never on your own initiative, and never for casual conversation. After calling a tool, briefly tell the advisor what you prepared in one short sentence, mentioning they can review and insert it from the button shown below your message.`;
+const PROFILE_TOOLS_INSTRUCTIONS = `You can help the advisor fill in parts of their profile by calling these tools: set_bio, set_about_me, add_faq, set_vision, set_mission. Only call a tool when the advisor clearly asks you to write/draft/update that specific piece of content for their profile — never on your own initiative, and never for casual conversation. Use the advisor's real profile details below (if provided) instead of generic placeholders or asking them to repeat information you already have — only ask for missing details you genuinely need. After calling a tool, briefly tell the advisor what you prepared in one short sentence, mentioning they can review and insert it from the button shown below your message.`;
+
+// Turns the advisor's own profile fields (sent by the dashboard, never by
+// the public microsite widget) into a short instructions block so drafts
+// use their real name/city/experience instead of generic placeholders or
+// making the advisor retype what's already on file.
+function buildAdvisorContextBlock(advisorContext) {
+  if (!advisorContext || typeof advisorContext !== 'object') return '';
+
+  const lines = Object.entries(advisorContext)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0))
+    .map(([key, value]) => `- ${key}: ${Array.isArray(value) ? value.join(', ') : value}`);
+
+  if (!lines.length) return '';
+  return `THE ADVISOR YOU'RE TALKING TO (use these real details when drafting content for them, instead of placeholders):\n${lines.join('\n')}`;
+}
 
 function isConfigured() {
   return Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_ASSISTANT_ID);
@@ -149,10 +190,15 @@ async function submitToolOutputs(threadId, runId, toolCalls) {
 
 // Runs the thread and returns any tool calls the assistant made along the
 // way (e.g. set_bio) as { type, args } — collected, not executed.
-async function runAndWait(threadId, tools) {
+async function runAndWait(threadId, tools, advisorContext) {
+  const instructionParts = [PLATFORM_KNOWLEDGE];
+  if (tools?.length) instructionParts.push(PROFILE_TOOLS_INSTRUCTIONS);
+  const advisorBlock = buildAdvisorContextBlock(advisorContext);
+  if (advisorBlock) instructionParts.push(advisorBlock);
+
   const body = {
     assistant_id: process.env.OPENAI_ASSISTANT_ID,
-    additional_instructions: tools?.length ? `${PLATFORM_KNOWLEDGE}\n\n${PROFILE_TOOLS_INSTRUCTIONS}` : PLATFORM_KNOWLEDGE
+    additional_instructions: instructionParts.join('\n\n')
   };
   if (tools?.length) {
     body.tools = tools;
@@ -212,12 +258,14 @@ async function latestReply(threadId) {
   return textBlock?.text?.value || "Sorry, I didn't catch that — could you rephrase?";
 }
 
-// sendMessage({ threadId, message, allowProfileTools }) -> { threadId, reply, actions }
+// sendMessage({ threadId, message, allowProfileTools, advisorContext }) -> { threadId, reply, actions }
 // Reuses the same OpenAI thread across turns (passed back to the caller) so
 // the assistant keeps context of the conversation. `allowProfileTools`
-// gates the set_bio/set_about_me/add_faq tools — only the advisor dashboard
-// passes this, never the public microsite widget.
-async function sendMessage({ threadId, message, allowProfileTools }) {
+// gates the set_bio/set_about_me/add_faq/set_vision/set_mission tools, and
+// `advisorContext` (the advisor's own profile fields) personalizes drafts —
+// both only ever come from the advisor dashboard, never the public
+// microsite widget (enforced by chatbotController.js's `context` check).
+async function sendMessage({ threadId, message, allowProfileTools, advisorContext }) {
   if (!isConfigured()) {
     return {
       threadId: threadId || null,
@@ -229,7 +277,7 @@ async function sendMessage({ threadId, message, allowProfileTools }) {
 
   const activeThreadId = threadId || (await createThread());
   await addMessage(activeThreadId, message);
-  const actions = await runAndWait(activeThreadId, allowProfileTools ? PROFILE_TOOLS : undefined);
+  const actions = await runAndWait(activeThreadId, allowProfileTools ? PROFILE_TOOLS : undefined, advisorContext);
   const reply = await latestReply(activeThreadId);
 
   return { threadId: activeThreadId, reply, actions };

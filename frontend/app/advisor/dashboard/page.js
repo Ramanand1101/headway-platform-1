@@ -820,6 +820,14 @@ export default function AdvisorDashboardPage() {
       setFaqs((prev) => [...prev, { question: action.args.question, answer: action.args.answer }]);
       setActiveTab('profile');
       showToast('FAQ added — remember to Save changes.');
+    } else if (action.type === 'set_vision' && action.args?.text) {
+      updateProfileField('vision', action.args.text);
+      setActiveTab('profile');
+      showToast('Inserted into Vision — remember to Save changes.');
+    } else if (action.type === 'set_mission' && action.args?.text) {
+      updateProfileField('mission', action.args.text);
+      setActiveTab('profile');
+      showToast('Inserted into Mission — remember to Save changes.');
     }
   }
 
@@ -3104,7 +3112,22 @@ export default function AdvisorDashboardPage() {
         {toast.msg}
       </div>
 
-      <ChatWidget context="dashboard" onAction={handleChatAction} />
+      <ChatWidget
+        context="dashboard"
+        onAction={handleChatAction}
+        advisorContext={{
+          name: profileForm.name,
+          city: profileForm.city,
+          specialization: specializationTags,
+          services: serviceOfferings.map((o) => o.title).filter(Boolean),
+          yearsExperience: profileForm.yearsExperience,
+          credentials: credentialTags,
+          existingBio: profileForm.bio,
+          existingAboutMe: profileForm.aboutMe,
+          existingVision: profileForm.vision,
+          existingMission: profileForm.mission
+        }}
+      />
     </div>
   );
 }
