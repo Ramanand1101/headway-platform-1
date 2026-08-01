@@ -6,6 +6,7 @@ import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import { defaultHomepageContent } from '../lib/homepageContent';
 import { getHomepageTheme, homepageThemeCssVars } from '../lib/homepageThemes';
+import ChatWidget from '../components/ChatWidget';
 
 const pillBase =
   'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]';
@@ -536,9 +537,6 @@ export default function HomePage() {
                     {capMeta[i].icon}
                   </span>
                 )}
-                <span className="absolute right-3.5 top-3.5 rounded-full border border-gray-200 bg-white px-3.5 py-2 text-xs font-extrabold shadow-sm">
-                  <span className="text-[var(--site-green)]">10</span> credits
-                </span>
               </div>
               <div className="p-6">
                 <Editable
@@ -844,6 +842,7 @@ export default function HomePage() {
       </section>
 
       <SiteFooter />
+      <ChatWidget />
     </div>
   );
 }

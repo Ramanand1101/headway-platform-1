@@ -2023,6 +2023,96 @@ export default function AdvisorDashboardPage() {
                     )}
 
                     <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                      <h3 className="text-sm font-extrabold text-ia-navy">Social links</h3>
+                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label className={profileLabelClasses}>LinkedIn URL</label>
+                          <input
+                            value={profileForm.linkedin}
+                            onChange={(e) => updateProfileField('linkedin', e.target.value)}
+                            placeholder="https://linkedin.com/in/your-profile"
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={profileLabelClasses}>Facebook URL</label>
+                          <input
+                            value={profileForm.facebook}
+                            onChange={(e) => updateProfileField('facebook', e.target.value)}
+                            placeholder="https://facebook.com/your-page"
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={profileLabelClasses}>YouTube URL</label>
+                          <input
+                            value={profileForm.youtube}
+                            onChange={(e) => updateProfileField('youtube', e.target.value)}
+                            placeholder="https://youtube.com/@your-channel"
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={profileLabelClasses}>Instagram URL</label>
+                          <input
+                            value={profileForm.instagramUrl}
+                            onChange={(e) => updateProfileField('instagramUrl', e.target.value)}
+                            placeholder="https://instagram.com/your-handle"
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                      <h3 className="text-sm font-extrabold text-ia-navy">Google Business Profile</h3>
+                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label className={profileLabelClasses}>Rating (e.g. 4.9)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="5"
+                            value={profileForm.gmbRating}
+                            onChange={(e) => updateProfileField('gmbRating', e.target.value)}
+                            placeholder="4.8"
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={profileLabelClasses}>Review count</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={profileForm.gmbReviewCount}
+                            onChange={(e) => updateProfileField('gmbReviewCount', e.target.value)}
+                            placeholder="e.g. 120"
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={profileLabelClasses}>"Write a review" link</label>
+                          <input
+                            value={profileForm.gmbReviewLink}
+                            onChange={(e) => updateProfileField('gmbReviewLink', e.target.value)}
+                            placeholder="https://g.page/r/your-business/review"
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                        <div>
+                          <label className={profileLabelClasses}>Google Maps link</label>
+                          <input
+                            value={profileForm.gmbMapsLink}
+                            onChange={(e) => updateProfileField('gmbMapsLink', e.target.value)}
+                            placeholder="https://maps.app.goo.gl/..."
+                            className={`mt-1.5 ${profileInputClasses}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
                       <div className="flex items-center justify-between">
                         <label className={profileLabelClasses}>Company working with</label>
                         <div className="flex gap-2">
@@ -2153,96 +2243,6 @@ export default function AdvisorDashboardPage() {
                             )}
                           </div>
                         ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                      <h3 className="text-sm font-extrabold text-ia-navy">Social links</h3>
-                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                        <div>
-                          <label className={profileLabelClasses}>LinkedIn URL</label>
-                          <input
-                            value={profileForm.linkedin}
-                            onChange={(e) => updateProfileField('linkedin', e.target.value)}
-                            placeholder="https://linkedin.com/in/your-profile"
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
-                        <div>
-                          <label className={profileLabelClasses}>Facebook URL</label>
-                          <input
-                            value={profileForm.facebook}
-                            onChange={(e) => updateProfileField('facebook', e.target.value)}
-                            placeholder="https://facebook.com/your-page"
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
-                        <div>
-                          <label className={profileLabelClasses}>YouTube URL</label>
-                          <input
-                            value={profileForm.youtube}
-                            onChange={(e) => updateProfileField('youtube', e.target.value)}
-                            placeholder="https://youtube.com/@your-channel"
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
-                        <div>
-                          <label className={profileLabelClasses}>Instagram URL</label>
-                          <input
-                            value={profileForm.instagramUrl}
-                            onChange={(e) => updateProfileField('instagramUrl', e.target.value)}
-                            placeholder="https://instagram.com/your-handle"
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                      <h3 className="text-sm font-extrabold text-ia-navy">Google Business Profile</h3>
-                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                        <div>
-                          <label className={profileLabelClasses}>Rating (e.g. 4.9)</label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="5"
-                            value={profileForm.gmbRating}
-                            onChange={(e) => updateProfileField('gmbRating', e.target.value)}
-                            placeholder="4.8"
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
-                        <div>
-                          <label className={profileLabelClasses}>Review count</label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={profileForm.gmbReviewCount}
-                            onChange={(e) => updateProfileField('gmbReviewCount', e.target.value)}
-                            placeholder="e.g. 120"
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
-                        <div>
-                          <label className={profileLabelClasses}>"Write a review" link</label>
-                          <input
-                            value={profileForm.gmbReviewLink}
-                            onChange={(e) => updateProfileField('gmbReviewLink', e.target.value)}
-                            placeholder="https://g.page/r/your-business/review"
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
-                        <div>
-                          <label className={profileLabelClasses}>Google Maps link</label>
-                          <input
-                            value={profileForm.gmbMapsLink}
-                            onChange={(e) => updateProfileField('gmbMapsLink', e.target.value)}
-                            placeholder="https://maps.app.goo.gl/..."
-                            className={`mt-1.5 ${profileInputClasses}`}
-                          />
-                        </div>
                       </div>
                     </div>
 

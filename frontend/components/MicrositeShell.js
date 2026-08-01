@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { getMicrositeTheme, themeCssVars } from '../lib/micrositeThemes';
 import ChatWidget from './ChatWidget';
 
@@ -35,9 +36,14 @@ function LogoMark() {
 export default function MicrositeShell({ initialAdvisor, children }) {
   const [advisor, setAdvisor] = useState(initialAdvisor);
   const [scrolled, setScrolled] = useState(false);
+  // The dashboard's "Live preview" panel loads this same microsite in an
+  // iframe (?preview=1) — without this check, that iframe would mount its
+  // own ChatWidget on top of the dashboard's own, stacking two bubbles in
+  // the same corner. Only ever suppressed inside that embedded preview.
+  const searchParams = useSearchParams();
+  const isPreview = searchParams.get('preview') === '1';
 
   useEffect(() => {
-    const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
     if (!isPreview) return;
 
     function handleMessage(e) {
@@ -182,7 +188,7 @@ export default function MicrositeShell({ initialAdvisor, children }) {
         </a>
       )}
 
-      <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />
+      {!isPreview && <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />}
     </div>
   );
 }

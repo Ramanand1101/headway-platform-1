@@ -86,13 +86,13 @@ export default function ChatWidget({ offset = false, context, advisorContext, on
     <>
       <button
         type="button"
-        aria-label={open ? 'Close chat' : 'Open chat'}
+        aria-label={open ? 'Close chat' : 'Ask me anything'}
         onClick={() => setOpen((v) => !v)}
         className={`fixed z-40 grid h-14 w-14 place-items-center rounded-full bg-ia-blue text-2xl text-white shadow-xl transition hover:-translate-y-0.5 ${
           offset ? 'bottom-24 right-6' : 'bottom-6 right-6'
         }`}
       >
-        {open ? '✕' : '💬'}
+        {open ? '✕' : '🤖'}
       </button>
 
       {open && (
@@ -102,7 +102,7 @@ export default function ChatWidget({ offset = false, context, advisorContext, on
           }`}
           style={{ height: '420px' }}
         >
-          <div className="bg-ia-navy px-4 py-3 text-sm font-bold text-white">Chat with us</div>
+          <div className="bg-ia-navy px-4 py-3 text-sm font-bold text-white">🤖 Ask me anything</div>
           <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto p-3">
             {messages.map((m, i) => (
               <div key={i} className={m.role === 'user' ? 'ml-auto max-w-[85%]' : 'max-w-[85%]'}>
@@ -136,7 +136,7 @@ export default function ChatWidget({ offset = false, context, advisorContext, on
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
+              placeholder="Ask me anything..."
               className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-ia-blue"
             />
             <button
