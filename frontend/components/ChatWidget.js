@@ -88,11 +88,18 @@ export default function ChatWidget({ offset = false, context, advisorContext, on
         type="button"
         aria-label={open ? 'Close chat' : 'Ask me anything'}
         onClick={() => setOpen((v) => !v)}
-        className={`fixed z-40 grid h-14 w-14 place-items-center rounded-full bg-ia-blue text-2xl text-white shadow-xl transition hover:-translate-y-0.5 ${
-          offset ? 'bottom-24 right-6' : 'bottom-6 right-6'
-        }`}
+        className={`fixed z-40 flex items-center gap-2 rounded-full bg-ia-blue text-white shadow-xl transition hover:-translate-y-0.5 ${
+          open ? 'h-14 w-14 justify-center text-2xl' : 'h-14 pl-4 pr-5 text-2xl'
+        } ${offset ? 'bottom-24 right-6' : 'bottom-6 right-6'}`}
       >
-        {open ? '✕' : '🤖'}
+        {open ? (
+          '✕'
+        ) : (
+          <>
+            <span>🤖</span>
+            <span className="text-sm font-bold whitespace-nowrap">Ask me anything</span>
+          </>
+        )}
       </button>
 
       {open && (
