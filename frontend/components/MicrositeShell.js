@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getMicrositeTheme, themeCssVars } from '../lib/micrositeThemes';
+import ChatWidget from './ChatWidget';
 
 const socialLabels = { linkedin: 'LinkedIn', instagram: 'Instagram', facebook: 'Facebook', youtube: 'YouTube' };
 
@@ -180,6 +181,8 @@ export default function MicrositeShell({ initialAdvisor, children }) {
           💬
         </a>
       )}
+
+      <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />
     </div>
   );
 }

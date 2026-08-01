@@ -79,29 +79,6 @@ const advisorSchema = new mongoose.Schema(
       facebook: String,
       youtube: String
     },
-    // OAuth connection to the advisor's own Instagram Business/Creator
-    // account (Instagram Business Login), used to publish posts and read
-    // comments/insights/messages only on the advisor's instruction.
-    instagram: {
-      connected: { type: Boolean, default: false },
-      igUserId: String,
-      username: String,
-      accountType: String,
-      accessToken: String,
-      tokenExpiresAt: Date,
-      connectedAt: Date
-    },
-    // OAuth connection to a Facebook Page the advisor administers (Facebook
-    // Login for Business), used to publish posts and read comments/messages
-    // only on the advisor's instruction. Page access tokens obtained via a
-    // long-lived user token don't expire on their own.
-    facebook: {
-      connected: { type: Boolean, default: false },
-      pageId: String,
-      pageName: String,
-      pageAccessToken: String,
-      connectedAt: Date
-    },
     isActive: { type: Boolean, default: true },
     onboardedAt: { type: Date, default: Date.now }
   },

@@ -15,10 +15,9 @@ const customerRoutes = require('./routes/customerRoutes');
 const siteBannerRoutes = require('./routes/siteBannerRoutes');
 const siteContentRoutes = require('./routes/siteContentRoutes');
 const leadRoutes = require('./routes/leadRoutes');
-const instagramRoutes = require('./routes/instagramRoutes');
-const facebookRoutes = require('./routes/facebookRoutes');
 const creativeRoutes = require('./routes/creativeRoutes');
 const companyDirectoryRoutes = require('./routes/companyDirectoryRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
 connectDB();
 
@@ -43,10 +42,9 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/site/banners', siteBannerRoutes);
 app.use('/api/site/content', siteContentRoutes);
 app.use('/api/leads', leadRoutes);
-app.use('/api/advisor/instagram', instagramRoutes);
-app.use('/api/advisor/facebook', facebookRoutes);
 app.use('/api/creatives', creativeRoutes);
 app.use('/api/companies', companyDirectoryRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 app.get('/', (req, res) => res.json({ message: 'Welcome to Makeuforward Platform' }));
 

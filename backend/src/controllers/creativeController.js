@@ -1,10 +1,11 @@
 const cloudinary = require('cloudinary').v2;
 const Creative = require('../models/Creative');
 
-const { CREATIVE_CATEGORIES } = Creative;
+const { CREATIVE_CATEGORIES, CREATIVE_TYPES } = Creative;
 
-// GET /api/creatives?category=life — any logged-in advisor/admin browses the
-// shared creative library, optionally filtered to one folder.
+// GET /api/creatives?category=life&type=reel — any logged-in advisor/admin
+// browses the shared creative library, optionally filtered by folder and/or
+// content format.
 exports.listCreatives = async (req, res, next) => {
   try {
     const filter = {};
@@ -14,36 +15,48 @@ exports.listCreatives = async (req, res, next) => {
       }
       filter.category = req.query.category;
     }
+    if (req.query.type) {
+      if (!CREATIVE_TYPES.includes(req.query.type)) {
+        return res.status(400).json({ error: 'Invalid type' });
+      }
+      filter.type = req.query.type;
+    }
 
     const creatives = await Creative.find(filter).sort({ createdAt: -1 });
-    res.json({ creatives, categories: CREATIVE_CATEGORIES });
+    res.json({ creatives, categories: CREATIVE_CATEGORIES, types: CREATIVE_TYPES });
   } catch (err) {
     next(err);
   }
 };
 
-// POST /api/creatives  (admin-only) — uploads one or more images into a
-// category folder, shared instantly with every advisor's Content Library.
+// POST /api/creatives  (admin-only) — uploads one or more images/videos into
+// a category+type folder, shared instantly with every advisor's Content
+// Library. Reels are uploaded as video; images/carousels as image.
 exports.uploadCreatives = async (req, res, next) => {
   try {
-    const { category } = req.body;
+    const { category, type = 'image' } = req.body;
     if (!CREATIVE_CATEGORIES.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
+    if (!CREATIVE_TYPES.includes(type)) {
+      return res.status(400).json({ error: 'Invalid type' });
+    }
     const files = req.files || [];
     if (!files.length) {
-      return res.status(400).json({ error: 'At least one image file is required' });
+      return res.status(400).json({ error: `At least one ${type === 'reel' ? 'video' : 'image'} file is required` });
     }
+
+    const resourceType = type === 'reel' ? 'video' : 'image';
 
     const created = await Promise.all(
       files.map(async (file, index) => {
         const dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
         const uploaded = await cloudinary.uploader.upload(dataUri, {
-          folder: `creatives/${category}`,
+          folder: `creatives/${type}/${category}`,
           public_id: `${Date.now()}-${index}`,
-          resource_type: 'image'
+          resource_type: resourceType
         });
-        return Creative.create({ category, imageUrl: uploaded.secure_url });
+        return Creative.create({ category, type, imageUrl: uploaded.secure_url });
       })
     );
 

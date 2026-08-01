@@ -2,6 +2,12 @@
 import { useEffect, useState } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 
+const TYPES = [
+  { key: 'image', label: 'Images' },
+  { key: 'carousel', label: 'Carousels' },
+  { key: 'reel', label: 'Reels' }
+];
+
 const CATEGORIES = [
   { key: 'life', label: 'Life' },
   { key: 'health', label: 'Health' },
@@ -9,6 +15,7 @@ const CATEGORIES = [
 ];
 
 export default function CreativesLibraryPage() {
+  const [activeType, setActiveType] = useState('image');
   const [activeCategory, setActiveCategory] = useState('life');
   const [creatives, setCreatives] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,9 +27,9 @@ export default function CreativesLibraryPage() {
     return { Authorization: `Bearer ${token}`, ...extra };
   }
 
-  function loadCategory(category) {
+  function loadCreatives(type, category) {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives?category=${category}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives?type=${type}&category=${category}`, {
       headers: authHeaders()
     })
       .then(async (res) => {
@@ -37,9 +44,9 @@ export default function CreativesLibraryPage() {
 
   useEffect(() => {
     setError('');
-    loadCategory(activeCategory);
+    loadCreatives(activeType, activeCategory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]);
+  }, [activeType, activeCategory]);
 
   async function handleUpload(e) {
     const files = Array.from(e.target.files || []);
@@ -55,6 +62,7 @@ export default function CreativesLibraryPage() {
       const formData = new FormData();
       formData.append('images', files[i]);
       formData.append('category', activeCategory);
+      formData.append('type', activeType);
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives`, {
         method: 'POST',
@@ -64,13 +72,13 @@ export default function CreativesLibraryPage() {
       const data = await res.json();
       if (!res.ok) {
         setUploadStatus({ uploading: false, progress: '', error: data.error || `Could not upload ${files[i].name}` });
-        loadCategory(activeCategory);
+        loadCreatives(activeType, activeCategory);
         return;
       }
     }
 
     setUploadStatus({ uploading: false, progress: '', error: '' });
-    loadCategory(activeCategory);
+    loadCreatives(activeType, activeCategory);
   }
 
   async function handleDelete(id) {
@@ -81,6 +89,9 @@ export default function CreativesLibraryPage() {
     });
   }
 
+  const typeLabel = TYPES.find((t) => t.key === activeType)?.label;
+  const categoryLabel = CATEGORIES.find((c) => c.key === activeCategory)?.label;
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar />
@@ -88,10 +99,27 @@ export default function CreativesLibraryPage() {
         <div className="mx-auto max-w-5xl">
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Creatives library</h1>
           <p className="mt-2 text-gray-500">
-            Marketing images shared with every advisor&apos;s Content Library, organized by insurance line.
+            Marketing content shared with every advisor&apos;s Content Library, organized by format and insurance
+            line.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-2 border-b border-gray-100 pb-4">
+          <div className="mt-8 flex flex-wrap gap-2">
+            {TYPES.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveType(t.key)}
+                className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                  activeType === t.key
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2 border-b border-gray-100 pb-4">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.key}
@@ -109,16 +137,18 @@ export default function CreativesLibraryPage() {
 
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <div>
-              <p className="font-semibold text-gray-900">{CATEGORIES.find((c) => c.key === activeCategory)?.label} folder</p>
+              <p className="font-semibold text-gray-900">
+                {typeLabel} · {categoryLabel}
+              </p>
               <p className="text-sm text-gray-500">
-                {loading ? 'Loading...' : `${creatives.length} image${creatives.length === 1 ? '' : 's'}`}
+                {loading ? 'Loading...' : `${creatives.length} item${creatives.length === 1 ? '' : 's'}`}
               </p>
             </div>
             <label className="cursor-pointer rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700">
-              {uploadStatus.uploading ? uploadStatus.progress : '+ Upload images'}
+              {uploadStatus.uploading ? uploadStatus.progress : `+ Upload ${activeType === 'reel' ? 'videos' : 'images'}`}
               <input
                 type="file"
-                accept="image/*"
+                accept={activeType === 'reel' ? 'video/*' : 'image/*'}
                 multiple
                 onChange={handleUpload}
                 disabled={uploadStatus.uploading}
@@ -132,7 +162,11 @@ export default function CreativesLibraryPage() {
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {creatives.map((creative) => (
               <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
-                <img src={creative.imageUrl} alt="" className="aspect-square w-full object-cover" />
+                {creative.type === 'reel' ? (
+                  <video src={creative.imageUrl} className="aspect-square w-full object-cover" muted controls />
+                ) : (
+                  <img src={creative.imageUrl} alt="" className="aspect-square w-full object-cover" />
+                )}
                 <button
                   onClick={() => handleDelete(creative._id)}
                   className="absolute right-2 top-2 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-bold text-red-500 opacity-0 shadow-sm transition hover:bg-white group-hover:opacity-100"
@@ -144,7 +178,7 @@ export default function CreativesLibraryPage() {
           </div>
 
           {!loading && creatives.length === 0 && (
-            <p className="mt-6 text-sm text-gray-400">No images in this folder yet — upload some above.</p>
+            <p className="mt-6 text-sm text-gray-400">Nothing here yet — upload some above.</p>
           )}
         </div>
       </main>

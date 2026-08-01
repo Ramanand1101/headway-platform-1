@@ -183,7 +183,9 @@ exports.generateMyContent = async (req, res, next) => {
   }
 };
 
-// POST /api/content/mine/draft  (advisor — AI draft, NOT saved; review before publish)
+// POST /api/content/mine/draft  (advisor — AI draft, NOT saved; free preview
+// before posting. Credits are only charged by publishMyDraft below, once
+// the advisor actually posts it.)
 exports.draftMyContent = async (req, res, next) => {
   try {
     const advisor = await Advisor.findById(req.user.advisorId);
@@ -199,12 +201,49 @@ exports.draftMyContent = async (req, res, next) => {
     const { topic } = req.body || {};
     const draft = await draftContent(advisor, topic);
 
+    res.json({ draft, aiCredits: advisor.aiCredits, planTier: advisor.planTier });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/content/mine/publish  (advisor — saves and publishes a
+// (possibly advisor-edited) AI draft from draftMyContent above. This is the
+// actual "posting" moment, so the 1 AI credit is charged here, not at draft
+// time.)
+exports.publishMyDraft = async (req, res, next) => {
+  try {
+    const advisor = await Advisor.findById(req.user.advisorId);
+    if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    const { title, body, imageUrl } = req.body || {};
+    if (!title || !body) {
+      return res.status(400).json({ error: 'Title and body are required' });
+    }
+
+    if (advisor.planTier !== 'premium' && advisor.aiCredits <= 0) {
+      return res.status(402).json({
+        error: 'No AI credits left. Upgrade to Premium for unlimited AI blog posts.',
+        creditsExhausted: true
+      });
+    }
+
+    const post = await ContentPost.create({
+      advisorId: advisor._id,
+      title,
+      body,
+      imageUrl,
+      status: 'published',
+      publishedAt: new Date(),
+      generatedBy: 'ai'
+    });
+
     if (advisor.planTier !== 'premium') {
       advisor.aiCredits -= 1;
       await advisor.save();
     }
 
-    res.json({ draft, aiCredits: advisor.aiCredits, planTier: advisor.planTier });
+    res.status(201).json({ post, aiCredits: advisor.aiCredits, planTier: advisor.planTier });
   } catch (err) {
     next(err);
   }

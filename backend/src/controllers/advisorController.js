@@ -5,7 +5,9 @@ const cloudinary = require('cloudinary').v2;
 const Advisor = require('../models/Advisor');
 const Testimonial = require('../models/Testimonial');
 const User = require('../models/User');
+const Creative = require('../models/Creative');
 const { generateProfileBlurb } = require('../services/contentGenerator');
+const { CONTENT_COSTS } = require('../config/pricing');
 
 // Subdomains that must never be assignable to an advisor — mirrors
 // frontend/middleware.js's RESERVED_SUBDOMAINS plus a couple of backend-only
@@ -392,32 +394,41 @@ exports.uploadContentLibraryImages = async (req, res, next) => {
 
 // POST /api/advisor/content-library/from-url — advisor unlocks a shared
 // creative (from the admin-curated library) straight to their own Content
-// Library by URL, without re-uploading the file. Costs 1 content credit —
-// the browsing grid shows these watermarked until unlocked this way.
+// Library, without re-uploading the file. Previewing is always free; this
+// endpoint is only called the moment the advisor actually shares or
+// downloads the item, and costs credits based on its type (image/carousel/
+// reel — see config/pricing.js). Already-unlocked items are free to
+// share/download again, so this only ever charges once per creative.
 exports.addContentLibraryImageFromUrl = async (req, res, next) => {
   try {
-    const { url } = req.body;
-    if (!url) {
-      return res.status(400).json({ error: 'Image url is required' });
+    const { creativeId } = req.body;
+    if (!creativeId) {
+      return res.status(400).json({ error: 'creativeId is required' });
     }
+
+    const creative = await Creative.findById(creativeId);
+    if (!creative) return res.status(404).json({ error: 'Creative not found' });
 
     const advisor = await Advisor.findById(req.user.advisorId);
     if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
 
-    if (advisor.contentCredits <= 0) {
+    const alreadyUnlocked = advisor.contentLibraryImages.includes(creative.imageUrl);
+    const cost = CONTENT_COSTS[creative.type] || CONTENT_COSTS.image;
+
+    if (!alreadyUnlocked && advisor.contentCredits < cost) {
       return res.status(402).json({
-        error: 'No content credits left. Recharge to unlock more images.',
+        error: `Not enough credits — this ${creative.type} costs ${cost} credits. Recharge to continue.`,
         creditsExhausted: true
       });
     }
 
-    if (!advisor.contentLibraryImages.includes(url)) {
-      advisor.contentLibraryImages.push(url);
-      advisor.contentCredits -= 1;
+    if (!alreadyUnlocked) {
+      advisor.contentLibraryImages.push(creative.imageUrl);
+      advisor.contentCredits -= cost;
     }
     await advisor.save();
 
-    res.json({ advisor });
+    res.json({ advisor, url: creative.imageUrl });
   } catch (err) {
     next(err);
   }

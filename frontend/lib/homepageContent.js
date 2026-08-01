@@ -144,33 +144,33 @@ export const defaultHomepageContent = {
   },
   pricing: {
     eyebrow: 'Credits and Recharge Plans',
-    heading: 'Start free. Recharge only when you publish.',
+    heading: 'Start free. Recharge only when you post.',
     paragraph:
-      'Every new advisor gets 50 free credits. Each activity — reel, carousel or image post — costs a flat 10 credits. When credits run out, recharge in seconds.',
+      'Credits are only spent when you actually share or download content — previewing is always free. An image costs 10 credits, a carousel 20 credits and a reel 30 credits.',
     plans: [
       {
         name: 'Starter',
-        amount: '₹500',
-        credits: '50 Credits · 5 posts',
+        amount: '₹249',
+        credits: '50 Credits',
         bonus: '',
-        features: ['Any mix of reels, carousels or images', 'Personalised with your identity', 'Credits valid for 3 months']
+        features: ['Good for 5 image posts', 'Personalised with your identity', 'Credits never expire']
       },
       {
         name: 'Growth',
-        amount: '₹1,000',
-        credits: '110 Credits · 11 posts',
-        bonus: '(+10% bonus)',
-        features: ['Roughly 2-3 posts every week', 'Priority content requests', 'Credits valid for 6 months']
+        amount: '₹499',
+        credits: '110 Credits',
+        bonus: '',
+        features: ['Mix of images, carousels or reels', 'Priority content requests', 'Credits never expire']
       },
       {
         name: 'Authority',
-        amount: '₹2,000',
-        credits: '240 Credits · 24 posts',
-        bonus: '(+20% bonus)',
-        features: ['Daily visibility, always-on presence', 'Monthly posting calendar included', 'Credits valid for 12 months']
+        amount: '₹999',
+        credits: '220 Credits',
+        bonus: '',
+        features: ['Daily visibility, always-on presence', 'Monthly posting calendar included', 'Credits never expire']
       }
     ],
-    note: "Simple credit rule: every activity costs 10 credits — whether it's a reel, a carousel or an image post. Your free 50 credits mean your first 5 posts cost nothing.",
+    note: 'Credits are charged per content type, only when you share or download: image = 10 credits, carousel = 20 credits, reel = 30 credits. Need more any time? Top up 50 extra credits for ₹249.',
     domainCrossSell: {
       title: 'Want your own domain? (www.yourname.com)',
       desc: 'Registration, DNS setup, SSL and connection to your microsite — fully handled for you',

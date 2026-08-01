@@ -9,6 +9,7 @@ import { decodeToken } from '../../../lib/auth';
 import { micrositeCopyDefaults } from '../../../lib/advisorMicrositeCopyDefaults';
 import { defaultVision, defaultMission } from '../../../lib/advisorMicrositeDefaults';
 import { watermarkedUrl } from '../../../lib/watermark';
+import ChatWidget from '../../../components/ChatWidget';
 
 function MenuIcon(props) {
   return (
@@ -39,16 +40,6 @@ function ProfileIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <path d="M17.25 19.5a5.25 5.25 0 0 0-10.5 0M12 12.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" />
-    </svg>
-  );
-}
-function SocialIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-      <circle cx="18" cy="5" r="3" />
-      <circle cx="6" cy="12" r="3" />
-      <circle cx="18" cy="19" r="3" />
-      <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
     </svg>
   );
 }
@@ -90,7 +81,6 @@ const navItems = [
   { key: 'overview', label: 'Overview', Icon: OverviewIcon },
   { key: 'website', label: 'My Website', Icon: WebsiteIcon },
   { key: 'profile', label: 'Edit Profile', Icon: ProfileIcon },
-  { key: 'social', label: 'Social Accounts', Icon: SocialIcon },
   { key: 'library', label: 'Content Library', Icon: LibraryIcon },
   { key: 'leads', label: 'My Leads', Icon: LeadsIcon },
   { key: 'recharge', label: 'Recharge Credits', Icon: RechargeIcon }
@@ -101,17 +91,12 @@ const profileInputClasses =
 const profileLabelClasses = 'text-sm font-semibold text-gray-700';
 
 const pricingPlans = [
-  { name: 'Starter', amount: '₹299', credits: '30 Credits', features: 'Creative images' },
-  { name: 'Growth', amount: '₹499', credits: '55 Credits', bonus: '(+10%)', features: 'Image + Carousel', popular: true },
-  { name: 'Authority', amount: '₹999', credits: '120 Credits', bonus: '(+20%)', features: 'Image + Carousel + Reel' }
+  { name: 'Starter', amount: '₹249', credits: '50 Credits', features: 'Images' },
+  { name: 'Growth', amount: '₹499', credits: '110 Credits', features: 'Images + Carousels', popular: true },
+  { name: 'Authority', amount: '₹999', credits: '220 Credits', features: 'Images + Carousels + Reels' }
 ];
 
-const socialPlatforms = [
-  { key: 'instagram', name: 'Instagram', desc: 'Reels, carousels and posts to your feed', color: 'bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600', available: true },
-  { key: 'facebook', name: 'Facebook', desc: 'Publish straight to your Facebook Page', color: 'bg-[#1877F2]', available: true },
-  { key: 'linkedin', name: 'LinkedIn', desc: 'Build authority with professionals', color: 'bg-[#0A66C2]', available: false },
-  { key: 'youtube', name: 'YouTube', desc: 'Publish Shorts, grow with video', color: 'bg-[#FF0000]', available: false }
-];
+const extraCreditsPack = { name: 'Extra Credits', amount: '₹249', credits: '50 Credits', features: 'Top up any time' };
 
 const statusStyles = {
   new: 'bg-ia-gold-tint/40 text-ia-blue',
@@ -128,7 +113,7 @@ function formatDate(dateString) {
   });
 }
 
-const tabKeys = ['overview', 'website', 'profile', 'social', 'library', 'leads', 'recharge'];
+const tabKeys = ['overview', 'website', 'profile', 'library', 'leads', 'recharge'];
 
 // Admin-only text overrides, grouped to match the microsite sections they
 // belong to. Keys must match lib/advisorMicrositeCopyDefaults.js.
@@ -290,6 +275,11 @@ export default function AdvisorDashboardPage() {
   const [reviewStatus, setReviewStatus] = useState({ savingId: '', adding: false, error: '' });
   const [reviewPhotoStatus, setReviewPhotoStatus] = useState({});
   const [profileStatus, setProfileStatus] = useState({ saving: false, error: '', success: '' });
+  const [myBlogPosts, setMyBlogPosts] = useState([]);
+  const [blogTopic, setBlogTopic] = useState('');
+  const [blogDraft, setBlogDraft] = useState(null);
+  const [blogManualForm, setBlogManualForm] = useState({ title: '', body: '' });
+  const [blogStatus, setBlogStatus] = useState({ drafting: false, publishing: false, error: '' });
   const [slugEditorOpen, setSlugEditorOpen] = useState(false);
   const [slugInput, setSlugInput] = useState('');
   const [slugCheck, setSlugCheck] = useState({ checking: false, available: null, reason: '', suggestions: [] });
@@ -309,6 +299,7 @@ export default function AdvisorDashboardPage() {
   const previewIframeRef = useRef(null);
   const [previewReadyTick, setPreviewReadyTick] = useState(0);
 
+  const [creativeType, setCreativeType] = useState('image');
   const [creativeCategory, setCreativeCategory] = useState('life');
   const [creatives, setCreatives] = useState([]);
   const [creativesLoading, setCreativesLoading] = useState(false);
@@ -318,31 +309,6 @@ export default function AdvisorDashboardPage() {
   const [companyDirectoryOpen, setCompanyDirectoryOpen] = useState(false);
   const [companyDirectoryCategory, setCompanyDirectoryCategory] = useState('life');
   const [companyDirectoryLoading, setCompanyDirectoryLoading] = useState(false);
-
-  const [igMedia, setIgMedia] = useState([]);
-  const [igInsights, setIgInsights] = useState([]);
-  const [igDataErrors, setIgDataErrors] = useState({ media: '', insights: '', conversations: '' });
-  const [igPublishForm, setIgPublishForm] = useState({ caption: '', file: null });
-  const [igPublishStatus, setIgPublishStatus] = useState({ posting: false, error: '' });
-  const [igComments, setIgComments] = useState({});
-  const [igCommentsOpenFor, setIgCommentsOpenFor] = useState(null);
-  const [igReplyDrafts, setIgReplyDrafts] = useState({});
-  const [igConversations, setIgConversations] = useState([]);
-  const [igMessages, setIgMessages] = useState({});
-  const [igConversationOpenFor, setIgConversationOpenFor] = useState(null);
-  const [igMessageDrafts, setIgMessageDrafts] = useState({});
-
-  const [fbPosts, setFbPosts] = useState([]);
-  const [fbInsights, setFbInsights] = useState([]);
-  const [fbPublishForm, setFbPublishForm] = useState({ caption: '', file: null });
-  const [fbPublishStatus, setFbPublishStatus] = useState({ posting: false, error: '' });
-  const [fbComments, setFbComments] = useState({});
-  const [fbCommentsOpenFor, setFbCommentsOpenFor] = useState(null);
-  const [fbReplyDrafts, setFbReplyDrafts] = useState({});
-  const [fbConversations, setFbConversations] = useState([]);
-  const [fbMessages, setFbMessages] = useState({});
-  const [fbConversationOpenFor, setFbConversationOpenFor] = useState(null);
-  const [fbMessageDrafts, setFbMessageDrafts] = useState({});
 
   function authHeaders(extra = {}) {
     const token = localStorage.getItem('token');
@@ -428,18 +394,6 @@ export default function AdvisorDashboardPage() {
     }
     window.location.href = '/admin/advisors';
   }
-
-  useEffect(() => {
-    if (advisor?.instagram?.connected) {
-      loadInstagramData();
-    }
-  }, [advisor?.instagram?.connected]);
-
-  useEffect(() => {
-    if (advisor?.facebook?.connected) {
-      loadFacebookData();
-    }
-  }, [advisor?.facebook?.connected]);
 
   useEffect(() => {
     if (!libraryPreviewUrl) return;
@@ -784,6 +738,81 @@ export default function AdvisorDashboardPage() {
     setPhotoStatus({ uploading: false, error: '' });
   }
 
+  // Advisor-facing Blogs — draftMyContent (free preview) then publishMyDraft
+  // (charges 1 AI credit, only at the moment of actually posting).
+  useEffect(() => {
+    if (activeTab !== 'profile') return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/mine`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((data) => setMyBlogPosts(data.posts || []));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  async function handleBlogDraft() {
+    setBlogStatus({ drafting: false, publishing: false, error: '' });
+    setBlogStatus((s) => ({ ...s, drafting: true }));
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/mine/draft`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ topic: blogTopic })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setBlogStatus({ drafting: false, publishing: false, error: data.error || 'Could not generate a draft' });
+      return;
+    }
+    setBlogDraft(data.draft);
+    setBlogStatus({ drafting: false, publishing: false, error: '' });
+  }
+
+  async function handleBlogPublish() {
+    if (!blogDraft) return;
+    setBlogStatus((s) => ({ ...s, publishing: true, error: '' }));
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/mine/publish`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(blogDraft)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setBlogStatus({ drafting: false, publishing: false, error: data.error || 'Could not post this' });
+      return;
+    }
+    setAdvisor((prev) => (prev ? { ...prev, aiCredits: data.aiCredits } : prev));
+    setMyBlogPosts((prev) => [data.post, ...prev]);
+    setBlogDraft(null);
+    setBlogTopic('');
+    setBlogStatus({ drafting: false, publishing: false, error: '' });
+    showToast('Posted to your blog.');
+  }
+
+  async function handleBlogManualPublish() {
+    if (!blogManualForm.title || !blogManualForm.body) return;
+    setBlogStatus((s) => ({ ...s, publishing: true, error: '' }));
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/mine/manual`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(blogManualForm)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setBlogStatus({ drafting: false, publishing: false, error: data.error || 'Could not post this' });
+      return;
+    }
+    setMyBlogPosts((prev) => [data.post, ...prev]);
+    setBlogManualForm({ title: '', body: '' });
+    setBlogStatus({ drafting: false, publishing: false, error: '' });
+    showToast('Posted to your blog.');
+  }
+
+  async function handleBlogDelete(id) {
+    setMyBlogPosts((prev) => prev.filter((p) => p._id !== id));
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/content/mine/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+  }
+
   async function handleMicrositeImageChange(section, e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -983,44 +1012,99 @@ export default function AdvisorDashboardPage() {
     }
   }
 
-  // Admin-curated creatives (Life/Health/General), shared with
-  // every advisor. Loaded lazily when the Content Library tab is open.
+  // Admin-curated creatives (Images/Carousels/Reels × Life/Health/General),
+  // shared with every advisor. Loaded lazily when the Content Library tab is open.
   useEffect(() => {
     if (activeTab !== 'library') return;
     setCreativesLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives?category=${creativeCategory}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives?type=${creativeType}&category=${creativeCategory}`, {
       headers: authHeaders()
     })
       .then((res) => res.json())
       .then((data) => setCreatives(data.creatives || []))
       .finally(() => setCreativesLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, creativeCategory]);
+  }, [activeTab, creativeType, creativeCategory]);
 
-  async function addCreativeToLibrary(creative) {
+  const CREATIVE_COSTS = { image: 10, carousel: 20, reel: 30 };
+
+  function isCreativeUnlocked(creative) {
+    return libraryImages.includes(creative.imageUrl);
+  }
+
+  // Charges credits (by content type) the first time this creative is
+  // shared or downloaded — never before. Already-unlocked creatives are
+  // free to share/download again. Returns the creative's real (clean) URL
+  // on success so the caller can proceed with the share/download action, or
+  // null if the advisor cancelled/couldn't afford it.
+  async function unlockCreativeForAction(creative) {
+    if (isCreativeUnlocked(creative)) return creative.imageUrl;
+
+    const cost = CREATIVE_COSTS[creative.type] || CREATIVE_COSTS.image;
+    if (!window.confirm(`This ${creative.type} costs ${cost} credits. Continue?`)) return null;
+
     setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'adding' }));
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/content-library/from-url`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ url: creative.imageUrl })
+      body: JSON.stringify({ creativeId: creative._id })
     });
     const data = await res.json();
     if (res.ok) {
       setAdvisor(data.advisor);
       setLibraryImages(data.advisor.contentLibraryImages || []);
       setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'added' }));
-      // If this creative is open in the preview modal, swap it to the clean
-      // unlocked image and drop the Unlock button instead of closing the modal.
-      setPreviewCreative((prev) => {
-        if (prev?._id === creative._id) {
-          setLibraryPreviewUrl(creative.imageUrl);
-          return null;
-        }
-        return prev;
-      });
+      return data.url;
+    }
+
+    showToast(data.error || 'Could not unlock this content', true);
+    setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
+    return null;
+  }
+
+  async function handleCreativeDownload(creative) {
+    const url = await unlockCreativeForAction(creative);
+    if (!url) return;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = '';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  async function handleCreativeShare(creative, platform) {
+    const url = await unlockCreativeForAction(creative);
+    if (!url) return;
+
+    if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
+    } else if (platform === 'facebook') {
+      window.open(
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+        '_blank',
+        'noopener,noreferrer'
+      );
+    } else if (platform === 'linkedin') {
+      window.open(
+        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+        '_blank',
+        'noopener,noreferrer'
+      );
     } else {
-      showToast(data.error || 'Could not unlock this image', true);
-      setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
+      // Instagram/YouTube have no web share intent for posting external
+      // media — download the file and point the advisor at the app instead.
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = '';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      showToast(`Saved — open ${platform === 'instagram' ? 'Instagram' : 'YouTube'} to post it.`);
     }
   }
 
@@ -1131,324 +1215,6 @@ export default function AdvisorDashboardPage() {
   function showToast(msg, warn = false) {
     setToast({ show: true, msg, warn });
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 4200);
-  }
-
-  const metricLabels = {
-    reach: 'Reach',
-    profile_views: 'Profile views',
-    page_impressions: 'Page impressions',
-    page_engaged_users: 'Engaged users'
-  };
-  function metricLabel(name) {
-    return metricLabels[name] || name;
-  }
-
-  function connectInstagram() {
-    if (!process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID) {
-      showToast('Instagram connect is being configured — check back soon.', true);
-      return;
-    }
-    const params = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID,
-      redirect_uri: process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI,
-      scope:
-        'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights',
-      response_type: 'code'
-    });
-    window.location.href = `https://www.instagram.com/oauth/authorize?${params.toString()}`;
-  }
-
-  function connectFacebook() {
-    if (!process.env.NEXT_PUBLIC_FACEBOOK_APP_ID) {
-      showToast('Facebook connect is being configured — check back soon.', true);
-      return;
-    }
-    const params = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
-      redirect_uri: process.env.NEXT_PUBLIC_FACEBOOK_REDIRECT_URI,
-      scope:
-        'pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content,pages_manage_metadata,pages_messaging',
-      response_type: 'code'
-    });
-    window.location.href = `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`;
-  }
-
-  async function disconnectFacebook() {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/disconnect`, {
-      method: 'POST',
-      headers: authHeaders()
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setAdvisor(data.advisor);
-      setFbPosts([]);
-      setFbInsights([]);
-      showToast('Facebook disconnected.');
-    }
-  }
-
-  async function disconnectInstagram() {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/disconnect`, {
-      method: 'POST',
-      headers: authHeaders()
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setAdvisor(data.advisor);
-      setIgMedia([]);
-      setIgInsights([]);
-      showToast('Instagram disconnected.');
-    }
-  }
-
-  function loadInstagramData() {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/media`, { headers: authHeaders() })
-      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-      .then(({ ok, data }) => {
-        setIgMedia(data.media || []);
-        setIgDataErrors((prev) => ({ ...prev, media: ok ? '' : data.error || 'Could not load posts' }));
-      });
-
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/insights`, { headers: authHeaders() })
-      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-      .then(({ ok, data }) => {
-        setIgInsights(data.insights || []);
-        setIgDataErrors((prev) => ({ ...prev, insights: ok ? data.error || '' : data.error || 'Could not load insights' }));
-      });
-
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/conversations`, { headers: authHeaders() })
-      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-      .then(({ ok, data }) => {
-        setIgConversations(data.conversations || []);
-        setIgDataErrors((prev) => ({
-          ...prev,
-          conversations: ok ? '' : data.error || 'Could not load conversations'
-        }));
-      });
-  }
-
-  async function handleIgPublish(e) {
-    e.preventDefault();
-    if (!igPublishForm.file) return;
-
-    setIgPublishStatus({ posting: true, error: '' });
-
-    const formData = new FormData();
-    formData.append('image', igPublishForm.file);
-    formData.append('caption', igPublishForm.caption);
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/publish`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: formData
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setIgPublishStatus({ posting: false, error: data.error || 'Could not publish post' });
-      return;
-    }
-
-    setIgPublishStatus({ posting: false, error: '' });
-    setIgPublishForm({ caption: '', file: null });
-    showToast('Published to Instagram.');
-    loadInstagramData();
-  }
-
-  function toggleComments(mediaId) {
-    if (igCommentsOpenFor === mediaId) {
-      setIgCommentsOpenFor(null);
-      return;
-    }
-    setIgCommentsOpenFor(mediaId);
-    if (!igComments[mediaId]) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/media/${mediaId}/comments`, {
-        headers: authHeaders()
-      })
-        .then((res) => res.json())
-        .then((data) => setIgComments((prev) => ({ ...prev, [mediaId]: data.comments || [] })));
-    }
-  }
-
-  async function handleReplySubmit(commentId) {
-    const message = (igReplyDrafts[commentId] || '').trim();
-    if (!message) return;
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/comments/${commentId}/reply`,
-      {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ message })
-      }
-    );
-
-    if (res.ok) {
-      setIgReplyDrafts((d) => ({ ...d, [commentId]: '' }));
-      showToast('Reply sent.');
-    } else {
-      showToast('Could not send reply.', true);
-    }
-  }
-
-  function toggleConversation(conversationId) {
-    if (igConversationOpenFor === conversationId) {
-      setIgConversationOpenFor(null);
-      return;
-    }
-    setIgConversationOpenFor(conversationId);
-    if (!igMessages[conversationId]) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/conversations/${conversationId}/messages`, {
-        headers: authHeaders()
-      })
-        .then((res) => res.json())
-        .then((data) => setIgMessages((prev) => ({ ...prev, [conversationId]: data.messages || [] })));
-    }
-  }
-
-  async function handleSendMessage(conversationId, recipientId) {
-    const message = (igMessageDrafts[conversationId] || '').trim();
-    if (!message || !recipientId) return;
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/conversations/${conversationId}/reply`,
-      {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ recipientId, message })
-      }
-    );
-
-    if (res.ok) {
-      setIgMessageDrafts((d) => ({ ...d, [conversationId]: '' }));
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/instagram/conversations/${conversationId}/messages`, {
-        headers: authHeaders()
-      })
-        .then((r) => r.json())
-        .then((data) => setIgMessages((prev) => ({ ...prev, [conversationId]: data.messages || [] })));
-      showToast('Message sent.');
-    } else {
-      showToast('Could not send message.', true);
-    }
-  }
-
-  function loadFacebookData() {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/posts`, { headers: authHeaders() })
-      .then((res) => res.json())
-      .then((data) => setFbPosts(data.posts || []));
-
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/insights`, { headers: authHeaders() })
-      .then((res) => res.json())
-      .then((data) => setFbInsights(data.insights || []));
-
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/conversations`, { headers: authHeaders() })
-      .then((res) => res.json())
-      .then((data) => setFbConversations(data.conversations || []));
-  }
-
-  async function handleFbPublish(e) {
-    e.preventDefault();
-    if (!fbPublishForm.file) return;
-
-    setFbPublishStatus({ posting: true, error: '' });
-
-    const formData = new FormData();
-    formData.append('image', fbPublishForm.file);
-    formData.append('caption', fbPublishForm.caption);
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/publish`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: formData
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setFbPublishStatus({ posting: false, error: data.error || 'Could not publish post' });
-      return;
-    }
-
-    setFbPublishStatus({ posting: false, error: '' });
-    setFbPublishForm({ caption: '', file: null });
-    showToast('Published to Facebook.');
-    loadFacebookData();
-  }
-
-  function toggleFbComments(postId) {
-    if (fbCommentsOpenFor === postId) {
-      setFbCommentsOpenFor(null);
-      return;
-    }
-    setFbCommentsOpenFor(postId);
-    if (!fbComments[postId]) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/posts/${postId}/comments`, {
-        headers: authHeaders()
-      })
-        .then((res) => res.json())
-        .then((data) => setFbComments((prev) => ({ ...prev, [postId]: data.comments || [] })));
-    }
-  }
-
-  async function handleFbReplySubmit(commentId) {
-    const message = (fbReplyDrafts[commentId] || '').trim();
-    if (!message) return;
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/comments/${commentId}/reply`,
-      {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ message })
-      }
-    );
-
-    if (res.ok) {
-      setFbReplyDrafts((d) => ({ ...d, [commentId]: '' }));
-      showToast('Reply sent.');
-    } else {
-      showToast('Could not send reply.', true);
-    }
-  }
-
-  function toggleFbConversation(conversationId) {
-    if (fbConversationOpenFor === conversationId) {
-      setFbConversationOpenFor(null);
-      return;
-    }
-    setFbConversationOpenFor(conversationId);
-    if (!fbMessages[conversationId]) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/conversations/${conversationId}/messages`, {
-        headers: authHeaders()
-      })
-        .then((res) => res.json())
-        .then((data) => setFbMessages((prev) => ({ ...prev, [conversationId]: data.messages || [] })));
-    }
-  }
-
-  async function handleFbSendMessage(conversationId, recipientId) {
-    const message = (fbMessageDrafts[conversationId] || '').trim();
-    if (!message || !recipientId) return;
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/conversations/${conversationId}/reply`,
-      {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ recipientId, message })
-      }
-    );
-
-    if (res.ok) {
-      setFbMessageDrafts((d) => ({ ...d, [conversationId]: '' }));
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/facebook/conversations/${conversationId}/messages`, {
-        headers: authHeaders()
-      })
-        .then((r) => r.json())
-        .then((data) => setFbMessages((prev) => ({ ...prev, [conversationId]: data.messages || [] })));
-      showToast('Message sent.');
-    } else {
-      showToast('Could not send message.', true);
-    }
   }
 
   function logout() {
@@ -1773,6 +1539,132 @@ export default function AdvisorDashboardPage() {
                     Admin tip: click any text or photo in the live preview on the right to jump straight to it here.
                   </p>
                 )}
+
+                <div className="mb-7 rounded-2xl border border-gray-100 bg-white p-7 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-extrabold text-ia-navy">Blogs</h3>
+                    <span className="text-xs font-bold text-gray-500">
+                      {advisor?.aiCredits ?? 0} AI credits left
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Write a post for your microsite&apos;s blog. Drafting/preview is free — 1 credit is charged
+                    only when you post it.
+                  </p>
+
+                  {!blogDraft ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <input
+                        value={blogTopic}
+                        onChange={(e) => setBlogTopic(e.target.value)}
+                        placeholder="Optional topic, e.g. 'Why term insurance matters'"
+                        className={`min-w-[220px] flex-1 ${profileInputClasses}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleBlogDraft}
+                        disabled={blogStatus.drafting}
+                        className="flex-none rounded-xl bg-ia-blue px-5 py-2.5 text-sm font-bold text-white transition hover:bg-ia-blue-soft disabled:opacity-60"
+                      >
+                        {blogStatus.drafting ? 'Writing...' : '✨ Write with AI (free preview)'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      {blogDraft.imageUrl && (
+                        <img src={blogDraft.imageUrl} alt="" className="max-h-56 w-full rounded-lg object-cover" />
+                      )}
+                      <input
+                        value={blogDraft.title}
+                        onChange={(e) => setBlogDraft((d) => ({ ...d, title: e.target.value }))}
+                        className={profileInputClasses}
+                      />
+                      <textarea
+                        value={blogDraft.body}
+                        onChange={(e) => setBlogDraft((d) => ({ ...d, body: e.target.value }))}
+                        rows={6}
+                        className={profileInputClasses}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={handleBlogPublish}
+                          disabled={blogStatus.publishing}
+                          className="rounded-xl bg-ia-green px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+                        >
+                          {blogStatus.publishing ? 'Posting...' : 'Post it (1 credit)'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBlogDraft(null)}
+                          className="rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-bold text-gray-600 transition hover:bg-gray-200"
+                        >
+                          Discard
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-xs font-bold text-ia-blue">
+                      Or write manually (always free)
+                    </summary>
+                    <div className="mt-3 space-y-2.5">
+                      <input
+                        value={blogManualForm.title}
+                        onChange={(e) => setBlogManualForm((f) => ({ ...f, title: e.target.value }))}
+                        placeholder="Title"
+                        className={profileInputClasses}
+                      />
+                      <textarea
+                        value={blogManualForm.body}
+                        onChange={(e) => setBlogManualForm((f) => ({ ...f, body: e.target.value }))}
+                        placeholder="Write your post..."
+                        rows={5}
+                        className={profileInputClasses}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleBlogManualPublish}
+                        disabled={blogStatus.publishing || !blogManualForm.title || !blogManualForm.body}
+                        className="rounded-xl bg-ia-navy px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        Post it (free)
+                      </button>
+                    </div>
+                  </details>
+
+                  {blogStatus.error && <p className="mt-3 text-xs text-red-500">{blogStatus.error}</p>}
+
+                  {myBlogPosts.length > 0 && (
+                    <div className="mt-6 border-t border-gray-100 pt-4">
+                      <h4 className="mb-2 text-xs font-extrabold uppercase tracking-wide text-gray-400">
+                        Your posts
+                      </h4>
+                      <div className="space-y-2">
+                        {myBlogPosts.map((post) => (
+                          <div
+                            key={post._id}
+                            className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold">{post.title}</p>
+                              <p className="text-[0.65rem] uppercase tracking-wide text-gray-400">{post.status}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleBlogDelete(post._id)}
+                              className="flex-none text-xs font-bold text-red-500 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="rounded-2xl border border-gray-100 bg-white p-7 shadow-sm">
                   <div className="flex items-center gap-5">
                     {advisor?.photoUrl ? (
@@ -2429,7 +2321,7 @@ export default function AdvisorDashboardPage() {
                           <input
                             value={profileForm.instagramUrl}
                             onChange={(e) => updateProfileField('instagramUrl', e.target.value)}
-                            placeholder="Optional — separate from Connect Instagram above"
+                            placeholder="https://instagram.com/your-handle"
                             className={`mt-1.5 ${profileInputClasses}`}
                           />
                         </div>
@@ -2762,461 +2654,38 @@ export default function AdvisorDashboardPage() {
               </section>
               )}
 
-              {/* SOCIAL ACCOUNTS */}
-              {activeTab === 'social' && (
-              <section id="social" className="mb-12 scroll-mt-24">
-                <h2 className="mb-1.5 text-lg font-extrabold">Social Accounts</h2>
-                <p className="mb-5 text-sm text-gray-500">
-                  Connect once, publish forever. Publishing happens only on your instruction.
-                </p>
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                  {socialPlatforms.map((p) => {
-                    const isInstagram = p.key === 'instagram';
-                    const isFacebook = p.key === 'facebook';
-                    const connected =
-                      (isInstagram && advisor?.instagram?.connected) ||
-                      (isFacebook && advisor?.facebook?.connected);
-                    return (
-                      <div
-                        key={p.key}
-                        className="relative rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm transition-transform duration-300 hover:-translate-y-1.5"
-                      >
-                        <span
-                          className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[0.6rem] font-extrabold tracking-wide ${
-                            connected ? 'bg-green-50 text-ia-green' : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {connected ? 'CONNECTED' : p.available ? 'SETUP NEEDED' : 'COMING SOON'}
-                        </span>
-                        <div className="mx-auto mb-3 grid h-14 w-14 place-items-center overflow-hidden rounded-2xl shadow-lg">
-                          {socialIcons[p.key] && (() => {
-                            const Icon = socialIcons[p.key];
-                            return <Icon className="h-14 w-14" />;
-                          })()}
-                        </div>
-                        <h4 className="text-sm font-bold">{p.name}</h4>
-                        <p className="mt-1 min-h-[32px] text-xs text-gray-500">
-                          {connected
-                            ? isInstagram
-                              ? `@${advisor.instagram.username}`
-                              : advisor.facebook.pageName
-                            : p.desc}
-                        </p>
-                        {isInstagram || isFacebook ? (
-                          connected ? (
-                            <button
-                              type="button"
-                              onClick={isInstagram ? disconnectInstagram : disconnectFacebook}
-                              className="mt-3.5 w-full rounded-xl bg-red-50 py-2.5 text-xs font-bold text-red-500 transition hover:bg-red-100"
-                            >
-                              Disconnect
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={isInstagram ? connectInstagram : connectFacebook}
-                              className="mt-3.5 w-full rounded-xl bg-ia-blue py-2.5 text-xs font-bold text-white transition hover:bg-ia-blue-soft"
-                            >
-                              Connect {p.name}
-                            </button>
-                          )
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => showToast(`${p.name} publishing is coming soon.`, true)}
-                            className="mt-3.5 w-full rounded-xl bg-gray-100 py-2.5 text-xs font-bold transition hover:bg-gray-200"
-                          >
-                            Notify Me
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {advisor?.instagram?.connected && (
-                  <div className="mt-8 space-y-6">
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">Insights</h3>
-                      {igDataErrors.insights && (
-                        <p className="mb-3 text-xs text-red-500">{igDataErrors.insights}</p>
-                      )}
-                      {igInsights.length === 0 ? (
-                        <p className="text-xs text-gray-400">No insights available yet.</p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                          {igInsights.map((metric) => (
-                            <div key={metric.name} className="rounded-xl bg-gray-50 p-4 text-center">
-                              <p className="text-2xl font-extrabold text-ia-navy">
-                                {metric.values?.[0]?.value ?? '—'}
-                              </p>
-                              <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wide text-gray-400">
-                                {metricLabel(metric.name)}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">New Instagram Post</h3>
-                      <form onSubmit={handleIgPublish} className="space-y-3">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => setIgPublishForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
-                          className="block w-full text-xs text-gray-500"
-                        />
-                        <p className="text-[0.65rem] text-gray-400">Recommended size: 1080×1080px, square (Instagram feed format)</p>
-                        <textarea
-                          value={igPublishForm.caption}
-                          onChange={(e) => setIgPublishForm((f) => ({ ...f, caption: e.target.value }))}
-                          placeholder="Write a caption..."
-                          rows={3}
-                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-ia-blue"
-                        />
-                        <button
-                          type="submit"
-                          disabled={igPublishStatus.posting || !igPublishForm.file}
-                          className="rounded-xl bg-ia-blue px-5 py-2.5 text-xs font-bold text-white disabled:opacity-60"
-                        >
-                          {igPublishStatus.posting ? 'Publishing...' : 'Publish to Instagram'}
-                        </button>
-                        {igPublishStatus.error && <p className="text-xs text-red-500">{igPublishStatus.error}</p>}
-                      </form>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">Recent Posts</h3>
-                      {igDataErrors.media && <p className="mb-3 text-xs text-red-500">{igDataErrors.media}</p>}
-                      {igMedia.length === 0 ? (
-                        <p className="text-xs text-gray-400">No posts yet.</p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                          {igMedia.map((m) => (
-                            <div key={m.id} className="overflow-hidden rounded-xl border border-gray-100">
-                              {m.media_url && (
-                                <img
-                                  src={m.thumbnail_url || m.media_url}
-                                  alt=""
-                                  className="aspect-square w-full object-cover"
-                                />
-                              )}
-                              <div className="p-3">
-                                <p className="line-clamp-2 text-xs text-gray-600">{m.caption || '(no caption)'}</p>
-                                <p className="mt-1.5 text-[0.65rem] text-gray-400">
-                                  ❤️ {m.like_count ?? 0} · 💬 {m.comments_count ?? 0}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleComments(m.id)}
-                                  className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-1.5 text-[0.65rem] font-bold hover:bg-gray-200"
-                                >
-                                  {igCommentsOpenFor === m.id ? 'Hide comments' : 'View comments'}
-                                </button>
-
-                                {igCommentsOpenFor === m.id && (
-                                  <div className="mt-3 space-y-2.5 border-t border-gray-100 pt-3">
-                                    {(igComments[m.id] || []).length === 0 ? (
-                                      <p className="text-xs text-gray-400">No comments yet.</p>
-                                    ) : (
-                                      igComments[m.id].map((c) => (
-                                        <div key={c.id} className="rounded-lg bg-gray-50 p-3">
-                                          <p className="text-xs">
-                                            <span className="font-bold">@{c.username}</span> {c.text}
-                                          </p>
-                                          <div className="mt-2 flex gap-2">
-                                            <input
-                                              value={igReplyDrafts[c.id] || ''}
-                                              onChange={(e) =>
-                                                setIgReplyDrafts((d) => ({ ...d, [c.id]: e.target.value }))
-                                              }
-                                              placeholder="Reply..."
-                                              className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-ia-blue"
-                                            />
-                                            <button
-                                              type="button"
-                                              onClick={() => handleReplySubmit(c.id)}
-                                              className="flex-none rounded-lg bg-ia-blue px-3 py-1.5 text-xs font-bold text-white"
-                                            >
-                                              Reply
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">Messages</h3>
-                      {igDataErrors.conversations && (
-                        <p className="mb-3 text-xs text-red-500">{igDataErrors.conversations}</p>
-                      )}
-                      {igConversations.length === 0 ? (
-                        <p className="text-xs text-gray-400">No conversations yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {igConversations.map((c) => (
-                            <div key={c.id} className="rounded-xl border border-gray-100 p-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="min-w-0 flex-1 truncate text-xs font-bold">
-                                  @{c.participant?.username || 'Unknown user'}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleConversation(c.id)}
-                                  className="flex-none rounded-lg bg-gray-100 px-3 py-1.5 text-[0.65rem] font-bold hover:bg-gray-200"
-                                >
-                                  {igConversationOpenFor === c.id ? 'Hide' : 'Open'}
-                                </button>
-                              </div>
-
-                              {igConversationOpenFor === c.id && (
-                                <div className="mt-3 space-y-2.5 border-t border-gray-100 pt-3">
-                                  {(igMessages[c.id] || []).length === 0 ? (
-                                    <p className="text-xs text-gray-400">No messages yet.</p>
-                                  ) : (
-                                    igMessages[c.id]
-                                      .slice()
-                                      .reverse()
-                                      .map((m) => (
-                                        <div key={m.id} className="rounded-lg bg-gray-50 p-3">
-                                          <p className="text-xs">
-                                            <span className="font-bold">@{m.from?.username}</span> {m.message}
-                                          </p>
-                                        </div>
-                                      ))
-                                  )}
-                                  <div className="mt-2 flex gap-2">
-                                    <input
-                                      value={igMessageDrafts[c.id] || ''}
-                                      onChange={(e) =>
-                                        setIgMessageDrafts((d) => ({ ...d, [c.id]: e.target.value }))
-                                      }
-                                      placeholder="Reply..."
-                                      className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-ia-blue"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSendMessage(c.id, c.participant?.id)}
-                                      className="rounded-lg bg-ia-blue px-3 py-1.5 text-xs font-bold text-white"
-                                    >
-                                      Send
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {advisor?.facebook?.connected && (
-                  <div className="mt-8 space-y-6">
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">Insights</h3>
-                      {fbInsights.length === 0 ? (
-                        <p className="text-xs text-gray-400">No insights available yet.</p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                          {fbInsights.map((metric) => (
-                            <div key={metric.name} className="rounded-xl bg-gray-50 p-4 text-center">
-                              <p className="text-2xl font-extrabold text-ia-navy">
-                                {metric.values?.[0]?.value ?? '—'}
-                              </p>
-                              <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wide text-gray-400">
-                                {metricLabel(metric.name)}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">New Facebook Post</h3>
-                      <form onSubmit={handleFbPublish} className="space-y-3">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => setFbPublishForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
-                          className="block w-full text-xs text-gray-500"
-                        />
-                        <textarea
-                          value={fbPublishForm.caption}
-                          onChange={(e) => setFbPublishForm((f) => ({ ...f, caption: e.target.value }))}
-                          placeholder="Write a caption..."
-                          rows={3}
-                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-ia-blue"
-                        />
-                        <button
-                          type="submit"
-                          disabled={fbPublishStatus.posting || !fbPublishForm.file}
-                          className="rounded-xl bg-ia-blue px-5 py-2.5 text-xs font-bold text-white disabled:opacity-60"
-                        >
-                          {fbPublishStatus.posting ? 'Publishing...' : 'Publish to Facebook'}
-                        </button>
-                        {fbPublishStatus.error && <p className="text-xs text-red-500">{fbPublishStatus.error}</p>}
-                      </form>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">Recent Posts</h3>
-                      {fbPosts.length === 0 ? (
-                        <p className="text-xs text-gray-400">No posts yet.</p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                          {fbPosts.map((post) => (
-                            <div key={post.id} className="overflow-hidden rounded-xl border border-gray-100">
-                              {post.full_picture && (
-                                <img src={post.full_picture} alt="" className="aspect-square w-full object-cover" />
-                              )}
-                              <div className="p-3">
-                                <p className="line-clamp-2 text-xs text-gray-600">{post.message || '(no caption)'}</p>
-                                <p className="mt-1.5 text-[0.65rem] text-gray-400">
-                                  👍 {post.likes?.summary?.total_count ?? 0} · 💬{' '}
-                                  {post.comments?.summary?.total_count ?? 0}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleFbComments(post.id)}
-                                  className="mt-2 w-full rounded-lg bg-gray-100 px-3 py-1.5 text-[0.65rem] font-bold hover:bg-gray-200"
-                                >
-                                  {fbCommentsOpenFor === post.id ? 'Hide comments' : 'View comments'}
-                                </button>
-
-                                {fbCommentsOpenFor === post.id && (
-                                  <div className="mt-3 space-y-2.5 border-t border-gray-100 pt-3">
-                                    {(fbComments[post.id] || []).length === 0 ? (
-                                      <p className="text-xs text-gray-400">No comments yet.</p>
-                                    ) : (
-                                      fbComments[post.id].map((c) => (
-                                        <div key={c.id} className="rounded-lg bg-gray-50 p-3">
-                                          <p className="text-xs">
-                                            <span className="font-bold">{c.from?.name || 'Someone'}</span>{' '}
-                                            {c.message}
-                                          </p>
-                                          <div className="mt-2 flex gap-2">
-                                            <input
-                                              value={fbReplyDrafts[c.id] || ''}
-                                              onChange={(e) =>
-                                                setFbReplyDrafts((d) => ({ ...d, [c.id]: e.target.value }))
-                                              }
-                                              placeholder="Reply..."
-                                              className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-ia-blue"
-                                            />
-                                            <button
-                                              type="button"
-                                              onClick={() => handleFbReplySubmit(c.id)}
-                                              className="flex-none rounded-lg bg-ia-blue px-3 py-1.5 text-xs font-bold text-white"
-                                            >
-                                              Reply
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 text-sm font-extrabold">Messages</h3>
-                      {fbConversations.length === 0 ? (
-                        <p className="text-xs text-gray-400">No conversations yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {fbConversations.map((c) => (
-                            <div key={c.id} className="rounded-xl border border-gray-100 p-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="min-w-0 flex-1 truncate text-xs font-bold">
-                                  {c.participant?.name || 'Unknown user'}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleFbConversation(c.id)}
-                                  className="flex-none rounded-lg bg-gray-100 px-3 py-1.5 text-[0.65rem] font-bold hover:bg-gray-200"
-                                >
-                                  {fbConversationOpenFor === c.id ? 'Hide' : 'Open'}
-                                </button>
-                              </div>
-
-                              {fbConversationOpenFor === c.id && (
-                                <div className="mt-3 space-y-2.5 border-t border-gray-100 pt-3">
-                                  {(fbMessages[c.id] || []).length === 0 ? (
-                                    <p className="text-xs text-gray-400">No messages yet.</p>
-                                  ) : (
-                                    fbMessages[c.id]
-                                      .slice()
-                                      .reverse()
-                                      .map((m) => (
-                                        <div key={m.id} className="rounded-lg bg-gray-50 p-3">
-                                          <p className="text-xs">
-                                            <span className="font-bold">{m.from?.name}</span> {m.message}
-                                          </p>
-                                        </div>
-                                      ))
-                                  )}
-                                  <div className="mt-2 flex gap-2">
-                                    <input
-                                      value={fbMessageDrafts[c.id] || ''}
-                                      onChange={(e) =>
-                                        setFbMessageDrafts((d) => ({ ...d, [c.id]: e.target.value }))
-                                      }
-                                      placeholder="Reply..."
-                                      className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-ia-blue"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleFbSendMessage(c.id, c.participant?.id)}
-                                      className="rounded-lg bg-ia-blue px-3 py-1.5 text-xs font-bold text-white"
-                                    >
-                                      Send
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </section>
-              )}
-
               {/* CONTENT LIBRARY */}
               {activeTab === 'library' && (
               <section id="library" className="mb-12 scroll-mt-24">
                 <h2 className="mb-1.5 text-lg font-extrabold">Content Library</h2>
                 <p className="mb-5 text-sm text-gray-500">
-                  Upload photos here to use in your reels, carousels and posters.
+                  Previewing is always free. Credits are charged only when you share or download a piece of
+                  content — {CREATIVE_COSTS.image} for an image, {CREATIVE_COSTS.carousel} for a carousel,{' '}
+                  {CREATIVE_COSTS.reel} for a reel.
                 </p>
 
                 <div className="mb-10 rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                  <h3 className="text-sm font-extrabold text-ia-navy">Creatives</h3>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Ready-made marketing images curated by the team — shown watermarked until you unlock one (1
-                    content credit each) to add it to your own library below.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: 'image', label: 'Images' },
+                      { key: 'carousel', label: 'Carousels' },
+                      { key: 'reel', label: 'Reels' }
+                    ].map((t) => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setCreativeType(t.key)}
+                        className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                          creativeType === t.key
+                            ? 'bg-ia-navy text-white'
+                            : 'bg-white text-gray-600 shadow-sm hover:bg-ia-gold-tint/40'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {[
                       { key: 'life', label: 'Life' },
                       { key: 'health', label: 'Health' },
@@ -3244,36 +2713,31 @@ export default function AdvisorDashboardPage() {
                   ) : (
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                       {creatives.map((creative) => {
-                        const unlocked = creativeAddStatus[creative._id] === 'added';
-
-                        function openPreview() {
-                          if (unlocked) {
-                            setLibraryPreviewUrl(creative.imageUrl);
-                            setPreviewCreative(null);
-                          } else {
-                            setLibraryPreviewUrl(watermarkedUrl(creative.imageUrl));
-                            setPreviewCreative(creative);
-                          }
-                        }
-
+                        const unlocked = isCreativeUnlocked(creative);
                         return (
                           <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white">
-                            <img
-                              src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
-                              alt=""
-                              onClick={openPreview}
-                              className="aspect-square w-full cursor-zoom-in object-cover"
-                            />
+                            {creative.type === 'reel' ? (
+                              <video
+                                src={creative.imageUrl}
+                                muted
+                                playsInline
+                                onClick={() => setPreviewCreative(creative)}
+                                className="aspect-square w-full cursor-zoom-in object-cover"
+                              />
+                            ) : (
+                              <img
+                                src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
+                                alt=""
+                                onClick={() => setPreviewCreative(creative)}
+                                className="aspect-square w-full cursor-zoom-in object-cover"
+                              />
+                            )}
                             <button
                               type="button"
-                              onClick={openPreview}
-                              className={`absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-bold text-white opacity-0 transition group-hover:opacity-100 ${
-                                unlocked ? 'pointer-events-none' : ''
-                              }`}
+                              onClick={() => setPreviewCreative(creative)}
+                              className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-bold text-white opacity-0 transition group-hover:opacity-100"
                             >
-                              {!unlocked && (
-                                <span className="rounded-lg bg-black/70 px-3 py-1.5">👁 Click to Preview</span>
-                              )}
+                              <span className="rounded-lg bg-black/70 px-3 py-1.5">👁 Click to Preview</span>
                             </button>
                             {unlocked && (
                               <span className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-center text-xs font-bold text-white">
@@ -3288,6 +2752,10 @@ export default function AdvisorDashboardPage() {
                 </div>
 
                 <div className="mb-5">
+                  <h3 className="mb-1.5 text-sm font-extrabold text-ia-navy">My Uploads</h3>
+                  <p className="mb-3 text-xs text-gray-500">
+                    Your own raw photos — free to upload and store, used as building blocks for your posts.
+                  </p>
                   <label className="inline-block cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold shadow-sm transition hover:bg-gray-50">
                     {libraryUploadStatus.uploading ? 'Uploading...' : '+ Upload photos'}
                     <input
@@ -3349,17 +2817,11 @@ export default function AdvisorDashboardPage() {
                 {libraryPreviewUrl && (
                   <div
                     className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/80 p-6"
-                    onClick={() => {
-                      setLibraryPreviewUrl(null);
-                      setPreviewCreative(null);
-                    }}
+                    onClick={() => setLibraryPreviewUrl(null)}
                   >
                     <button
                       type="button"
-                      onClick={() => {
-                        setLibraryPreviewUrl(null);
-                        setPreviewCreative(null);
-                      }}
+                      onClick={() => setLibraryPreviewUrl(null)}
                       className="absolute right-5 top-5 rounded-full bg-white/10 px-3 py-1.5 text-lg font-bold text-white hover:bg-white/20"
                     >
                       ✕
@@ -3370,21 +2832,76 @@ export default function AdvisorDashboardPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="max-h-[80vh] max-w-full rounded-lg object-contain"
                     />
-                    {previewCreative && (
+                  </div>
+                )}
+
+                {previewCreative && (
+                  <div
+                    className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/80 p-6"
+                    onClick={() => setPreviewCreative(null)}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setPreviewCreative(null)}
+                      className="absolute right-5 top-5 rounded-full bg-white/10 px-3 py-1.5 text-lg font-bold text-white hover:bg-white/20"
+                    >
+                      ✕
+                    </button>
+                    {previewCreative.type === 'reel' ? (
+                      <video
+                        src={previewCreative.imageUrl}
+                        controls
+                        autoPlay
+                        muted
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-h-[70vh] max-w-full rounded-lg object-contain"
+                      />
+                    ) : (
+                      <img
+                        src={
+                          isCreativeUnlocked(previewCreative)
+                            ? previewCreative.imageUrl
+                            : watermarkedUrl(previewCreative.imageUrl)
+                        }
+                        alt="Content preview"
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-h-[70vh] max-w-full rounded-lg object-contain"
+                      />
+                    )}
+
+                    <div
+                      className="flex flex-wrap items-center justify-center gap-3 rounded-2xl bg-white/95 px-5 py-4 shadow-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {!isCreativeUnlocked(previewCreative) && (
+                        <span className="mr-1 text-xs font-bold text-gray-500">
+                          {CREATIVE_COSTS[previewCreative.type] || CREATIVE_COSTS.image} credits to share/download
+                        </span>
+                      )}
+                      {['whatsapp', 'facebook', 'linkedin', 'instagram', 'youtube'].map((platform) => {
+                        const Icon = socialIcons[platform];
+                        return (
+                          <button
+                            key={platform}
+                            type="button"
+                            title={`Share to ${platform}`}
+                            disabled={creativeAddStatus[previewCreative._id] === 'adding'}
+                            onClick={() => handleCreativeShare(previewCreative, platform)}
+                            className="h-10 w-10 overflow-hidden rounded-full shadow-sm transition hover:scale-110 disabled:opacity-50"
+                          >
+                            {Icon && <Icon className="h-10 w-10" />}
+                          </button>
+                        );
+                      })}
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addCreativeToLibrary(previewCreative);
-                        }}
                         disabled={creativeAddStatus[previewCreative._id] === 'adding'}
-                        className="rounded-xl bg-ia-blue px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-ia-blue-soft disabled:opacity-60"
+                        onClick={() => handleCreativeDownload(previewCreative)}
+                        className="rounded-xl bg-ia-blue px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-ia-blue-soft disabled:opacity-60"
                       >
-                        {creativeAddStatus[previewCreative._id] === 'adding'
-                          ? 'Unlocking...'
-                          : '🔓 Unlock (1 credit)'}
+                        {creativeAddStatus[previewCreative._id] === 'adding' ? 'Please wait...' : '⬇ Download'}
                       </button>
-                    )}
+                    </div>
                   </div>
                 )}
               </section>
@@ -3469,7 +2986,8 @@ export default function AdvisorDashboardPage() {
               <section id="recharge" className="mb-4 scroll-mt-24">
                 <h2 className="mb-1.5 text-lg font-extrabold">Recharge Credits</h2>
                 <p className="mb-5 text-sm text-gray-500">
-                  Every activity — reel, carousel or image — costs a flat 10 credits. Bigger packs earn bonus credits.
+                  An image costs 10 credits, a carousel 20 credits and a reel 30 credits — charged only when you
+                  share or download it, never before.
                 </p>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
                   {pricingPlans.map((plan) => (
@@ -3505,6 +3023,25 @@ export default function AdvisorDashboardPage() {
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-dashed border-gray-200 bg-white p-5">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-ia-navy">{extraCreditsPack.name}</h4>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Running low? Top up {extraCreditsPack.credits} for {extraCreditsPack.amount}, any time.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      showToast('Extra credits top-up is launching soon — payments aren\'t live yet.', true)
+                    }
+                    className="flex-none rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-bold text-ia-navy transition hover:bg-gray-200"
+                  >
+                    Buy {extraCreditsPack.amount}
+                  </button>
+                </div>
+
                 <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-5 text-center text-sm leading-relaxed text-gray-600">
                   <b className="text-ia-navy">Want your own domain (www.yourname.com)?</b> One-time ₹6,000 —
                   registration, DNS, SSL and connection fully handled. Contact us to request it.
@@ -3548,6 +3085,8 @@ export default function AdvisorDashboardPage() {
       >
         {toast.msg}
       </div>
+
+      <ChatWidget />
     </div>
   );
 }

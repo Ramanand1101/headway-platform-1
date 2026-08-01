@@ -17,6 +17,7 @@ const {
   getMyPosts,
   generateMyContent,
   draftMyContent,
+  publishMyDraft,
   createMyManualPost,
   deleteMyPost
 } = require('../controllers/contentController');
@@ -33,6 +34,7 @@ router.patch('/:id/approve', authenticate, approveContent);
 router.get('/mine', authenticate, getMyPosts);
 router.post('/mine/generate', authenticate, generateMyContent);
 router.post('/mine/draft', authenticate, draftMyContent);
+router.post('/mine/publish', authenticate, publishMyDraft);
 router.post('/mine/manual', authenticate, createMyManualPost);
 router.delete('/mine/:id', authenticate, deleteMyPost);
 
