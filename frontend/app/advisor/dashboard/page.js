@@ -943,12 +943,19 @@ export default function AdvisorDashboardPage() {
   }
 
   // Fetches the actual image/video file and hands it to the device's native
-  // share sheet (WhatsApp/Instagram/etc. all appear there directly) so the
-  // real file + headline get shared — not just a link. Only works where the
-  // browser supports file sharing (mainly mobile Chrome/Safari); returns
-  // false so the caller can fall back to the platform-specific web link.
+  // share sheet so the real file + headline get shared — not just a link.
+  // Only worth trying on phones: WhatsApp/Instagram/etc. appear as targets
+  // there. On desktop (macOS/Windows) the native share sheet only lists the
+  // OS's own apps (Mail, Messages, AirDrop...) — no WhatsApp/Instagram — so
+  // using it there would hijack the platform icon away from where it should
+  // go. Returns false whenever it can't/shouldn't run, so the caller falls
+  // back to the platform-specific web link.
+  function isMobileDevice() {
+    return typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
   async function tryNativeFileShare(url, title, description) {
-    if (typeof navigator === 'undefined' || !navigator.share) return false;
+    if (typeof navigator === 'undefined' || !navigator.share || !isMobileDevice()) return false;
     try {
       const response = await fetch(url, { mode: 'cors' });
       if (!response.ok) return false;
