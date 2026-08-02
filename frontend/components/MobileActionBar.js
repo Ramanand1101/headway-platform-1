@@ -4,7 +4,9 @@ import Link from 'next/link';
 // Sticky bottom action bar shown on mobile only (matches the common
 // e-commerce "Account / Cart / Chat / Call" pattern) — swaps "Cart" for
 // "Enquire" since this is a service site, not a store. Hidden on desktop,
-// where the header/footer contact options already cover this.
+// where the header/footer contact options already cover this. Generic
+// (accountHref/enquireHref/whatsappNumber/phone as props, not tied to a
+// specific advisor) so it can be reused on the main marketing homepage too.
 function AccountIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
@@ -31,12 +33,19 @@ function CallIcon(props) {
   );
 }
 
-export default function MobileActionBar({ advisor }) {
-  const phone = advisor?.contactNumber || advisor?.whatsappNumber;
+export default function MobileActionBar({
+  accountHref = '/customer/login',
+  accountLabel = 'Account',
+  enquireHref = '/#contact',
+  enquireLabel = 'Enquire',
+  whatsappNumber,
+  phone
+}) {
+  const callNumber = phone || whatsappNumber;
 
   const items = [
-    { key: 'account', label: 'Account', Icon: AccountIcon, href: '/customer/login' },
-    { key: 'enquire', label: 'Enquire', Icon: EnquireIcon, href: '/#contact' }
+    { key: 'account', label: accountLabel, Icon: AccountIcon, href: accountHref },
+    { key: 'enquire', label: enquireLabel, Icon: EnquireIcon, href: enquireHref }
   ];
 
   return (
@@ -48,9 +57,9 @@ export default function MobileActionBar({ advisor }) {
         </Link>
       ))}
 
-      {advisor?.whatsappNumber ? (
+      {whatsappNumber ? (
         <a
-          href={`https://wa.me/${advisor.whatsappNumber}`}
+          href={`https://wa.me/${whatsappNumber}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex flex-col items-center gap-1 py-1 text-[var(--tc-dark)]"
@@ -65,8 +74,8 @@ export default function MobileActionBar({ advisor }) {
         </span>
       )}
 
-      {phone ? (
-        <a href={`tel:${phone}`} className="flex flex-col items-center gap-1 py-1 text-[var(--tc-dark)]">
+      {callNumber ? (
+        <a href={`tel:${callNumber}`} className="flex flex-col items-center gap-1 py-1 text-[var(--tc-dark)]">
           <CallIcon className="h-6 w-6" />
           <span className="text-[0.65rem] font-bold">Call</span>
         </a>

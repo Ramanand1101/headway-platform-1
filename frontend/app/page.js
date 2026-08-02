@@ -6,6 +6,7 @@ import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import { defaultHomepageContent } from '../lib/homepageContent';
 import { getHomepageTheme, homepageThemeCssVars } from '../lib/homepageThemes';
+import MobileActionBar from '../components/MobileActionBar';
 
 const pillBase =
   'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]';
@@ -153,7 +154,7 @@ export default function HomePage() {
   const heroOverlayOpacity = content.heroOverlayOpacity ?? 70;
 
   return (
-    <div className="min-h-screen bg-white text-[var(--site-navy)]" style={homepageThemeCssVars(theme)}>
+    <div className="min-h-screen bg-white pb-16 text-[var(--site-navy)] sm:pb-0" style={homepageThemeCssVars(theme)}>
       <SiteHeader navLinks={content.navLinks} />
 
       {/* HERO CAROUSEL — full-bleed photo background with text overlay. The
@@ -841,6 +842,7 @@ export default function HomePage() {
       </section>
 
       <SiteFooter />
+      <MobileActionBar accountHref="/advisor/login" accountLabel="Advisor Login" enquireHref="/#pricing" />
     </div>
   );
 }

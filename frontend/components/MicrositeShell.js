@@ -48,7 +48,12 @@ export default function MicrositeShell({ initialAdvisor, children }) {
   const searchParams = useSearchParams();
   const isPreview = searchParams.get('preview') === '1';
   const [isEmbedded, setIsEmbedded] = useState(false);
-  const hideChatWidget = isPreview || isEmbedded;
+  // Explicit one-off exclusion, requested for this specific advisor's site —
+  // neither the chatbot nor the mobile action bar should appear there.
+  const WIDGETS_EXCLUDED_SLUGS = ['vinodyadav'];
+  const isExcludedSlug = WIDGETS_EXCLUDED_SLUGS.includes(advisor?.slug);
+  const hideChatWidget = isPreview || isEmbedded || isExcludedSlug;
+  const hideMobileBar = hideChatWidget;
 
   useEffect(() => {
     setIsEmbedded(window.self !== window.top);
@@ -199,11 +204,15 @@ export default function MicrositeShell({ initialAdvisor, children }) {
         </a>
       )}
 
-      {!hideChatWidget && (
-        <>
-          <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />
-          <MobileActionBar advisor={advisor} />
-        </>
+      {!hideChatWidget && <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />}
+
+      {!hideMobileBar && (
+        <MobileActionBar
+          accountHref="/customer/login"
+          enquireHref="/#contact"
+          whatsappNumber={advisor?.whatsappNumber}
+          phone={advisor?.contactNumber}
+        />
       )}
     </div>
   );
