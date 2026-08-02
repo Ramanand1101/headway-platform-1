@@ -2122,15 +2122,9 @@ export default function AdvisorDashboardPage() {
                     </div>
 
                 <div className="mb-7 rounded-2xl border border-gray-100 bg-white p-7 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-extrabold text-ia-navy">Blogs</h3>
-                    <span className="text-xs font-bold text-gray-500">
-                      {advisor?.aiCredits ?? 0} AI credits left
-                    </span>
-                  </div>
+                  <h3 className="text-sm font-extrabold text-ia-navy">Blogs</h3>
                   <p className="mt-1 text-xs text-gray-500">
-                    Write a post for your microsite&apos;s blog. Drafting/preview is free — 1 credit is charged
-                    only when you post it.
+                    Write a post for your microsite&apos;s blog.
                   </p>
 
                   {!blogDraft ? (
@@ -2173,7 +2167,7 @@ export default function AdvisorDashboardPage() {
                           disabled={blogStatus.publishing}
                           className="rounded-xl bg-ia-green px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
                         >
-                          {blogStatus.publishing ? 'Posting...' : 'Post it (1 credit)'}
+                          {blogStatus.publishing ? 'Posting...' : 'Post it'}
                         </button>
                         <button
                           type="button"
