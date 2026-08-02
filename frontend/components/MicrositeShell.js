@@ -37,11 +37,21 @@ export default function MicrositeShell({ initialAdvisor, children }) {
   const [advisor, setAdvisor] = useState(initialAdvisor);
   const [scrolled, setScrolled] = useState(false);
   // The dashboard's "Live preview" panel loads this same microsite in an
-  // iframe (?preview=1) — without this check, that iframe would mount its
-  // own ChatWidget on top of the dashboard's own, stacking two bubbles in
-  // the same corner. Only ever suppressed inside that embedded preview.
+  // iframe — without this check, that iframe would mount its own
+  // ChatWidget on top of the dashboard's own, stacking two bubbles in the
+  // same corner. `isPreview` covers the ?preview=1 case; `isEmbedded`
+  // (window.self !== window.top) is a second, query-param-independent
+  // check that catches it even if the query string gets lost/mismatched —
+  // this component is never legitimately iframed anywhere else, so "inside
+  // any iframe at all" is a safe signal to hide the widget.
   const searchParams = useSearchParams();
   const isPreview = searchParams.get('preview') === '1';
+  const [isEmbedded, setIsEmbedded] = useState(false);
+  const hideChatWidget = isPreview || isEmbedded;
+
+  useEffect(() => {
+    setIsEmbedded(window.self !== window.top);
+  }, []);
 
   useEffect(() => {
     if (!isPreview) return;
@@ -188,7 +198,7 @@ export default function MicrositeShell({ initialAdvisor, children }) {
         </a>
       )}
 
-      {!isPreview && <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />}
+      {!hideChatWidget && <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />}
     </div>
   );
 }

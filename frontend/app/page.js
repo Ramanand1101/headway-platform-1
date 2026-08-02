@@ -6,7 +6,6 @@ import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import { defaultHomepageContent } from '../lib/homepageContent';
 import { getHomepageTheme, homepageThemeCssVars } from '../lib/homepageThemes';
-import ChatWidget from '../components/ChatWidget';
 
 const pillBase =
   'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]';
@@ -842,7 +841,6 @@ export default function HomePage() {
       </section>
 
       <SiteFooter />
-      <ChatWidget />
     </div>
   );
 }

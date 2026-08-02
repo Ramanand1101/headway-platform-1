@@ -24,21 +24,21 @@ const pricing = {
       amount: '₹249',
       credits: '50 Credits',
       bonus: '',
-      features: ['Good for 5 image posts', 'Personalised with your identity', 'Credits never expire']
+      features: ['Good for 5 image posts', 'Personalised with your identity']
     },
     {
       name: 'Growth',
       amount: '₹499',
       credits: '110 Credits',
       bonus: '',
-      features: ['Mix of images, carousels or reels', 'Priority content requests', 'Credits never expire']
+      features: ['Mix of images, carousels or reels', 'Priority content requests']
     },
     {
       name: 'Authority',
       amount: '₹999',
       credits: '220 Credits',
       bonus: '',
-      features: ['Daily visibility, always-on presence', 'Monthly posting calendar included', 'Credits never expire']
+      features: ['Daily visibility, always-on presence', 'Monthly posting calendar included']
     }
   ],
   note: 'Credits are charged per content type, only when you share or download: image = 10 credits, carousel = 20 credits, reel = 30 credits. Need more any time? Top up 50 extra credits for ₹249.',
