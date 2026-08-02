@@ -88,9 +88,9 @@ export default function ChatWidget({ offset = false, context, advisorContext, on
         type="button"
         aria-label={open ? 'Close chat' : 'Ask me anything'}
         onClick={() => setOpen((v) => !v)}
-        className={`fixed z-40 flex items-center gap-2 rounded-full bg-ia-blue text-white shadow-xl transition hover:-translate-y-0.5 ${
+        className={`fixed z-40 flex items-center gap-2 rounded-full bg-ia-blue text-white shadow-xl transition hover:-translate-y-0.5 right-6 ${
           open ? 'h-14 w-14 justify-center text-2xl' : 'h-14 pl-4 pr-5 text-2xl'
-        } ${offset ? 'bottom-24 right-6' : 'bottom-6 right-6'}`}
+        } bottom-20 ${offset ? 'sm:bottom-24' : 'sm:bottom-6'}`}
       >
         {open ? (
           '✕'
@@ -104,8 +104,8 @@ export default function ChatWidget({ offset = false, context, advisorContext, on
 
       {open && (
         <div
-          className={`fixed z-40 flex w-[calc(100vw-3rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl ${
-            offset ? 'bottom-40 right-6' : 'bottom-24 right-6'
+          className={`fixed z-40 flex w-[calc(100vw-3rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl right-6 bottom-36 ${
+            offset ? 'sm:bottom-40' : 'sm:bottom-24'
           }`}
           style={{ height: '420px' }}
         >

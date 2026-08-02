@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getMicrositeTheme, themeCssVars } from '../lib/micrositeThemes';
 import ChatWidget from './ChatWidget';
+import MobileActionBar from './MobileActionBar';
 
 const socialLabels = { linkedin: 'LinkedIn', instagram: 'Instagram', facebook: 'Facebook', youtube: 'YouTube' };
 
@@ -145,9 +146,9 @@ export default function MicrositeShell({ initialAdvisor, children }) {
         </nav>
       </header>
 
-      <div className="flex-1">{children}</div>
+      <div className="flex-1 pb-16 sm:pb-0">{children}</div>
 
-      <footer className="bg-[var(--tc-dark)] text-white/70">
+      <footer className="bg-[var(--tc-dark)] pb-16 text-white/70 sm:pb-0">
         <div className="mx-auto max-w-6xl px-6 py-12">
           <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/10 pb-8">
             <Link href="/" className="flex items-center gap-2 text-white">
@@ -192,13 +193,18 @@ export default function MicrositeShell({ initialAdvisor, children }) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat on WhatsApp"
-          className="fixed bottom-6 right-6 z-30 grid h-14 w-14 place-items-center rounded-full bg-[var(--tc-secondary)] text-2xl text-white shadow-xl transition hover:-translate-y-0.5"
+          className="fixed bottom-6 right-6 z-30 hidden h-14 w-14 place-items-center rounded-full bg-[var(--tc-secondary)] text-2xl text-white shadow-xl transition hover:-translate-y-0.5 sm:grid"
         >
           💬
         </a>
       )}
 
-      {!hideChatWidget && <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />}
+      {!hideChatWidget && (
+        <>
+          <ChatWidget offset={Boolean(advisor?.whatsappNumber)} />
+          <MobileActionBar advisor={advisor} />
+        </>
+      )}
     </div>
   );
 }
