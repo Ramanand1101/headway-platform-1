@@ -8,13 +8,20 @@ const ContentPost = require('../models/ContentPost');
 function buildPrompt(advisor, topic) {
   const subject = topic ? `about "${topic}"` : 'sharing one practical financial tip';
 
-  return `Write a short, simple LinkedIn-style post (150-200 words) for an
+  return `Write a simple, informative blog post for an
 Indian financial advisor named ${advisor.name}, based in ${advisor.city || 'India'},
 specializing in ${(advisor.specialization || []).join(', ') || 'financial planning'}.
 The post should be ${subject}.
+Length: strictly between 2500 and 3000 characters including spaces — this is a firm requirement,
+not a suggestion. Never go over 3000 characters under any circumstance; stop writing and wrap up
+with the closing paragraph before you reach that limit. Write in enough detail (explain each
+point with a short example or practical tip) to naturally reach at least 2500 characters, but do
+not pad with filler just to hit the count.
 Tone: simple, trustworthy, no jargon, end with a soft call to action.
+Structure: a short opening hook, 3-5 numbered points each explained in 2-3 sentences, and a
+closing paragraph. Use fewer, more detailed points rather than many short ones.
 Formatting: plain text only. Do not use markdown — no asterisks, no #, no bullet
-symbols, no emoji. For a numbered list just use "1. ", "2. " etc. on their own lines.`;
+symbols, no emoji. For the numbered points just use "1. ", "2. " etc. on their own lines.`;
 }
 
 async function callModel(prompt) {
@@ -118,10 +125,28 @@ async function generateProfileBlurb(advisor, field) {
   return callModel(buildProfileBlurbPrompt(advisor, field));
 }
 
+// Models aren't precise character counters, so the prompt's 2500-3000
+// target is a best effort, not a guarantee — this is the hard backstop.
+// Trims to the last complete sentence at or before `max` chars rather than
+// cutting mid-sentence.
+const BLOG_MAX_CHARS = 3000;
+function capLength(text, max = BLOG_MAX_CHARS) {
+  if (!text || text.length <= max) return text;
+
+  const truncated = text.slice(0, max);
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf('. '),
+    truncated.lastIndexOf('.\n'),
+    truncated.lastIndexOf('!'),
+    truncated.lastIndexOf('?')
+  );
+  return lastSentenceEnd > max * 0.5 ? truncated.slice(0, lastSentenceEnd + 1) : truncated;
+}
+
 // Drafts a post (title/body/imageUrl) WITHOUT saving it — used by the
 // "Write blog" admin page so the draft can be reviewed/edited before publish.
 async function draftContent(advisor, topic) {
-  const body = await callModel(buildPrompt(advisor, topic));
+  const body = capLength(await callModel(buildPrompt(advisor, topic)));
   const title = topic || `${advisor.name} — Monthly Update`;
   const imageUrl = await generateBlogImage(title, topic);
   return { title, body, imageUrl };
@@ -131,7 +156,7 @@ async function draftContent(advisor, topic) {
 // 'pending_review' so the advisor approves before it goes live; pass
 // publish: true to skip review and make it live immediately.
 async function generateContent(advisor, { topic, publish = false } = {}) {
-  const body = await callModel(buildPrompt(advisor, topic));
+  const body = capLength(await callModel(buildPrompt(advisor, topic)));
   const title = topic || `${advisor.name} — Monthly Update`;
   const imageUrl = await generateBlogImage(title, topic);
 

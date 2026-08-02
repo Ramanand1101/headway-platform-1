@@ -21,6 +21,10 @@ export default function CreativesLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: '', error: '' });
+  // Headline/description edits, keyed by creative id — kept separate from
+  // `creatives` so typing doesn't refetch/rerender the whole grid.
+  const [drafts, setDrafts] = useState({});
+  const [saveStatus, setSaveStatus] = useState({});
 
   function authHeaders(extra = {}) {
     const token = localStorage.getItem('token');
@@ -37,7 +41,13 @@ export default function CreativesLibraryPage() {
         if (!res.ok) throw new Error(data.error || 'Could not load creatives');
         return data;
       })
-      .then((data) => setCreatives(data.creatives || []))
+      .then((data) => {
+        const list = data.creatives || [];
+        setCreatives(list);
+        setDrafts(
+          Object.fromEntries(list.map((c) => [c._id, { title: c.title || '', description: c.description || '' }]))
+        );
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }
@@ -89,6 +99,26 @@ export default function CreativesLibraryPage() {
     });
   }
 
+  function updateDraft(id, field, value) {
+    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  }
+
+  async function handleSave(id) {
+    setSaveStatus((prev) => ({ ...prev, [id]: 'saving' }));
+    const draft = drafts[id] || {};
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives/${id}`, {
+      method: 'PATCH',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ title: draft.title, description: draft.description })
+    });
+    if (res.ok) {
+      setSaveStatus((prev) => ({ ...prev, [id]: 'saved' }));
+      setTimeout(() => setSaveStatus((prev) => ({ ...prev, [id]: '' })), 1500);
+    } else {
+      setSaveStatus((prev) => ({ ...prev, [id]: 'error' }));
+    }
+  }
+
   const typeLabel = TYPES.find((t) => t.key === activeType)?.label;
   const categoryLabel = CATEGORIES.find((c) => c.key === activeCategory)?.label;
 
@@ -100,7 +130,7 @@ export default function CreativesLibraryPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Creatives library</h1>
           <p className="mt-2 text-gray-500">
             Marketing content shared with every advisor&apos;s Content Library, organized by format and insurance
-            line.
+            line. Add a headline and description so advisors know what each piece is for.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-2">
@@ -159,22 +189,56 @@ export default function CreativesLibraryPage() {
           {uploadStatus.error && <p className="mt-2 text-sm text-red-600">{uploadStatus.error}</p>}
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {creatives.map((creative) => (
-              <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
-                {creative.type === 'reel' ? (
-                  <video src={creative.imageUrl} className="aspect-square w-full object-cover" muted controls />
-                ) : (
-                  <img src={creative.imageUrl} alt="" className="aspect-square w-full object-cover" />
-                )}
-                <button
-                  onClick={() => handleDelete(creative._id)}
-                  className="absolute right-2 top-2 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-bold text-red-500 opacity-0 shadow-sm transition hover:bg-white group-hover:opacity-100"
+          <div className="mt-6 space-y-4">
+            {creatives.map((creative) => {
+              const draft = drafts[creative._id] || { title: '', description: '' };
+              const status = saveStatus[creative._id];
+              return (
+                <div
+                  key={creative._id}
+                  className="flex flex-col gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:flex-row"
                 >
-                  Remove
-                </button>
-              </div>
-            ))}
+                  <div className="relative h-32 w-32 flex-none overflow-hidden rounded-lg bg-gray-50">
+                    {creative.type === 'reel' ? (
+                      <video src={creative.imageUrl} className="h-full w-full object-cover" muted controls />
+                    ) : (
+                      <img src={creative.imageUrl} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <input
+                      value={draft.title}
+                      onChange={(e) => updateDraft(creative._id, 'title', e.target.value)}
+                      placeholder="Headline, e.g. 'Term insurance made simple'"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary-600"
+                    />
+                    <textarea
+                      value={draft.description}
+                      onChange={(e) => updateDraft(creative._id, 'description', e.target.value)}
+                      placeholder="Description — what this piece is about, or a ready-made caption."
+                      rows={2}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-600"
+                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleSave(creative._id)}
+                        disabled={status === 'saving'}
+                        className="rounded-lg bg-primary-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
+                      >
+                        {status === 'saving' ? 'Saving...' : status === 'saved' ? 'Saved ✓' : 'Save'}
+                      </button>
+                      {status === 'error' && <span className="text-xs text-red-600">Could not save</span>}
+                      <button
+                        onClick={() => handleDelete(creative._id)}
+                        className="ml-auto text-xs font-bold text-red-500 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {!loading && creatives.length === 0 && (

@@ -66,6 +66,23 @@ exports.uploadCreatives = async (req, res, next) => {
   }
 };
 
+// PATCH /api/creatives/:id  (admin-only) — sets/updates the headline
+// (title) and description shown to advisors browsing this creative.
+exports.updateCreative = async (req, res, next) => {
+  try {
+    const { title, description } = req.body;
+    const creative = await Creative.findByIdAndUpdate(
+      req.params.id,
+      { $set: { title, description } },
+      { new: true }
+    );
+    if (!creative) return res.status(404).json({ error: 'Creative not found' });
+    res.json({ creative });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // DELETE /api/creatives/:id  (admin-only)
 exports.deleteCreative = async (req, res, next) => {
   try {

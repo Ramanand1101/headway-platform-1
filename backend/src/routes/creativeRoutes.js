@@ -3,7 +3,7 @@ const multer = require('multer');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const requireAdmin = require('../middleware/requireAdmin');
-const { listCreatives, uploadCreatives, deleteCreative } = require('../controllers/creativeController');
+const { listCreatives, uploadCreatives, updateCreative, deleteCreative } = require('../controllers/creativeController');
 
 // Same per-file limit as the advisor content library uploader (uploaded one
 // file per request from the admin UI, so a larger per-file size is fine) —
@@ -25,6 +25,7 @@ router.get('/', authenticate, listCreatives);
 
 // Only admins manage what's in it.
 router.post('/', authenticate, requireAdmin, uploadPhotos.array('images', 10), uploadCreatives);
+router.patch('/:id', authenticate, requireAdmin, updateCreative);
 router.delete('/:id', authenticate, requireAdmin, deleteCreative);
 
 module.exports = router;

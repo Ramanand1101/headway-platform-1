@@ -17,7 +17,12 @@ const creativeSchema = new mongoose.Schema(
     // URL for 'reel' creatives — one field either way since only one is
     // ever a still frame's worth of content per creative today.
     imageUrl: { type: String, required: true },
-    title: String
+    // Headline + description the admin writes for this creative — shown to
+    // advisors browsing the Content Library (and usable as a ready-made
+    // share caption). Optional so existing/newly-uploaded creatives keep
+    // working before an admin fills these in.
+    title: String,
+    description: String
   },
   { timestamps: true }
 );

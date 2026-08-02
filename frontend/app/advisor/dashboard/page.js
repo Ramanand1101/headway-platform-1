@@ -8,7 +8,7 @@ import { micrositeThemes } from '../../../lib/micrositeThemes';
 import { decodeToken } from '../../../lib/auth';
 import { micrositeCopyDefaults } from '../../../lib/advisorMicrositeCopyDefaults';
 import { defaultVision, defaultMission } from '../../../lib/advisorMicrositeDefaults';
-import { watermarkedUrl } from '../../../lib/watermark';
+import { watermarkedUrl, downloadableUrl } from '../../../lib/watermark';
 import ChatWidget from '../../../components/ChatWidget';
 
 function MenuIcon(props) {
@@ -936,18 +936,48 @@ export default function AdvisorDashboardPage() {
     const url = await unlockCreativeForAction(creative);
     if (!url) return;
     const link = document.createElement('a');
-    link.href = url;
-    link.download = '';
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
+    link.href = downloadableUrl(url);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
+  // Fetches the actual image/video file and hands it to the device's native
+  // share sheet (WhatsApp/Instagram/etc. all appear there directly) so the
+  // real file + headline get shared — not just a link. Only works where the
+  // browser supports file sharing (mainly mobile Chrome/Safari); returns
+  // false so the caller can fall back to the platform-specific web link.
+  async function tryNativeFileShare(url, title, description) {
+    if (typeof navigator === 'undefined' || !navigator.share) return false;
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) return false;
+      const blob = await response.blob();
+      const isVideo = blob.type.startsWith('video/');
+      const ext = blob.type.split('/')[1] || (isVideo ? 'mp4' : 'jpg');
+      const file = new File([blob], `insuranceadvise-content.${ext}`, { type: blob.type });
+
+      if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
+
+      await navigator.share({
+        files: [file],
+        title: title || undefined,
+        text: description || title || undefined
+      });
+      return true;
+    } catch (err) {
+      // AbortError = advisor closed the share sheet without picking anything
+      // — they saw it and chose not to proceed, so treat as handled, not a failure.
+      return err?.name === 'AbortError';
+    }
+  }
+
   async function handleCreativeShare(creative, platform) {
     const url = await unlockCreativeForAction(creative);
     if (!url) return;
+
+    const sharedNatively = await tryNativeFileShare(url, creative.title, creative.description);
+    if (sharedNatively) return;
 
     if (platform === 'whatsapp') {
       window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
@@ -967,10 +997,7 @@ export default function AdvisorDashboardPage() {
       // Instagram/YouTube have no web share intent for posting external
       // media — download the file and point the advisor at the app instead.
       const link = document.createElement('a');
-      link.href = url;
-      link.download = '';
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
+      link.href = downloadableUrl(url);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -2579,34 +2606,48 @@ export default function AdvisorDashboardPage() {
                       {creatives.map((creative) => {
                         const unlocked = isCreativeUnlocked(creative);
                         return (
-                          <div key={creative._id} className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white">
-                            {creative.type === 'reel' ? (
-                              <video
-                                src={creative.imageUrl}
-                                muted
-                                playsInline
+                          <div key={creative._id} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                            <div className="group relative">
+                              {creative.type === 'reel' ? (
+                                <video
+                                  src={creative.imageUrl}
+                                  muted
+                                  playsInline
+                                  onClick={() => setPreviewCreative(creative)}
+                                  className="aspect-square w-full cursor-zoom-in object-cover"
+                                />
+                              ) : (
+                                <img
+                                  src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
+                                  alt=""
+                                  onClick={() => setPreviewCreative(creative)}
+                                  className="aspect-square w-full cursor-zoom-in object-cover"
+                                />
+                              )}
+                              <button
+                                type="button"
                                 onClick={() => setPreviewCreative(creative)}
-                                className="aspect-square w-full cursor-zoom-in object-cover"
-                              />
-                            ) : (
-                              <img
-                                src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
-                                alt=""
-                                onClick={() => setPreviewCreative(creative)}
-                                className="aspect-square w-full cursor-zoom-in object-cover"
-                              />
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => setPreviewCreative(creative)}
-                              className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-bold text-white opacity-0 transition group-hover:opacity-100"
-                            >
-                              <span className="rounded-lg bg-black/70 px-3 py-1.5">👁 Click to Preview</span>
-                            </button>
-                            {unlocked && (
-                              <span className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-center text-xs font-bold text-white">
-                                Unlocked ✓
-                              </span>
+                                className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-bold text-white opacity-0 transition group-hover:opacity-100"
+                              >
+                                <span className="rounded-lg bg-black/70 px-3 py-1.5">👁 Click to Preview</span>
+                              </button>
+                              {unlocked && (
+                                <span className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-black/70 px-2 py-1.5 text-center text-xs font-bold text-white">
+                                  Unlocked ✓
+                                </span>
+                              )}
+                            </div>
+                            {(creative.title || creative.description) && (
+                              <div className="p-2">
+                                {creative.title && (
+                                  <p className="truncate text-xs font-bold text-ia-navy">{creative.title}</p>
+                                )}
+                                {creative.description && (
+                                  <p className="mt-0.5 line-clamp-2 text-[0.65rem] text-gray-500">
+                                    {creative.description}
+                                  </p>
+                                )}
+                              </div>
                             )}
                           </div>
                         );
@@ -2617,7 +2658,7 @@ export default function AdvisorDashboardPage() {
 
                 {previewCreative && (
                   <div
-                    className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/80 p-6"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
                     onClick={() => setPreviewCreative(null)}
                   >
                     <button
@@ -2627,60 +2668,93 @@ export default function AdvisorDashboardPage() {
                     >
                       ✕
                     </button>
-                    {previewCreative.type === 'reel' ? (
-                      <video
-                        src={previewCreative.imageUrl}
-                        controls
-                        autoPlay
-                        muted
-                        onClick={(e) => e.stopPropagation()}
-                        className="max-h-[70vh] max-w-full rounded-lg object-contain"
-                      />
-                    ) : (
-                      <img
-                        src={
-                          isCreativeUnlocked(previewCreative)
-                            ? previewCreative.imageUrl
-                            : watermarkedUrl(previewCreative.imageUrl)
-                        }
-                        alt="Content preview"
-                        onClick={(e) => e.stopPropagation()}
-                        className="max-h-[70vh] max-w-full rounded-lg object-contain"
-                      />
-                    )}
 
+                    {/* Mimics how this will actually look once shared — image, headline
+                        and caption together, like a real social post — instead of just a
+                        bare image, so the advisor knows what they're posting. */}
                     <div
-                      className="flex flex-wrap items-center justify-center gap-3 rounded-2xl bg-white/95 px-5 py-4 shadow-lg"
+                      className="flex max-h-[88vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {!isCreativeUnlocked(previewCreative) && (
-                        <span className="mr-1 text-xs font-bold text-gray-500">
-                          {CREATIVE_COSTS[previewCreative.type] || CREATIVE_COSTS.image} credits to share/download
-                        </span>
-                      )}
-                      {['whatsapp', 'facebook', 'linkedin', 'instagram', 'youtube'].map((platform) => {
-                        const Icon = socialIcons[platform];
-                        return (
-                          <button
-                            key={platform}
-                            type="button"
-                            title={`Share to ${platform}`}
-                            disabled={creativeAddStatus[previewCreative._id] === 'adding'}
-                            onClick={() => handleCreativeShare(previewCreative, platform)}
-                            className="h-10 w-10 overflow-hidden rounded-full shadow-sm transition hover:scale-110 disabled:opacity-50"
-                          >
-                            {Icon && <Icon className="h-10 w-10" />}
-                          </button>
-                        );
-                      })}
-                      <button
-                        type="button"
-                        disabled={creativeAddStatus[previewCreative._id] === 'adding'}
-                        onClick={() => handleCreativeDownload(previewCreative)}
-                        className="rounded-xl bg-ia-blue px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-ia-blue-soft disabled:opacity-60"
-                      >
-                        {creativeAddStatus[previewCreative._id] === 'adding' ? 'Please wait...' : '⬇ Download'}
-                      </button>
+                      <div className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-3">
+                        {advisor?.photoUrl ? (
+                          <img src={advisor.photoUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="grid h-8 w-8 place-items-center rounded-full bg-ia-gold-tint/40 text-xs font-bold text-ia-blue">
+                            {advisor?.name?.[0] || 'A'}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-ia-navy">{advisor?.name || 'Your Post'}</p>
+                          <p className="text-[0.6rem] uppercase tracking-wide text-gray-400">Post preview</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto">
+                        {previewCreative.type === 'reel' ? (
+                          <video
+                            src={previewCreative.imageUrl}
+                            controls
+                            autoPlay
+                            muted
+                            className="aspect-square w-full bg-black object-contain"
+                          />
+                        ) : (
+                          <img
+                            src={
+                              isCreativeUnlocked(previewCreative)
+                                ? previewCreative.imageUrl
+                                : watermarkedUrl(previewCreative.imageUrl)
+                            }
+                            alt="Content preview"
+                            className="aspect-square w-full object-cover"
+                          />
+                        )}
+
+                        {(previewCreative.title || previewCreative.description) && (
+                          <div className="px-4 py-3">
+                            {previewCreative.title && (
+                              <p className="text-sm font-extrabold text-ia-navy">{previewCreative.title}</p>
+                            )}
+                            {previewCreative.description && (
+                              <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                                {previewCreative.description}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2.5 border-t border-gray-100 px-4 py-3">
+                        {!isCreativeUnlocked(previewCreative) && (
+                          <span className="w-full text-[0.65rem] font-bold text-gray-500">
+                            {CREATIVE_COSTS[previewCreative.type] || CREATIVE_COSTS.image} credits to share/download
+                          </span>
+                        )}
+                        {['whatsapp', 'facebook', 'linkedin', 'instagram', 'youtube'].map((platform) => {
+                          const Icon = socialIcons[platform];
+                          return (
+                            <button
+                              key={platform}
+                              type="button"
+                              title={`Share to ${platform}`}
+                              disabled={creativeAddStatus[previewCreative._id] === 'adding'}
+                              onClick={() => handleCreativeShare(previewCreative, platform)}
+                              className="h-9 w-9 flex-none overflow-hidden rounded-full shadow-sm transition hover:scale-110 disabled:opacity-50"
+                            >
+                              {Icon && <Icon className="h-9 w-9" />}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          disabled={creativeAddStatus[previewCreative._id] === 'adding'}
+                          onClick={() => handleCreativeDownload(previewCreative)}
+                          className="ml-auto flex-none rounded-xl bg-ia-blue px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-ia-blue-soft disabled:opacity-60"
+                        >
+                          {creativeAddStatus[previewCreative._id] === 'adding' ? 'Please wait...' : '⬇ Download'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
