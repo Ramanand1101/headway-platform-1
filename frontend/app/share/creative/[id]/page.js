@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { videoThumbnailUrl } from '../../../../lib/watermark';
 
 // Server-rendered so WhatsApp/Facebook/LinkedIn's link-preview crawlers
 // (which don't run client JS) see real Open Graph tags — this is what
@@ -18,12 +19,23 @@ export async function generateMetadata({ params }) {
 
   const title = creative.title || 'Shared via InsuranceAdvise.in';
   const description = creative.description || 'Insurance content shared via InsuranceAdvise.in';
-  const images = creative.type === 'reel' ? [] : [creative.imageUrl];
+  const isReel = creative.type === 'reel';
+  // Cloudinary derives a still frame as the preview thumbnail — WhatsApp/
+  // Facebook/LinkedIn need a real image to show anything, a raw video URL
+  // alone won't render a preview in most of them.
+  const thumbnail = isReel ? videoThumbnailUrl(creative.imageUrl) : creative.imageUrl;
+  const images = thumbnail ? [thumbnail] : [];
 
   return {
     title,
     description,
-    openGraph: { title, description, images, type: 'website' },
+    openGraph: {
+      title,
+      description,
+      images,
+      type: isReel ? 'video.other' : 'website',
+      ...(isReel ? { videos: [{ url: creative.imageUrl, type: 'video/mp4' }] } : {})
+    },
     twitter: { card: 'summary_large_image', title, description, images }
   };
 }

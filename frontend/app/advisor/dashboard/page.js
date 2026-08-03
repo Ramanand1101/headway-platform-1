@@ -8,7 +8,7 @@ import { micrositeThemes } from '../../../lib/micrositeThemes';
 import { decodeToken } from '../../../lib/auth';
 import { micrositeCopyDefaults } from '../../../lib/advisorMicrositeCopyDefaults';
 import { defaultVision, defaultMission } from '../../../lib/advisorMicrositeDefaults';
-import { watermarkedUrl, downloadableUrl } from '../../../lib/watermark';
+import { watermarkedUrl, downloadableUrl, videoThumbnailUrl } from '../../../lib/watermark';
 import ChatWidget from '../../../components/ChatWidget';
 
 function MenuIcon(props) {
@@ -2652,6 +2652,7 @@ export default function AdvisorDashboardPage() {
                               {creative.type === 'reel' ? (
                                 <video
                                   src={creative.imageUrl}
+                                  poster={videoThumbnailUrl(creative.imageUrl)}
                                   muted
                                   playsInline
                                   onClick={() => setPreviewCreative(creative)}
@@ -2735,6 +2736,7 @@ export default function AdvisorDashboardPage() {
                         {previewCreative.type === 'reel' ? (
                           <video
                             src={previewCreative.imageUrl}
+                            poster={videoThumbnailUrl(previewCreative.imageUrl)}
                             controls
                             autoPlay
                             muted

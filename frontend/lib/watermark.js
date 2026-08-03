@@ -23,3 +23,13 @@ export function downloadableUrl(url) {
   if (!url || !url.includes('/upload/')) return url;
   return url.replace('/upload/', '/upload/fl_attachment/');
 }
+
+// Cloudinary can derive a still JPG from any frame of a hosted video purely
+// via URL transformation (so_0 = the frame at 0 seconds) — used as a poster
+// image for reel <video> elements and as the og:image on the reel share
+// page, since WhatsApp/Facebook/LinkedIn link previews need a real image
+// file (a raw .mp4 URL alone won't render a thumbnail in most of them).
+export function videoThumbnailUrl(url) {
+  if (!url || !url.includes('/video/upload/')) return null;
+  return url.replace('/video/upload/', '/video/upload/so_0/').replace(/\.\w+(\?.*)?$/, '.jpg');
+}
