@@ -3,7 +3,13 @@ const multer = require('multer');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const requireAdmin = require('../middleware/requireAdmin');
-const { listCreatives, uploadCreatives, updateCreative, deleteCreative } = require('../controllers/creativeController');
+const {
+  listCreatives,
+  uploadCreatives,
+  getPublicCreative,
+  updateCreative,
+  deleteCreative
+} = require('../controllers/creativeController');
 
 // Same per-file limit as the advisor content library uploader (uploaded one
 // file per request from the admin UI, so a larger per-file size is fine) —
@@ -19,6 +25,10 @@ const uploadPhotos = multer({
     cb(null, true);
   }
 });
+
+// Public — powers the /share/creative/:id Open Graph landing page. Must
+// stay ahead of/independent from the authenticated routes below.
+router.get('/:id/public', getPublicCreative);
 
 // Any logged-in advisor (or admin) can browse the shared library.
 router.get('/', authenticate, listCreatives);

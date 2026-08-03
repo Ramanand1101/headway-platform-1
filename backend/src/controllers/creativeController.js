@@ -66,6 +66,21 @@ exports.uploadCreatives = async (req, res, next) => {
   }
 };
 
+// GET /api/creatives/:id/public — no auth. Powers the /share/creative/:id
+// landing page's Open Graph tags, so WhatsApp/Facebook/LinkedIn render a
+// real image+headline+description preview card when an advisor shares that
+// page's link, instead of a bare file URL. Only the fields needed for a
+// preview card are exposed — nothing else on the document.
+exports.getPublicCreative = async (req, res, next) => {
+  try {
+    const creative = await Creative.findById(req.params.id).select('imageUrl title description type');
+    if (!creative) return res.status(404).json({ error: 'Not found' });
+    res.json({ creative });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // PATCH /api/creatives/:id  (admin-only) — sets/updates the headline
 // (title) and description shown to advisors browsing this creative.
 exports.updateCreative = async (req, res, next) => {

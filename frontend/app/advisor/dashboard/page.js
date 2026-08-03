@@ -987,14 +987,22 @@ export default function AdvisorDashboardPage() {
     youtube: 'YouTube'
   };
 
-  // Desktop fallback for every platform: none of WhatsApp Web/Facebook/
-  // LinkedIn's web "share" links can actually attach a real image file —
-  // WhatsApp's only accepts pre-filled text, and Facebook/LinkedIn's
-  // require a public URL to scrape (which is exactly the raw image link we
-  // don't want to send). So instead of sending a link anywhere, this
-  // downloads the real photo and copies the headline+description caption
-  // to the clipboard — the advisor pastes the caption and attaches the
-  // already-downloaded photo themselves when they open the app.
+  // WhatsApp/Facebook/LinkedIn's web "share" links can't attach a real
+  // image file directly — but they DO render a rich preview card
+  // (image + title + description) for any link that has Open Graph tags,
+  // instead of showing the bare URL as plain text. So we share a link to
+  // our own /share/creative/:id page (server-rendered with real OG tags —
+  // see that page's generateMetadata) rather than the raw Cloudinary file
+  // URL, which has no such tags and would just show as a boring link.
+  function creativeShareUrl(creative) {
+    return `${window.location.origin}/share/creative/${creative._id}`;
+  }
+
+  // Instagram/YouTube have no link-preview or web-share mechanism at all —
+  // posting there always requires the advisor to manually upload inside
+  // the app, so this is the one place a download is unavoidable. Copies
+  // the caption too, so they just need to paste it after attaching the
+  // already-downloaded photo.
   async function downloadAndCopyCaption(url, creative, platform) {
     const link = document.createElement('a');
     link.href = downloadableUrl(url);
@@ -1022,6 +1030,18 @@ export default function AdvisorDashboardPage() {
 
     const sharedNatively = await tryNativeFileShare(url, creative.title, creative.description);
     if (sharedNatively) return;
+
+    if (platform === 'whatsapp' || platform === 'facebook' || platform === 'linkedin') {
+      const shareUrl = creativeShareUrl(creative);
+      const intent =
+        platform === 'whatsapp'
+          ? `https://wa.me/?text=${encodeURIComponent(shareUrl)}`
+          : platform === 'facebook'
+            ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+            : `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+      window.open(intent, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
     await downloadAndCopyCaption(url, creative, platform);
   }
