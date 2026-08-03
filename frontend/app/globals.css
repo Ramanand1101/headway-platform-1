@@ -64,3 +64,16 @@ body {
   border-radius: 0.75rem;
   margin: 1em 0;
 }
+
+/* Subtle fine-line grid texture (Plaid-style restrained ornamentation) —
+   use behind hero/CTA sections as a quiet backdrop, never as the focal
+   element. Fades out toward the edges via a radial mask so it never reads
+   as a hard-edged rectangle. */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}

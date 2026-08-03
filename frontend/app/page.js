@@ -7,13 +7,19 @@ import SiteFooter from '../components/SiteFooter';
 import { defaultHomepageContent } from '../lib/homepageContent';
 import { getHomepageTheme, homepageThemeCssVars } from '../lib/homepageThemes';
 import MobileActionBar from '../components/MobileActionBar';
+import Reveal from '../components/Reveal';
 
+// Flat, borderless CTAs with a soft lift on hover instead of a glow-shadow —
+// closer to Plaid's restrained, whitespace-driven button style than the
+// previous heavy colored-shadow pills.
 const pillBase =
-  'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]';
-const pillBlue = `${pillBase} bg-[var(--site-blue)] text-white shadow-lg shadow-ia-gold-tint hover:bg-[var(--site-blue-soft)] hover:shadow-xl hover:shadow-ia-gold-tint`;
-const pillOutline = `${pillBase} border-2 border-[var(--site-navy)] text-[var(--site-navy)] hover:bg-[var(--site-navy)] hover:text-white`;
-const pillGreen = `${pillBase} bg-[var(--site-green)] text-white shadow-lg shadow-green-200 hover:bg-[var(--site-green-soft)] hover:shadow-xl hover:shadow-green-200`;
-const cardHover = 'transition-all duration-300 hover:-translate-y-1 hover:shadow-xl';
+  'inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97]';
+const pillBlue = `${pillBase} bg-[var(--site-navy)] text-white shadow-sm hover:bg-[var(--site-navy-2)] hover:shadow-md`;
+const pillOutline = `${pillBase} border border-gray-300 text-[var(--site-navy)] hover:border-[var(--site-navy)] hover:bg-gray-50`;
+const pillGreen = `${pillBase} bg-[var(--site-green)] text-white shadow-sm hover:bg-[var(--site-green-soft)] hover:shadow-md`;
+// Subtle border-based hover instead of a heavy drop shadow — cards read as
+// flat, bordered surfaces (Plaid-style) rather than floating/elevated ones.
+const cardHover = 'transition-all duration-300 hover:-translate-y-1 hover:border-gray-300 hover:shadow-sm';
 
 // Non-text presentation metadata that stays fixed in code (icons, colors,
 // image keys) — the actual copy comes from `content`, editable at
@@ -41,9 +47,9 @@ const capMeta = [
 ];
 
 const pricingMeta = [
-  { popular: false, btnClass: `${pillBase} w-full justify-center border-2 border-[var(--site-navy)] text-[var(--site-navy)] hover:bg-[var(--site-navy)] hover:text-white` },
-  { popular: true, btnClass: pillBlue },
-  { popular: false, btnClass: pillGreen }
+  { popular: false, btnClass: `${pillOutline} w-full justify-center` },
+  { popular: true, btnClass: `${pillBlue} w-full justify-center` },
+  { popular: false, btnClass: `${pillGreen} w-full justify-center` }
 ];
 
 const complianceMeta = [{ icon: '🚫' }, { icon: '✅' }, { icon: '📤' }, { icon: '🔒' }];
@@ -334,8 +340,8 @@ export default function HomePage() {
       </div>
 
       {/* WHY A WEBSITE */}
-      <section id="why" className="px-[6vw] py-24">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
+      <section id="why" className="px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto mb-14 max-w-2xl text-center">
           <Editable
             path={['whyWebsite', 'eyebrow']}
             active={previewMode}
@@ -362,10 +368,15 @@ export default function HomePage() {
           >
             {content.whyWebsite.paragraph}
           </Editable>
-        </div>
+        </Reveal>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {content.whyWebsite.cards.map((item, i) => (
-            <div key={i} className={`rounded-2xl border border-gray-100 bg-white p-7 shadow-sm ${cardHover}`}>
+            <Reveal
+              as="div"
+              key={i}
+              delay={i * 80}
+              className={`rounded-2xl border border-gray-100 bg-white p-7 shadow-sm ${cardHover}`}
+            >
               <div className={`grid h-14 w-14 place-items-center rounded-2xl text-2xl ${whyMeta[i].iconClass}`}>
                 {whyMeta[i].icon}
               </div>
@@ -395,14 +406,14 @@ export default function HomePage() {
               >
                 {item.stat}
               </Editable>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* HOW IT'S FREE */}
-      <section id="free" className="bg-gray-50 px-[6vw] py-24">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 lg:grid-cols-2">
+      <section id="free" className="bg-gray-50 px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 lg:grid-cols-2">
           <div className="relative mx-auto w-full max-w-md">
             <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-3xl border border-gray-100 bg-gradient-to-br from-blue-50 to-green-50 shadow-sm">
               {bannerUrls['free-image'] ? (
@@ -421,7 +432,7 @@ export default function HomePage() {
                 </span>
               )}
             </div>
-            <div className="absolute -right-4 -top-4 rounded-2xl bg-gradient-to-br from-[var(--site-green)] to-[var(--site-green-soft)] px-6 py-4 text-center text-white shadow-xl shadow-green-200 sm:-right-6 sm:-top-6">
+            <div className="absolute -right-4 -top-4 rounded-2xl bg-gradient-to-br from-[var(--site-green)] to-[var(--site-green-soft)] px-6 py-4 text-center text-white shadow-md sm:-right-6 sm:-top-6">
               <strong className="block text-xl font-extrabold">FREE</strong>
               <span className="text-[0.65rem] font-bold uppercase tracking-wide opacity-90">Website + Hosting</span>
             </div>
@@ -485,12 +496,12 @@ export default function HomePage() {
               {content.freeSection.button} <span aria-hidden>→</span>
             </button>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* PLATFORM CAPABILITIES */}
-      <section id="platform" className="px-[6vw] py-24">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
+      <section id="platform" className="px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto mb-14 max-w-2xl text-center">
           <Editable
             path={['capabilities', 'eyebrow']}
             active={previewMode}
@@ -517,10 +528,15 @@ export default function HomePage() {
           >
             {content.capabilities.paragraph}
           </Editable>
-        </div>
+        </Reveal>
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-3">
           {content.capabilities.cards.map((cap, i) => (
-            <div key={i} className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${cardHover}`}>
+            <Reveal
+              as="div"
+              key={i}
+              delay={i * 80}
+              className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${cardHover}`}
+            >
               <div className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 to-green-50">
                 {bannerUrls[capMeta[i].key] ? (
                   <img
@@ -558,13 +574,17 @@ export default function HomePage() {
                   {cap.desc}
                 </Editable>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* ONE PLATFORM FLOW */}
-      <div className="mx-[6vw] rounded-[28px] border border-gray-100 bg-gradient-to-br from-blue-50 to-green-50 px-[6vw] py-14 text-center">
+      <Reveal
+        as="div"
+        className="relative mx-[6vw] overflow-hidden rounded-[28px] border border-gray-100 bg-gradient-to-br from-blue-50 to-green-50 px-[6vw] py-14 text-center"
+      >
+        <div className="bg-grid-pattern pointer-events-none absolute inset-0 -z-10" />
         <h2 className="mx-auto max-w-3xl text-2xl font-extrabold tracking-tight sm:text-3xl">
           <Editable path={['flow', 'headingLine1']} active={previewMode} notify={notify}>
             {content.flow.headingLine1}
@@ -612,11 +632,11 @@ export default function HomePage() {
         >
           {content.flow.button}
         </button>
-      </div>
+      </Reveal>
 
       {/* PRICING */}
-      <section id="pricing" className="px-[6vw] py-24">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
+      <section id="pricing" className="px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto mb-14 max-w-2xl text-center">
           <Editable
             path={['pricing', 'eyebrow']}
             active={previewMode}
@@ -637,7 +657,7 @@ export default function HomePage() {
           <Editable path={['pricing', 'paragraph']} active={previewMode} notify={notify} as="p" className="mt-4 text-gray-600">
             {content.pricing.paragraph}
           </Editable>
-        </div>
+        </Reveal>
 
         {rechargeNotice && (
           <div className="mx-auto mb-8 max-w-xl rounded-2xl border border-ia-gold-tint bg-ia-gold-tint/40 px-5 py-4 text-center text-sm font-medium text-[var(--site-blue)]">
@@ -647,14 +667,16 @@ export default function HomePage() {
 
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-7 lg:grid-cols-3">
           {content.pricing.plans.map((plan, i) => (
-            <div
+            <Reveal
+              as="div"
               key={i}
+              delay={i * 80}
               className={`relative rounded-3xl border p-9 text-center shadow-sm ${cardHover} ${
                 pricingMeta[i].popular ? 'border-[var(--site-blue)] bg-ia-gold-tint/40' : 'border-gray-100 bg-white'
               }`}
             >
               {pricingMeta[i].popular && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--site-blue)] px-5 py-1.5 text-xs font-extrabold uppercase tracking-wide text-white shadow-lg shadow-ia-gold-tint">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--site-blue)] px-5 py-1.5 text-xs font-extrabold uppercase tracking-wide text-white shadow-sm">
                   Most Popular
                 </span>
               )}
@@ -710,7 +732,7 @@ export default function HomePage() {
               >
                 Recharge {plan.amount}
               </button>
-            </div>
+            </Reveal>
           ))}
         </div>
 
@@ -761,8 +783,8 @@ export default function HomePage() {
       </section>
 
       {/* COMPLIANCE */}
-      <section className="bg-gray-50 px-[6vw] py-24">
-        <div className="mx-auto max-w-4xl rounded-3xl border border-gray-100 bg-white p-9 shadow-sm sm:p-12">
+      <section className="bg-gray-50 px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto max-w-4xl rounded-3xl border border-gray-100 bg-white p-9 shadow-sm sm:p-12">
           <h2 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight">
             <span className="text-[var(--site-green)]">🛡️</span>
             <Editable path={['compliance', 'heading']} active={previewMode} notify={notify}>
@@ -793,12 +815,12 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* FINAL CTA */}
-      <section className="px-[6vw] py-24 text-center">
-        <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight sm:text-4xl">
+      <section className="px-[6vw] py-28 text-center">
+        <Reveal as="h2" className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight sm:text-4xl">
           <Editable path={['finalCta', 'headingLine1']} active={previewMode} notify={notify}>
             {content.finalCta.headingLine1}
           </Editable>
@@ -815,7 +837,7 @@ export default function HomePage() {
             {content.finalCta.headingLine2Highlight}
           </Editable>
           .
-        </h2>
+        </Reveal>
         <Editable
           path={['finalCta', 'paragraph']}
           active={previewMode}
