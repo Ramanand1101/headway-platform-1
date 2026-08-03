@@ -966,10 +966,17 @@ export default function AdvisorDashboardPage() {
 
       if (navigator.canShare && !navigator.canShare({ files: [file] })) return false;
 
+      // Full caption (not just description-or-title) — on mobile, whichever
+      // app the advisor picks from the native share sheet (Facebook,
+      // Instagram, WhatsApp...) receives this text directly via the OS
+      // share intent, which is NOT subject to Facebook's web-sharer
+      // restriction on prefilling post text — that limitation only applies
+      // to the browser-based sharer.php dialog, not native app-to-app shares.
+      const caption = [title, description].filter(Boolean).join('\n\n');
       await navigator.share({
         files: [file],
         title: title || undefined,
-        text: description || title || undefined
+        text: caption || undefined
       });
       return true;
     } catch (err) {
