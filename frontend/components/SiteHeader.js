@@ -91,6 +91,35 @@ export default function SiteHeader({ onLoginClick, navLinks }) {
             </Link>
           )}
 
+          {/* Compact login button shown right before the hamburger on mobile
+              — the full pill above only appears at lg:, and the mobile menu's
+              own login link needs the menu opened first, so without this,
+              logging in from a phone required an extra tap to get there. */}
+          {onLoginClick ? (
+            <button
+              type="button"
+              onClick={onLoginClick}
+              aria-label="Advisor Login"
+              className="grid h-10 w-10 flex-none place-items-center rounded-lg text-[var(--site-navy)] transition hover:bg-gray-100 lg:hidden"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <circle cx="12" cy="8" r="3.5" />
+                <path strokeLinecap="round" d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+              </svg>
+            </button>
+          ) : (
+            <Link
+              href="/advisor/login"
+              aria-label="Advisor Login"
+              className="grid h-10 w-10 flex-none place-items-center rounded-lg text-[var(--site-navy)] transition hover:bg-gray-100 lg:hidden"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                <circle cx="12" cy="8" r="3.5" />
+                <path strokeLinecap="round" d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+              </svg>
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={() => setMobileMenuOpen((v) => !v)}
