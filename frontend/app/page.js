@@ -8,6 +8,25 @@ import { defaultHomepageContent } from '../lib/homepageContent';
 import { getHomepageTheme, homepageThemeCssVars } from '../lib/homepageThemes';
 import MobileActionBar from '../components/MobileActionBar';
 import Reveal from '../components/Reveal';
+import {
+  ClockIcon,
+  GiftIcon,
+  AssetsIcon,
+  RocketIcon,
+  SearchIcon,
+  ShieldIcon,
+  ChatIcon,
+  CalendarIcon,
+  ReelIcon,
+  ImageIcon,
+  PinIcon,
+  BanIcon,
+  CheckCircleIcon,
+  UploadIcon,
+  LockIcon,
+  HandshakeIcon,
+  GlobeIcon
+} from '../components/HomeIcons';
 
 // Flat, borderless CTAs with a soft lift on hover instead of a glow-shadow —
 // closer to Plaid's restrained, whitespace-driven button style than the
@@ -27,23 +46,23 @@ const cardHover = 'transition-all duration-300 hover:-translate-y-1 hover:border
 const heroMeta = ['/images/banner-1.jpg', '/images/banner-2.jpg', '/images/banner-3.jpg', '/images/banner-4.jpg'];
 
 const trustMeta = [
-  { icon: '⏱️', iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' },
-  { icon: '🎁', iconClass: 'bg-green-50 text-[var(--site-green)]' },
-  { icon: '🗂️', iconClass: 'bg-[#2E6FD8]/10 text-[#2E6FD8]' },
-  { icon: '🚀', iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' }
+  { Icon: ClockIcon, iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' },
+  { Icon: GiftIcon, iconClass: 'bg-green-50 text-[var(--site-green)]' },
+  { Icon: AssetsIcon, iconClass: 'bg-[#2E6FD8]/10 text-[#2E6FD8]' },
+  { Icon: RocketIcon, iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' }
 ];
 
 const whyMeta = [
-  { icon: '🔍', iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' },
-  { icon: '🛡️', iconClass: 'bg-green-50 text-[var(--site-green)]' },
-  { icon: '💬', iconClass: 'bg-[#2E6FD8]/10 text-[#2E6FD8]' },
-  { icon: '📅', iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' }
+  { Icon: SearchIcon, iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' },
+  { Icon: ShieldIcon, iconClass: 'bg-green-50 text-[var(--site-green)]' },
+  { Icon: ChatIcon, iconClass: 'bg-[#2E6FD8]/10 text-[#2E6FD8]' },
+  { Icon: CalendarIcon, iconClass: 'bg-ia-gold-tint/40 text-[var(--site-blue)]' }
 ];
 
 const capMeta = [
-  { key: 'cap-reels', icon: '🎬' },
-  { key: 'cap-carousels', icon: '🖼️' },
-  { key: 'cap-posts', icon: '📌' }
+  { key: 'cap-reels', Icon: ReelIcon },
+  { key: 'cap-carousels', Icon: ImageIcon },
+  { key: 'cap-posts', Icon: PinIcon }
 ];
 
 const pricingMeta = [
@@ -52,7 +71,7 @@ const pricingMeta = [
   { popular: false, btnClass: `${pillGreen} w-full justify-center` }
 ];
 
-const complianceMeta = [{ icon: '🚫' }, { icon: '✅' }, { icon: '📤' }, { icon: '🔒' }];
+const complianceMeta = [{ Icon: BanIcon }, { Icon: CheckCircleIcon }, { Icon: UploadIcon }, { Icon: LockIcon }];
 
 // Click-to-locate: in live-preview mode (embedded from /admin/homepage),
 // wraps a piece of content so clicking it tells the admin editor which
@@ -163,11 +182,11 @@ export default function HomePage() {
     <div className="min-h-screen bg-white pb-16 text-[var(--site-navy)] sm:pb-0" style={homepageThemeCssVars(theme)}>
       <SiteHeader navLinks={content.navLinks} />
 
-      {/* HERO CAROUSEL — full-bleed photo background with text overlay. The
-          background layer bleeds up behind the floating header (which sits
-          in its own reserved space above) so the photo reaches the very top
-          of the viewport instead of stopping below the navbar. */}
-      <section className="relative isolate -mt-[96px] min-h-[500px] overflow-hidden pt-[96px] sm:min-h-[560px] lg:min-h-[620px]">
+      {/* HERO CARD — rounded, inset gradient/photo card (not full-bleed) —
+          the "Paynext"-style contained hero rather than an edge-to-edge
+          banner: margin on all sides, rounded corners, floats just below
+          the sticky pill nav instead of bleeding behind it. */}
+      <section className="relative isolate mx-[3vw] mt-4 min-h-[440px] overflow-hidden rounded-[32px] sm:min-h-[480px] lg:min-h-[540px]">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[var(--site-navy)] via-[var(--site-navy-2)] to-[var(--site-navy-3)]">
           <img
             key={activeSlide}
@@ -309,35 +328,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* TRUST STRIP */}
-      <div className="grid grid-cols-2 gap-6 border-y border-gray-100 bg-gray-50 px-[6vw] py-9 lg:grid-cols-4">
+      {/* TRUST STRIP — big bold centered stat numbers with vertical
+          dividers, no icons, closer to the "99% / 85% / 50K+" stat-row
+          style than the earlier icon+text cards. */}
+      <Reveal
+        as="div"
+        className="grid grid-cols-2 gap-y-8 divide-gray-100 border-y border-gray-100 bg-gray-50 px-[6vw] py-12 text-center sm:divide-x lg:grid-cols-4"
+      >
         {content.trustStrip.map((item, i) => (
-          <div key={i} className="flex items-center gap-3.5">
-            <div className={`grid h-12 w-12 flex-none place-items-center rounded-2xl text-2xl ${trustMeta[i].iconClass}`}>
-              {trustMeta[i].icon}
-            </div>
-            <div>
-              <Editable
-                path={['trustStrip', i, 'value']}
-                active={previewMode}
-                notify={notify}
-                as="strong"
-                className="block font-extrabold text-[var(--site-navy)]"
-              >
-                {item.value}
-              </Editable>
-              <Editable
-                path={['trustStrip', i, 'label']}
-                active={previewMode}
-                notify={notify}
-                className="text-xs text-gray-500"
-              >
-                {item.label}
-              </Editable>
-            </div>
+          <div key={i} className="px-4">
+            <Editable
+              path={['trustStrip', i, 'value']}
+              active={previewMode}
+              notify={notify}
+              as="strong"
+              className="block text-3xl font-extrabold tracking-tight text-[var(--site-navy)] sm:text-4xl"
+            >
+              {item.value}
+            </Editable>
+            <Editable
+              path={['trustStrip', i, 'label']}
+              active={previewMode}
+              notify={notify}
+              className="mt-1.5 block text-sm text-gray-500"
+            >
+              {item.label}
+            </Editable>
           </div>
         ))}
-      </div>
+      </Reveal>
 
       {/* WHY A WEBSITE */}
       <section id="why" className="px-[6vw] py-28">
@@ -370,15 +389,17 @@ export default function HomePage() {
           </Editable>
         </Reveal>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {content.whyWebsite.cards.map((item, i) => (
+          {content.whyWebsite.cards.map((item, i) => {
+            const WhyIcon = whyMeta[i].Icon;
+            return (
             <Reveal
               as="div"
               key={i}
               delay={i * 80}
               className={`rounded-2xl border border-gray-100 bg-white p-7 shadow-sm ${cardHover}`}
             >
-              <div className={`grid h-14 w-14 place-items-center rounded-2xl text-2xl ${whyMeta[i].iconClass}`}>
-                {whyMeta[i].icon}
+              <div className={`grid h-14 w-14 place-items-center rounded-2xl ${whyMeta[i].iconClass}`}>
+                <WhyIcon className="h-6 w-6" />
               </div>
               <Editable
                 path={['whyWebsite', 'cards', i, 'title']}
@@ -407,7 +428,8 @@ export default function HomePage() {
                 {item.stat}
               </Editable>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -425,10 +447,10 @@ export default function HomePage() {
                 />
               ) : (
                 <span
-                  className={`text-8xl ${previewMode ? 'cursor-pointer' : ''}`}
+                  className={`text-[var(--site-navy)] ${previewMode ? 'cursor-pointer' : ''}`}
                   onClick={previewMode ? () => notify(['image', 'free-image']) : undefined}
                 >
-                  🤝
+                  <HandshakeIcon className="h-28 w-28" strokeWidth={1.2} />
                 </span>
               )}
             </div>
@@ -530,7 +552,9 @@ export default function HomePage() {
           </Editable>
         </Reveal>
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-3">
-          {content.capabilities.cards.map((cap, i) => (
+          {content.capabilities.cards.map((cap, i) => {
+            const CapIcon = capMeta[i].Icon;
+            return (
             <Reveal
               as="div"
               key={i}
@@ -547,10 +571,10 @@ export default function HomePage() {
                   />
                 ) : (
                   <span
-                    className={`text-6xl ${previewMode ? 'cursor-pointer' : ''}`}
+                    className={`text-[var(--site-blue)] ${previewMode ? 'cursor-pointer' : ''}`}
                     onClick={previewMode ? () => notify(['image', capMeta[i].key]) : undefined}
                   >
-                    {capMeta[i].icon}
+                    <CapIcon className="h-16 w-16" />
                   </span>
                 )}
               </div>
@@ -575,7 +599,8 @@ export default function HomePage() {
                 </Editable>
               </div>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -635,7 +660,14 @@ export default function HomePage() {
       </Reveal>
 
       {/* PRICING */}
-      <section id="pricing" className="px-[6vw] py-28">
+      <section id="pricing" className="relative isolate overflow-hidden px-[6vw] py-28">
+        {/* Soft drifting color blobs — a quiet touch of "fintech glow" behind
+            the pricing cards, low-opacity and heavily blurred so it never
+            competes with the actual content. */}
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="animate-ia-drift1 absolute -left-24 top-0 h-96 w-96 rounded-full bg-[var(--site-blue)]/10 blur-3xl" />
+          <div className="animate-ia-drift2 absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-[var(--site-green)]/10 blur-3xl" />
+        </div>
         <Reveal as="div" className="mx-auto mb-14 max-w-2xl text-center">
           <Editable
             path={['pricing', 'eyebrow']}
@@ -748,8 +780,8 @@ export default function HomePage() {
 
         <div className="mx-auto mt-8 flex max-w-5xl flex-wrap items-center justify-between gap-6 rounded-2xl border border-gray-100 bg-gradient-to-r from-[#2E6FD8]/5 to-blue-50 p-7">
           <div className="flex items-center gap-4">
-            <div className="grid h-[52px] w-[52px] flex-none place-items-center rounded-2xl bg-[#2E6FD8]/10 text-2xl text-[#2E6FD8]">
-              🌐
+            <div className="grid h-[52px] w-[52px] flex-none place-items-center rounded-2xl bg-[#2E6FD8]/10 text-[#2E6FD8]">
+              <GlobeIcon className="h-6 w-6" />
             </div>
             <div>
               <Editable
@@ -786,7 +818,7 @@ export default function HomePage() {
       <section className="bg-gray-50 px-[6vw] py-28">
         <Reveal as="div" className="mx-auto max-w-4xl rounded-3xl border border-gray-100 bg-white p-9 shadow-sm sm:p-12">
           <h2 className="flex items-center gap-3 text-2xl font-extrabold tracking-tight">
-            <span className="text-[var(--site-green)]">🛡️</span>
+            <ShieldIcon className="h-6 w-6 flex-none text-[var(--site-green)]" />
             <Editable path={['compliance', 'heading']} active={previewMode} notify={notify}>
               {content.compliance.heading}
             </Editable>
@@ -801,9 +833,11 @@ export default function HomePage() {
             {content.compliance.paragraph}
           </Editable>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {content.compliance.items.map((item, i) => (
+            {content.compliance.items.map((item, i) => {
+              const ComplianceIcon = complianceMeta[i].Icon;
+              return (
               <div key={i} className="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                <span className="text-lg text-[var(--site-blue)]">{complianceMeta[i].icon}</span>
+                <ComplianceIcon className="h-5 w-5 flex-none text-[var(--site-blue)]" />
                 <p className="text-sm leading-relaxed text-gray-600">
                   <Editable path={['compliance', 'items', i, 'lead']} active={previewMode} notify={notify} as="b" className="text-[var(--site-navy)]">
                     {item.lead}
@@ -813,7 +847,8 @@ export default function HomePage() {
                   </Editable>
                 </p>
               </div>
-            ))}
+              );
+            })}
           </div>
         </Reveal>
       </section>

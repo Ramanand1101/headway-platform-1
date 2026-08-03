@@ -2714,7 +2714,7 @@ export default function AdvisorDashboardPage() {
                                 : watermarkedUrl(previewCreative.imageUrl)
                             }
                             alt="Content preview"
-                            className="aspect-square w-full object-cover"
+                            className="block max-h-[85vh] w-full object-contain"
                           />
                         )}
 
