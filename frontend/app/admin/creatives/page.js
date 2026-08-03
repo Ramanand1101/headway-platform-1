@@ -175,7 +175,9 @@ export default function CreativesLibraryPage() {
               </p>
             </div>
             <label className="cursor-pointer rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700">
-              {uploadStatus.uploading ? uploadStatus.progress : `+ Upload ${activeType === 'reel' ? 'videos' : 'images'}`}
+              {uploadStatus.uploading
+                ? uploadStatus.progress
+                : `+ Upload ${activeType === 'reel' ? 'videos' : activeType === 'carousel' ? 'file' : 'images'}`}
               <input
                 type="file"
                 accept={activeType === 'reel' ? 'video/*' : 'image/*'}

@@ -1033,13 +1033,39 @@ export default function AdvisorDashboardPage() {
 
     if (platform === 'whatsapp' || platform === 'facebook' || platform === 'linkedin') {
       const shareUrl = creativeShareUrl(creative);
+      const caption = [creative.title, creative.description].filter(Boolean).join('\n\n');
       const intent =
         platform === 'whatsapp'
-          ? `https://wa.me/?text=${encodeURIComponent(shareUrl)}`
+          ? // WhatsApp is the one platform whose share link DOES accept
+            // free text, so send the actual caption + link together instead
+            // of just the bare link.
+            `https://wa.me/?text=${encodeURIComponent(caption ? `${caption}\n\n${shareUrl}` : shareUrl)}`
           : platform === 'facebook'
-            ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+            ? // Facebook's web sharer intentionally ignores/strips any text
+              // meant for the post body (anti-spam policy since ~2018) — a
+              // site can only control the link-preview card (image/title/
+              // description via Open Graph tags), never prefill "What's on
+              // your mind". `quote` is passed as a best-effort; Facebook may
+              // or may not use it, and there's no other way around this.
+              `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(caption)}`
             : `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
       window.open(intent, '_blank', 'noopener,noreferrer');
+
+      // Facebook/LinkedIn never let a site prefill their post-text box (only
+      // the link-preview card is controllable via Open Graph tags) — copy
+      // the caption to the clipboard so the advisor only has to paste it
+      // into the box that just opened, instead of typing it out.
+      if (platform === 'facebook' || platform === 'linkedin') {
+        if (caption && navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(caption);
+            showToast('Caption copied — paste it into the post box that just opened.');
+          } catch {
+            // clipboard write can fail silently (permissions/non-secure
+            // context) — the share dialog still opened, so nothing to undo.
+          }
+        }
+      }
       return;
     }
 
