@@ -336,13 +336,13 @@ export default function HomePage() {
         className="grid grid-cols-2 gap-y-8 divide-gray-100 border-y border-gray-100 bg-gray-50 px-[6vw] py-12 text-center sm:divide-x lg:grid-cols-4"
       >
         {content.trustStrip.map((item, i) => (
-          <div key={i} className="px-4">
+          <div key={i} className="flex flex-col items-center px-3">
             <Editable
               path={['trustStrip', i, 'value']}
               active={previewMode}
               notify={notify}
               as="strong"
-              className="block text-3xl font-extrabold tracking-tight text-[var(--site-navy)] sm:text-4xl"
+              className="block text-2xl font-extrabold leading-tight tracking-tight text-[var(--site-navy)] sm:text-3xl"
             >
               {item.value}
             </Editable>

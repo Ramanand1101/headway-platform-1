@@ -979,6 +979,43 @@ export default function AdvisorDashboardPage() {
     }
   }
 
+  const platformLabels = {
+    whatsapp: 'WhatsApp',
+    facebook: 'Facebook',
+    linkedin: 'LinkedIn',
+    instagram: 'Instagram',
+    youtube: 'YouTube'
+  };
+
+  // Desktop fallback for every platform: none of WhatsApp Web/Facebook/
+  // LinkedIn's web "share" links can actually attach a real image file —
+  // WhatsApp's only accepts pre-filled text, and Facebook/LinkedIn's
+  // require a public URL to scrape (which is exactly the raw image link we
+  // don't want to send). So instead of sending a link anywhere, this
+  // downloads the real photo and copies the headline+description caption
+  // to the clipboard — the advisor pastes the caption and attaches the
+  // already-downloaded photo themselves when they open the app.
+  async function downloadAndCopyCaption(url, creative, platform) {
+    const link = document.createElement('a');
+    link.href = downloadableUrl(url);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    const caption = [creative.title, creative.description].filter(Boolean).join('\n\n');
+    if (caption && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(caption);
+        showToast(`Photo saved & caption copied — open ${platformLabels[platform]} and post it.`);
+        return;
+      } catch {
+        // clipboard write can fail (permissions/non-secure context) — fall
+        // through to the photo-only toast below instead of erroring out.
+      }
+    }
+    showToast(`Photo saved — open ${platformLabels[platform]} to post it.`);
+  }
+
   async function handleCreativeShare(creative, platform) {
     const url = await unlockCreativeForAction(creative);
     if (!url) return;
@@ -986,30 +1023,7 @@ export default function AdvisorDashboardPage() {
     const sharedNatively = await tryNativeFileShare(url, creative.title, creative.description);
     if (sharedNatively) return;
 
-    if (platform === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
-    } else if (platform === 'facebook') {
-      window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-        '_blank',
-        'noopener,noreferrer'
-      );
-    } else if (platform === 'linkedin') {
-      window.open(
-        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-        '_blank',
-        'noopener,noreferrer'
-      );
-    } else {
-      // Instagram/YouTube have no web share intent for posting external
-      // media — download the file and point the advisor at the app instead.
-      const link = document.createElement('a');
-      link.href = downloadableUrl(url);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showToast(`Saved — open ${platform === 'instagram' ? 'Instagram' : 'YouTube'} to post it.`);
-    }
+    await downloadAndCopyCaption(url, creative, platform);
   }
 
   function openSlugEditor() {
