@@ -1,4 +1,4 @@
-const { uploadBuffer, deleteByUrl } = require('../services/s3Service');
+const { uploadBuffer, deleteByUrl, getPresignedUploadUrl } = require('../services/s3Service');
 const { extractVideoThumbnail } = require('../services/mediaService');
 const Creative = require('../models/Creative');
 
@@ -106,6 +106,88 @@ exports.uploadCreatives = async (req, res, next) => {
     );
 
     res.status(201).json({ creatives: created });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/creatives/presigned-upload  (admin-only) — for large files
+// (reel videos) that don't fit through the hosting platform's ~4.5MB
+// request-body cap. Returns a one-time S3 PUT URL the browser uploads
+// straight to (bypassing our server entirely for the actual bytes) plus
+// the public URL the file will have once that PUT succeeds — the admin UI
+// then calls finalizeCreative below with that URL to actually save it.
+exports.getPresignedUpload = async (req, res, next) => {
+  try {
+    const { category, type, filename, contentType } = req.body;
+    if (!CREATIVE_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    if (!CREATIVE_TYPES.includes(type)) {
+      return res.status(400).json({ error: 'Invalid type' });
+    }
+    if (!filename || !contentType) {
+      return res.status(400).json({ error: 'filename and contentType are required' });
+    }
+    const format = formatFromMimetype(contentType);
+    if (!ALLOWED_FORMATS_BY_TYPE[type].includes(format)) {
+      return res.status(400).json({ error: `${type} does not accept ${format} files` });
+    }
+
+    const { uploadUrl, publicUrl } = await getPresignedUploadUrl({
+      folder: `creatives/${type}/${category}`,
+      filename,
+      contentType
+    });
+    res.json({ uploadUrl, publicUrl, format });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/creatives/finalize  (admin-only) — called after the browser's
+// direct-to-S3 PUT (above) succeeds. Fetches the file back down
+// server-to-server (no request-body-size limit applies to an outgoing
+// fetch, only to incoming request bodies) to generate a reel's poster
+// thumbnail, then saves the Creative doc.
+exports.finalizeCreative = async (req, res, next) => {
+  try {
+    const { category, type, format, imageUrl, title, description } = req.body;
+    if (!CREATIVE_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    if (!CREATIVE_TYPES.includes(type)) {
+      return res.status(400).json({ error: 'Invalid type' });
+    }
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'imageUrl is required' });
+    }
+    if (!ALLOWED_FORMATS_BY_TYPE[type].includes(format)) {
+      return res.status(400).json({ error: `${type} does not accept ${format} files` });
+    }
+
+    let thumbnailUrl;
+    if (format === 'video') {
+      // Best-effort — a bad/corrupt video shouldn't block the upload, it'll
+      // just fall back to no poster image until re-processed.
+      try {
+        const videoRes = await fetch(imageUrl);
+        if (videoRes.ok) {
+          const buffer = Buffer.from(await videoRes.arrayBuffer());
+          const frame = await extractVideoThumbnail(buffer);
+          thumbnailUrl = await uploadBuffer(frame, {
+            folder: `creatives/${type}/${category}/thumbnails`,
+            filename: `${Date.now()}.jpg`,
+            contentType: 'image/jpeg'
+          });
+        }
+      } catch (err) {
+        console.error('Reel thumbnail generation failed:', err.message);
+      }
+    }
+
+    const creative = await Creative.create({ category, type, format, imageUrl, thumbnailUrl, title, description });
+    res.status(201).json({ creative });
   } catch (err) {
     next(err);
   }

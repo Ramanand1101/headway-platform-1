@@ -6,15 +6,19 @@ const requireAdmin = require('../middleware/requireAdmin');
 const {
   listCreatives,
   uploadCreatives,
+  getPresignedUpload,
+  finalizeCreative,
   getPublicCreative,
   updateCreative,
   deleteCreative
 } = require('../controllers/creativeController');
 
 // Same per-file limit as the advisor content library uploader (uploaded one
-// file per request from the admin UI, so a larger per-file size is fine) —
-// also caps reel (video) uploads, since the hosting platform enforces a
-// ~4.5MB request body limit regardless of file type.
+// file per request from the admin UI, so a larger per-file size is fine).
+// Images/PDFs are comfortably under this and still go through this
+// endpoint; reel videos — which routinely exceed it — instead use the
+// presigned-upload + finalize pair below, which never sends the file
+// through this server at all.
 const uploadPhotos = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 4 * 1024 * 1024, files: 10 },
@@ -38,6 +42,8 @@ router.get('/', authenticate, listCreatives);
 
 // Only admins manage what's in it.
 router.post('/', authenticate, requireAdmin, uploadPhotos.array('images', 10), uploadCreatives);
+router.post('/presigned-upload', authenticate, requireAdmin, getPresignedUpload);
+router.post('/finalize', authenticate, requireAdmin, finalizeCreative);
 router.patch('/:id', authenticate, requireAdmin, updateCreative);
 router.delete('/:id', authenticate, requireAdmin, deleteCreative);
 

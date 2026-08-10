@@ -58,6 +58,41 @@ export default function CreativesLibraryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeType, activeCategory]);
 
+  // Reel videos routinely exceed the hosting platform's ~4.5MB request-body
+  // cap, so they never go through our own server at all: get a one-time S3
+  // PUT URL, upload straight to S3 from the browser, then tell the backend
+  // to finalize (fetch it back down server-side to generate the poster
+  // thumbnail and save the Creative doc).
+  async function uploadReelDirect(file) {
+    const presignRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives/presigned-upload`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ category: activeCategory, type: 'reel', filename: file.name, contentType: file.type })
+    });
+    const presignData = await presignRes.json();
+    if (!presignRes.ok) throw new Error(presignData.error || `Could not prepare upload for ${file.name}`);
+
+    const putRes = await fetch(presignData.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file
+    });
+    if (!putRes.ok) throw new Error(`Upload to storage failed for ${file.name}`);
+
+    const finalizeRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creatives/finalize`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        category: activeCategory,
+        type: 'reel',
+        format: presignData.format,
+        imageUrl: presignData.publicUrl
+      })
+    });
+    const finalizeData = await finalizeRes.json();
+    if (!finalizeRes.ok) throw new Error(finalizeData.error || `Could not save ${file.name}`);
+  }
+
   async function handleUpload(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -69,6 +104,18 @@ export default function CreativesLibraryPage() {
     // the hosting platform's per-request body size limit.
     for (let i = 0; i < files.length; i += 1) {
       setUploadStatus({ uploading: true, progress: `Uploading ${i + 1} of ${files.length}...`, error: '' });
+
+      if (activeType === 'reel') {
+        try {
+          await uploadReelDirect(files[i]);
+        } catch (err) {
+          setUploadStatus({ uploading: false, progress: '', error: err.message });
+          loadCreatives(activeType, activeCategory);
+          return;
+        }
+        continue;
+      }
+
       const formData = new FormData();
       formData.append('images', files[i]);
       formData.append('category', activeCategory);

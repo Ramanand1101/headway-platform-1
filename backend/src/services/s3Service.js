@@ -20,6 +20,18 @@ async function uploadBuffer(buffer, { folder, filename, contentType }) {
   return `${PUBLIC_BASE_URL}/${key}`;
 }
 
+// For large files (reel videos) — the browser PUTs the bytes straight to
+// S3 using this URL, never through our own server/serverless function, so
+// the hosting platform's ~4.5MB request-body cap never applies. Returns
+// both the one-time upload URL and the final public URL the object will
+// have once that PUT succeeds.
+async function getPresignedUploadUrl({ folder, filename, contentType }) {
+  const key = `${folder}/${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${sanitizeFilename(filename)}`;
+  const command = new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType });
+  const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 600 });
+  return { uploadUrl, publicUrl: `${PUBLIC_BASE_URL}/${key}` };
+}
+
 function keyFromUrl(url) {
   if (!url || !url.startsWith(PUBLIC_BASE_URL)) return null;
   return decodeURIComponent(url.slice(PUBLIC_BASE_URL.length + 1));
@@ -53,4 +65,12 @@ async function getPresignedDownloadUrl(url, downloadFilename) {
   return getSignedUrl(s3Client, command, { expiresIn: 300 });
 }
 
-module.exports = { uploadBuffer, keyFromUrl, deleteByUrl, objectExists, getPresignedDownloadUrl, PUBLIC_BASE_URL };
+module.exports = {
+  uploadBuffer,
+  keyFromUrl,
+  deleteByUrl,
+  objectExists,
+  getPresignedDownloadUrl,
+  getPresignedUploadUrl,
+  PUBLIC_BASE_URL
+};
