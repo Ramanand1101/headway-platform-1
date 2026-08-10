@@ -173,17 +173,6 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
           banner: margin on all sides, rounded corners, floats just below
           the sticky pill nav instead of bleeding behind it. */}
       <section className="relative isolate mx-[3vw] mt-4 min-h-[440px] overflow-hidden rounded-[32px] sm:min-h-[480px] lg:min-h-[540px]">
-        {/* Bold diagonal accent stripes in the two theme accent colors,
-            echoing the angled orange/purple corner cut of the reference
-            layout — purely decorative, sits behind the content. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-10 -right-10 -z-10 h-56 w-56 rotate-45 bg-[var(--site-blue)]/90 sm:h-72 sm:w-72"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-16 -right-16 -z-10 h-56 w-56 rotate-45 bg-[var(--site-green)]/70 sm:h-72 sm:w-72"
-        />
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[var(--site-navy)] via-[var(--site-navy-2)] to-[var(--site-navy-3)]">
           <img
             key={activeSlide}
@@ -234,23 +223,6 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                 {heroSlides[activeSlide].text}
               </Editable>
             </p>
-
-            {/* Quick checklist row, reusing the same "why it's free" bullets
-                shown lower on the page — mirrors the reference layout's
-                "✓ 24/7 Emergency ✓ Family-Owned ✓ Expert Technicians" row
-                under its headline, with real platform facts instead of
-                fabricated stats. */}
-            <div className="mb-8 flex flex-wrap gap-x-6 gap-y-2">
-              {content.freeSection.checklist.slice(0, 3).map((item, i) => (
-                <span key={i} className="flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <span className="grid h-5 w-5 flex-none place-items-center rounded-full bg-[var(--site-green)] text-[0.65rem] font-bold text-[var(--site-navy)]">
-                    ✓
-                  </span>
-                  {item.bold}
-                </span>
-              ))}
-            </div>
-
             <div className="flex flex-wrap gap-4">
               <button
                 type="button"
@@ -293,6 +265,17 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                 </button>
               )}
             </div>
+            {heroSlides[activeSlide].chip && (
+              <Editable
+                path={['hero', 'slides', activeSlide, 'chip']}
+                active={previewMode}
+                notify={notify}
+                className="mt-7 inline-flex w-fit items-center gap-2.5 rounded-full border border-[rgb(var(--site-green-rgb)/40%)] bg-[rgb(var(--site-green-rgb)/20%)] px-5 py-3 text-sm font-bold text-[var(--site-green-soft)] backdrop-blur"
+              >
+                ✓ {heroSlides[activeSlide].chip}
+              </Editable>
+            )}
+
             {/* dots + arrows — normal flow, no overlap */}
             <div className="mt-10 flex items-center gap-6 border-t border-white/15 pt-8">
               <div className="flex gap-2">
@@ -331,19 +314,14 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
         </div>
       </section>
 
-      {/* TRUST STRIP — bold bordered stat cards with a colored top accent,
-          closer to the reference's punchy "25+ Years" badge treatment than
-          plain dividers-only text. */}
+      {/* TRUST STRIP — big bold centered stat numbers with vertical
+          dividers, no icons. */}
       <Reveal
         as="div"
-        className="grid grid-cols-2 gap-4 px-[6vw] py-12 text-center lg:grid-cols-4"
+        className="grid grid-cols-2 gap-y-8 divide-gray-100 border-y border-gray-100 bg-gray-50 px-[6vw] py-12 text-center sm:divide-x lg:grid-cols-4"
       >
         {content.trustStrip.map((item, i) => (
-          <div
-            key={i}
-            className="rounded-2xl border-2 border-[var(--site-navy)]/10 bg-white px-4 py-6 shadow-sm"
-            style={{ borderTopColor: i % 2 === 0 ? 'var(--site-blue)' : 'var(--site-navy)', borderTopWidth: '4px' }}
-          >
+          <div key={i} className="flex flex-col items-center px-3">
             <Editable
               path={['trustStrip', i, 'value']}
               active={previewMode}
@@ -611,18 +589,13 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
         </div>
       </section>
 
-      {/* ONE PLATFORM FLOW — big numbered process cards on a bold color
-          block, matching the reference's "Our Simple Hassle-Free Work
-          Process" section instead of the earlier chip+arrow row. */}
+      {/* ONE PLATFORM FLOW */}
       <Reveal
         as="div"
-        className="relative mx-[3vw] overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--site-navy)] via-[var(--site-navy-2)] to-[var(--site-navy-3)] px-[6vw] py-16 text-center text-white"
+        className="relative mx-[6vw] overflow-hidden rounded-[28px] border border-gray-100 bg-gradient-to-br from-blue-50 to-green-50 px-[6vw] py-14 text-center"
       >
-        <div className="bg-grid-pattern pointer-events-none absolute inset-0 -z-10 opacity-20" />
-        <span className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[var(--site-blue-soft)]">
-          How It Works
-        </span>
-        <h2 className="mx-auto mt-4 max-w-3xl text-2xl font-extrabold tracking-tight sm:text-3xl">
+        <div className="bg-grid-pattern pointer-events-none absolute inset-0 -z-10" />
+        <h2 className="mx-auto max-w-3xl text-2xl font-extrabold tracking-tight sm:text-3xl">
           <Editable path={['flow', 'headingLine1']} active={previewMode} notify={notify}>
             {content.flow.headingLine1}
           </Editable>
@@ -636,33 +609,28 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
           active={previewMode}
           notify={notify}
           as="p"
-          className="mx-auto mt-4 max-w-xl leading-relaxed text-white/70"
+          className="mx-auto mt-4 max-w-xl leading-relaxed text-gray-600"
         >
           {content.flow.paragraph}
         </Editable>
-
-        <div className="mt-12 grid grid-cols-1 gap-6 text-left sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           {content.flow.steps.map((step, i) => (
-            <div key={i} className="relative rounded-2xl border border-white/15 bg-white/5 p-6">
-              <span className="text-4xl font-extrabold text-[var(--site-blue)]/50">
-                {String(i + 1).padStart(2, '0')}
-              </span>
+            <div key={i} className="flex items-center gap-3">
               <Editable
                 path={['flow', 'steps', i]}
                 active={previewMode}
                 notify={notify}
-                as="div"
-                className="mt-3 text-base font-bold text-white"
+                className="rounded-full border border-gray-200 bg-white px-5 py-3 text-sm font-bold shadow-sm"
               >
                 {step}
               </Editable>
+              {i < content.flow.steps.length - 1 && <span className="text-[var(--site-blue)]">→</span>}
             </div>
           ))}
         </div>
-
         <button
           type="button"
-          className={`${pillGreen} mt-12${previewMode ? ' outline-dashed outline-2 outline-white/60' : ''}`}
+          className={`${pillBlue} mt-9${previewMode ? ' outline-dashed outline-2 outline-white/60' : ''}`}
           onClick={
             previewMode
               ? (e) => {
@@ -830,37 +798,6 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
           </Editable>
         </div>
       </section>
-
-      {/* NATIONWIDE — stands in for the reference layout's local "service
-          area" map, which doesn't translate here: this platform isn't tied
-          to one city/region the way a local plumbing business is, and there
-          is no real per-city usage data to show, so a specific city list
-          would just be fabricated. This states the real, honest equivalent
-          instead. */}
-      <Reveal
-        as="div"
-        className="mx-[6vw] flex flex-col items-center gap-6 rounded-[28px] border border-gray-100 bg-gray-50 px-[6vw] py-16 text-center sm:flex-row sm:justify-between sm:text-left"
-      >
-        <div className="flex items-center gap-5">
-          <div className="grid h-16 w-16 flex-none place-items-center rounded-2xl bg-[var(--site-blue)]/10 text-[var(--site-blue)]">
-            <GlobeIcon className="h-8 w-8" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Built for advisors across India</h2>
-            <p className="mt-1.5 max-w-xl text-gray-600">
-              Every microsite runs on the cloud — there&apos;s no local setup, no city restriction. Wherever you&apos;re
-              licensed to advise, your website and content library work exactly the same.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className={`${pillOutline} flex-none`}
-          onClick={openLogin}
-        >
-          Get Started
-        </button>
-      </Reveal>
 
       {/* COMPLIANCE */}
       <section className="bg-gray-50 px-[6vw] py-28">

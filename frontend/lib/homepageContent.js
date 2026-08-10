@@ -3,7 +3,7 @@
 // /admin/homepage, and the admin editor (app/admin/homepage/page.js) uses
 // this same shape to pre-fill its form. Keep both in sync with this shape.
 export const defaultHomepageContent = {
-  themeKey: 'bold-purple',
+  themeKey: 'navy-gold',
   heroOverlayOpacity: 70,
   // Top nav — editable at /admin/homepage. Each item is { id, label, href,
   // newTab, children }; items with a non-empty `children` array render as a
