@@ -180,7 +180,7 @@ export default function CreativesLibraryPage() {
                 : `+ Upload ${activeType === 'reel' ? 'videos' : activeType === 'carousel' ? 'file' : 'images'}`}
               <input
                 type="file"
-                accept={activeType === 'reel' ? 'video/*' : 'image/*'}
+                accept={activeType === 'reel' ? 'video/*' : activeType === 'carousel' ? 'image/*,application/pdf' : 'image/*'}
                 multiple
                 onChange={handleUpload}
                 disabled={uploadStatus.uploading}
@@ -201,7 +201,20 @@ export default function CreativesLibraryPage() {
                   className="flex flex-col gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:flex-row"
                 >
                   <div className="relative h-32 w-32 flex-none overflow-hidden rounded-lg bg-gray-50">
-                    {creative.type === 'reel' ? (
+                    {creative.format === 'pdf' ? (
+                      <a
+                        href={creative.imageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-red-500 hover:bg-gray-100"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-8 w-8">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+                          <path strokeLinecap="round" d="M15 4v4h4" />
+                        </svg>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wide">PDF</span>
+                      </a>
+                    ) : creative.type === 'reel' ? (
                       <video src={creative.imageUrl} className="h-full w-full object-cover" muted controls />
                     ) : (
                       <img src={creative.imageUrl} alt="" className="h-full w-full object-cover" />

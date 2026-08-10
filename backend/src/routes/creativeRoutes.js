@@ -19,8 +19,11 @@ const uploadPhotos = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 4 * 1024 * 1024, files: 10 },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/') && !file.mimetype.startsWith('video/')) {
-      return cb(Object.assign(new Error('Files must be images or videos'), { status: 400 }));
+    const isImage = file.mimetype.startsWith('image/');
+    const isVideo = file.mimetype.startsWith('video/');
+    const isPdf = file.mimetype === 'application/pdf';
+    if (!isImage && !isVideo && !isPdf) {
+      return cb(Object.assign(new Error('Files must be images, videos or PDFs'), { status: 400 }));
     }
     cb(null, true);
   }

@@ -30,9 +30,27 @@ exports.listCreatives = async (req, res, next) => {
   }
 };
 
-// POST /api/creatives  (admin-only) — uploads one or more images/videos into
-// a category+type folder, shared instantly with every advisor's Content
-// Library. Reels are uploaded as video; images/carousels as image.
+// Which file formats each content type accepts — reels must be an actual
+// video (the poster-frame/playback logic assumes it); images/carousels are
+// stills, but a carousel can also be a swipeable PDF deck.
+const ALLOWED_FORMATS_BY_TYPE = {
+  image: ['image'],
+  carousel: ['image', 'pdf'],
+  reel: ['video']
+};
+
+function formatFromMimetype(mimetype) {
+  if (mimetype === 'application/pdf') return 'pdf';
+  if (mimetype.startsWith('video/')) return 'video';
+  return 'image';
+}
+
+// POST /api/creatives  (admin-only) — uploads one or more files (images,
+// videos or PDFs) into a category+type folder, shared instantly with every
+// advisor's Content Library. Multiple files upload in parallel in a single
+// request (the admin UI still sends one request per file to stay under the
+// hosting platform's body-size limit for large videos, but the endpoint
+// itself supports a real batch).
 exports.uploadCreatives = async (req, res, next) => {
   try {
     const { category, type = 'image' } = req.body;
@@ -44,11 +62,23 @@ exports.uploadCreatives = async (req, res, next) => {
     }
     const files = req.files || [];
     if (!files.length) {
-      return res.status(400).json({ error: `At least one ${type === 'reel' ? 'video' : 'image'} file is required` });
+      return res.status(400).json({ error: `At least one ${type === 'reel' ? 'video' : 'image or PDF'} file is required` });
+    }
+
+    const allowedFormats = ALLOWED_FORMATS_BY_TYPE[type];
+    const badFile = files.find((f) => !allowedFormats.includes(formatFromMimetype(f.mimetype)));
+    if (badFile) {
+      return res.status(400).json({
+        error:
+          type === 'reel'
+            ? `${badFile.originalname} isn't a video — reels must be uploaded as video files.`
+            : `${badFile.originalname} isn't an image or PDF.`
+      });
     }
 
     const created = await Promise.all(
       files.map(async (file) => {
+        const format = formatFromMimetype(file.mimetype);
         const imageUrl = await uploadBuffer(file.buffer, {
           folder: `creatives/${type}/${category}`,
           filename: file.originalname,
@@ -56,7 +86,7 @@ exports.uploadCreatives = async (req, res, next) => {
         });
 
         let thumbnailUrl;
-        if (type === 'reel') {
+        if (format === 'video') {
           // Best-effort — a bad/corrupt video shouldn't block the upload,
           // it'll just fall back to no poster image until re-processed.
           try {
@@ -71,7 +101,7 @@ exports.uploadCreatives = async (req, res, next) => {
           }
         }
 
-        return Creative.create({ category, type, imageUrl, thumbnailUrl });
+        return Creative.create({ category, type, format, imageUrl, thumbnailUrl });
       })
     );
 
@@ -88,7 +118,7 @@ exports.uploadCreatives = async (req, res, next) => {
 // preview card are exposed — nothing else on the document.
 exports.getPublicCreative = async (req, res, next) => {
   try {
-    const creative = await Creative.findById(req.params.id).select('imageUrl thumbnailUrl title description type');
+    const creative = await Creative.findById(req.params.id).select('imageUrl thumbnailUrl title description type format');
     if (!creative) return res.status(404).json({ error: 'Not found' });
     res.json({ creative });
   } catch (err) {
