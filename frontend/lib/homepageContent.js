@@ -114,19 +114,6 @@ export const defaultHomepageContent = {
     ],
     button: 'Claim My Free Website'
   },
-  // About block — the photo+checklist+stat-badge section right after the
-  // hero. The floating badge reuses a real trustStrip figure (50 free
-  // credits) rather than inventing a vanity metric like an advisor/customer
-  // count, which isn't something we can honestly put a specific number on.
-  about: {
-    eyebrow: 'About The Platform',
-    heading: 'Built around what advisors actually need',
-    paragraph:
-      "InsuranceAdvise.in started with one problem: licensed advisors were losing clients to whoever showed up first online. So the platform gives every advisor the two things that fix that — a real website and a steady stream of content — without needing a developer or a marketing team.",
-    checklist: ['No technical skill required', 'Credits only spent on what you actually post', 'Your name, your license, your practice'],
-    badgeValue: '50',
-    badgeLabel: 'Free Credits On Signup'
-  },
   capabilities: {
     eyebrow: 'Everything In One Place',
     heading: 'Your entire digital presence. One login.',
@@ -144,18 +131,8 @@ export const defaultHomepageContent = {
       {
         title: 'Image Posts',
         desc: "Premium posters, greetings and quote cards for every occasion — keep your feed alive and your name in every client's mind."
-      },
-      {
-        title: 'Blogs',
-        desc: 'AI-assisted article drafts you can edit and publish straight to your microsite — free to draft, and a lightweight way to build search visibility over time.'
       }
     ]
-  },
-  // Full-width CTA banner between the services grid and the flow section.
-  ctaBanner: {
-    heading: 'Your website and your content, finally in one place.',
-    paragraph: 'No developer. No separate design tool. No manual posting.',
-    button: 'Get Started Free'
   },
   flow: {
     headingLine1: 'Website. Content. Publishing. Leads.',

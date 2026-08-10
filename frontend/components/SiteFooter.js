@@ -29,16 +29,12 @@ const columns = [
   }
 ];
 
-// Small real-photo strip in the footer — reuses the same hero images already
-// shown elsewhere on this site (not stock/fabricated gallery photos).
-const galleryImages = ['/images/banner-1.jpg', '/images/banner-2.jpg', '/images/banner-3.jpg', '/images/banner-4.jpg'];
-
 // Shared marketing-site footer — used on every platform page except the
 // advisor microsites (those render their own advisor-branded footer).
 export default function SiteFooter() {
   return (
     <footer className="bg-[var(--site-navy)] px-[6vw] pb-8 pt-14 text-white">
-      <div className="grid gap-10 border-b border-white/10 pb-10 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr]">
+      <div className="grid gap-10 border-b border-white/10 pb-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Link href="/" className="flex items-center gap-2.5 text-lg font-extrabold">
             <Logo size="sm" />
@@ -63,17 +59,6 @@ export default function SiteFooter() {
             </ul>
           </div>
         ))}
-
-        <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-white/70">Gallery</h4>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {galleryImages.map((src) => (
-              <div key={src} className="aspect-square overflow-hidden rounded-lg bg-white/10">
-                <img src={src} alt="" className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5 text-xs leading-relaxed text-white/80">
