@@ -4,7 +4,7 @@ import AdminSidebar from '../../../components/AdminSidebar';
 import { defaultHomepageContent } from '../../../lib/homepageContent';
 import { homepageThemes } from '../../../lib/homepageThemes';
 
-const capImageKeys = ['cap-reels', 'cap-carousels', 'cap-posts'];
+const capImageKeys = ['cap-reels', 'cap-carousels', 'cap-posts', 'cap-blogs'];
 
 // Quick-fill shortcuts for the nav menu editor — picking one fills both the
 // label and the link, which the admin can still rename/redirect afterward.
@@ -191,7 +191,14 @@ export default function HomepageContentPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.content) {
-          setContent({ ...data.content, navLinks: data.content.navLinks?.length ? data.content.navLinks : defaultHomepageContent.navLinks });
+          // Merge over the code defaults — a save made before a new section
+          // (e.g. `about`, `ctaBanner`) existed would otherwise be missing
+          // that key entirely and crash the editor form for it.
+          setContent({
+            ...defaultHomepageContent,
+            ...data.content,
+            navLinks: data.content.navLinks?.length ? data.content.navLinks : defaultHomepageContent.navLinks
+          });
         }
         setLoading(false);
       })
@@ -616,6 +623,66 @@ export default function HomepageContentPage() {
               ))}
             </Section>
 
+            <Section title='"About" section' desc="Photo + floating stat badge + short story + 3-item checklist, right after the reason cards.">
+              <ImageSlot
+                id={fieldId(['image', 'about-image'])}
+                highlighted={highlightedId === fieldId(['image', 'about-image'])}
+                label="Section photo"
+                size="1200×900px, 4:3"
+                imageUrl={bannerUrls['about-image']}
+                uploading={uploadingKey === 'about-image'}
+                error={bannerErrors['about-image']}
+                onUpload={(file) => handleUploadImage('about-image', file)}
+              />
+              <Field
+                id={fieldId(['about', 'badgeValue'])}
+                highlighted={highlightedId === fieldId(['about', 'badgeValue'])}
+                label="Floating badge — value"
+                value={content.about.badgeValue}
+                onChange={(v) => set(['about', 'badgeValue'], v)}
+              />
+              <Field
+                id={fieldId(['about', 'badgeLabel'])}
+                highlighted={highlightedId === fieldId(['about', 'badgeLabel'])}
+                label="Floating badge — label"
+                value={content.about.badgeLabel}
+                onChange={(v) => set(['about', 'badgeLabel'], v)}
+              />
+              <Field
+                id={fieldId(['about', 'eyebrow'])}
+                highlighted={highlightedId === fieldId(['about', 'eyebrow'])}
+                label="Eyebrow"
+                value={content.about.eyebrow}
+                onChange={(v) => set(['about', 'eyebrow'], v)}
+              />
+              <Field
+                id={fieldId(['about', 'heading'])}
+                highlighted={highlightedId === fieldId(['about', 'heading'])}
+                label="Heading"
+                value={content.about.heading}
+                onChange={(v) => set(['about', 'heading'], v)}
+              />
+              <Field
+                id={fieldId(['about', 'paragraph'])}
+                highlighted={highlightedId === fieldId(['about', 'paragraph'])}
+                label="Paragraph"
+                textarea
+                rows={4}
+                value={content.about.paragraph}
+                onChange={(v) => set(['about', 'paragraph'], v)}
+              />
+              {content.about.checklist.map((item, i) => (
+                <Field
+                  key={i}
+                  id={fieldId(['about', 'checklist', i])}
+                  highlighted={highlightedId === fieldId(['about', 'checklist', i])}
+                  label={`Checklist item ${i + 1}`}
+                  value={item}
+                  onChange={(v) => set(['about', 'checklist', i], v)}
+                />
+              ))}
+            </Section>
+
             <Section title='"How is this free?" section' desc="Explanation copy, the 4-item checklist and its button.">
               <ImageSlot
                 id={fieldId(['image', 'free-image'])}
@@ -676,7 +743,7 @@ export default function HomepageContentPage() {
               />
             </Section>
 
-            <Section title="Platform capabilities" desc="Intro plus the 3 content-type cards.">
+            <Section title="Platform capabilities" desc="Intro plus the 4 content-type cards.">
               <Field
                 id={fieldId(['capabilities', 'eyebrow'])}
                 highlighted={highlightedId === fieldId(['capabilities', 'eyebrow'])}
@@ -731,6 +798,30 @@ export default function HomepageContentPage() {
                   </div>
                 </div>
               ))}
+            </Section>
+
+            <Section title="CTA banner" desc="Full-width color strip between the services grid and the process section.">
+              <Field
+                id={fieldId(['ctaBanner', 'heading'])}
+                highlighted={highlightedId === fieldId(['ctaBanner', 'heading'])}
+                label="Heading"
+                value={content.ctaBanner.heading}
+                onChange={(v) => set(['ctaBanner', 'heading'], v)}
+              />
+              <Field
+                id={fieldId(['ctaBanner', 'paragraph'])}
+                highlighted={highlightedId === fieldId(['ctaBanner', 'paragraph'])}
+                label="Paragraph"
+                value={content.ctaBanner.paragraph}
+                onChange={(v) => set(['ctaBanner', 'paragraph'], v)}
+              />
+              <Field
+                id={fieldId(['ctaBanner', 'button'])}
+                highlighted={highlightedId === fieldId(['ctaBanner', 'button'])}
+                label="Button label"
+                value={content.ctaBanner.button}
+                onChange={(v) => set(['ctaBanner', 'button'], v)}
+              />
             </Section>
 
             <Section title="Platform flow banner" desc="The blue/green banner with the 4 flow steps.">

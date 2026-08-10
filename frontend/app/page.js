@@ -26,7 +26,13 @@ async function getHomepageContent() {
     if (!res.ok) return defaultHomepageContent;
     const data = await res.json();
     if (!data.content) return defaultHomepageContent;
+    // Shallow-merge over the code defaults (not just the saved override on
+    // its own) — an admin save from before a new top-level section (e.g.
+    // `about`, `ctaBanner`) existed in the code wouldn't have that key at
+    // all, and rendering it as `undefined` crashes the page instead of
+    // just falling back to the section's default copy.
     return {
+      ...defaultHomepageContent,
       ...data.content,
       navLinks: data.content.navLinks?.length ? data.content.navLinks : defaultHomepageContent.navLinks
     };

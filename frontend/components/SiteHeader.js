@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Logo from './Logo';
 import { defaultHomepageContent } from '../lib/homepageContent';
+import { ShieldIcon } from './HomeIcons';
 
 const pillBlue =
   'inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--site-blue)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-ia-gold-tint transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--site-blue-soft)] hover:shadow-xl hover:shadow-ia-gold-tint active:translate-y-0 active:scale-[0.97]';
@@ -44,7 +45,28 @@ export default function SiteHeader({ onLoginClick, navLinks }) {
   const links = navLinks || fetchedNavLinks || defaultHomepageContent.navLinks;
 
   return (
-    <div className="sticky top-2 z-50 px-4 sm:px-6">
+    <div>
+      {/* Thin utility strip above the nav — real, functional links only (no
+          invented phone number/social handles to match). Not sticky, so it
+          scrolls away with the page instead of eating space permanently. */}
+      <div className="hidden bg-[var(--site-navy)] px-6 py-2 text-xs font-semibold text-white/85 sm:block">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldIcon className="h-3.5 w-3.5" />
+            For IRDAI-licensed insurance advisors
+          </span>
+          <div className="flex items-center gap-5">
+            <Link href="/customer/login" className="transition hover:text-white">
+              Customer Login
+            </Link>
+            <Link href="/advisor/login" className="transition hover:text-white">
+              Advisor Login
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="sticky top-2 z-50 px-4 sm:px-6">
       <nav className="mx-auto max-w-6xl rounded-2xl border border-gray-100 bg-white/95 shadow-lg shadow-gray-900/5 backdrop-blur-md">
         <div className="flex items-center justify-between px-5 py-3 sm:px-7 sm:py-4">
           <Link href="/" className="flex items-center gap-2.5 text-lg font-extrabold tracking-tight sm:text-xl">
@@ -201,6 +223,7 @@ export default function SiteHeader({ onLoginClick, navLinks }) {
           </div>
         </div>
       </nav>
+      </div>
     </div>
   );
 }

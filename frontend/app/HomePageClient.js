@@ -25,7 +25,8 @@ import {
   UploadIcon,
   LockIcon,
   HandshakeIcon,
-  GlobeIcon
+  GlobeIcon,
+  BlogIcon
 } from '../components/HomeIcons';
 
 // Flat, borderless CTAs with a soft lift on hover instead of a glow-shadow —
@@ -62,7 +63,8 @@ const whyMeta = [
 const capMeta = [
   { key: 'cap-reels', Icon: ReelIcon },
   { key: 'cap-carousels', Icon: ImageIcon },
-  { key: 'cap-posts', Icon: PinIcon }
+  { key: 'cap-posts', Icon: PinIcon },
+  { key: 'cap-blogs', Icon: BlogIcon }
 ];
 
 const pricingMeta = [
@@ -194,6 +196,13 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
           />
         </div>
 
+        {/* Diagonal accent seam — echoes the angled photo/text split common
+            to insurance-template heroes, without needing a second image. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-[38%] -z-10 hidden w-24 bg-[var(--site-blue)]/15 [clip-path:polygon(40%_0,100%_0,60%_100%,0_100%)] lg:block"
+        />
+
         <div className="relative flex min-h-[500px] items-center px-[6vw] py-16 sm:min-h-[560px] lg:min-h-[620px]">
           <div key={activeSlide} className="animate-fade-in max-w-2xl text-white">
             <Editable
@@ -223,6 +232,18 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                 {heroSlides[activeSlide].text}
               </Editable>
             </p>
+
+            {/* Real stat badges pulled from trustStrip — not invented
+                numbers, the same facts shown further down the page. */}
+            <div className="mb-8 flex flex-wrap gap-4">
+              {content.trustStrip.slice(0, 2).map((item, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 backdrop-blur">
+                  <span className="text-lg font-extrabold text-[var(--site-blue-soft)]">{item.value}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-white/70">{item.label}</span>
+                </div>
+              ))}
+            </div>
+
             <div className="flex flex-wrap gap-4">
               <button
                 type="button"
@@ -418,6 +439,81 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
         </div>
       </section>
 
+      {/* ABOUT — photo + floating stat badge + short story + checklist. The
+          badge value reuses a real trustStrip figure rather than an
+          invented advisor/customer count. */}
+      <section className="bg-gray-50 px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 lg:grid-cols-2">
+          <div className="relative mx-auto w-full max-w-md">
+            <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+              {bannerUrls['about-image'] ? (
+                <img
+                  src={bannerUrls['about-image']}
+                  alt="Advisor at work"
+                  className={`h-full w-full object-cover ${previewMode ? 'cursor-pointer outline-dashed outline-2 outline-transparent hover:outline-[rgb(var(--site-blue-rgb)/60%)]' : ''}`}
+                  onClick={previewMode ? () => notify(['image', 'about-image']) : undefined}
+                />
+              ) : (
+                <span
+                  className={`text-[var(--site-navy)] ${previewMode ? 'cursor-pointer' : ''}`}
+                  onClick={previewMode ? () => notify(['image', 'about-image']) : undefined}
+                >
+                  <ShieldIcon className="h-28 w-28" strokeWidth={1.2} />
+                </span>
+              )}
+            </div>
+            <div className="absolute -left-4 -bottom-4 rounded-2xl bg-[var(--site-navy)] px-6 py-4 text-white shadow-md sm:-left-6 sm:-bottom-6">
+              <Editable path={['about', 'badgeValue']} active={previewMode} notify={notify} as="strong" className="block text-2xl font-extrabold">
+                {content.about.badgeValue}
+              </Editable>
+              <Editable path={['about', 'badgeLabel']} active={previewMode} notify={notify} className="text-[0.65rem] font-bold uppercase tracking-wide text-white/80">
+                {content.about.badgeLabel}
+              </Editable>
+            </div>
+          </div>
+          <div>
+            <Editable
+              path={['about', 'eyebrow']}
+              active={previewMode}
+              notify={notify}
+              className="text-sm font-bold uppercase tracking-widest text-[var(--site-blue)]"
+            >
+              {content.about.eyebrow}
+            </Editable>
+            <Editable
+              path={['about', 'heading']}
+              active={previewMode}
+              notify={notify}
+              as="h2"
+              className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl"
+            >
+              {content.about.heading}
+            </Editable>
+            <Editable
+              path={['about', 'paragraph']}
+              active={previewMode}
+              notify={notify}
+              as="p"
+              className="mt-5 leading-relaxed text-gray-600"
+            >
+              {content.about.paragraph}
+            </Editable>
+            <ul className="mt-7 space-y-3">
+              {content.about.checklist.map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm leading-relaxed text-gray-700">
+                  <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-green-50 text-xs font-bold text-[var(--site-green)]">
+                    ✓
+                  </span>
+                  <Editable path={['about', 'checklist', i]} active={previewMode} notify={notify}>
+                    {item}
+                  </Editable>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+      </section>
+
       {/* HOW IT'S FREE */}
       <section id="free" className="bg-gray-50 px-[6vw] py-28">
         <Reveal as="div" className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 lg:grid-cols-2">
@@ -536,7 +632,7 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
             {content.capabilities.paragraph}
           </Editable>
         </Reveal>
-        <div className="grid grid-cols-1 gap-7 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
           {content.capabilities.cards.map((cap, i) => {
             const CapIcon = capMeta[i].Icon;
             return (
@@ -589,6 +685,36 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
         </div>
       </section>
 
+      {/* CTA BANNER — full-width color strip between the services grid and
+          the process section. */}
+      <Reveal
+        as="div"
+        className="mx-[3vw] flex flex-col items-center justify-between gap-6 rounded-[28px] bg-[var(--site-navy)] px-[6vw] py-10 text-center text-white sm:flex-row sm:text-left"
+      >
+        <div>
+          <Editable path={['ctaBanner', 'heading']} active={previewMode} notify={notify} as="h3" className="text-xl font-extrabold tracking-tight sm:text-2xl">
+            {content.ctaBanner.heading}
+          </Editable>
+          <Editable path={['ctaBanner', 'paragraph']} active={previewMode} notify={notify} as="p" className="mt-1.5 text-white/70">
+            {content.ctaBanner.paragraph}
+          </Editable>
+        </div>
+        <button
+          type="button"
+          className={`${pillGreen} flex-none${previewMode ? ' outline-dashed outline-2 outline-white/60' : ''}`}
+          onClick={
+            previewMode
+              ? (e) => {
+                  e.preventDefault();
+                  notify(['ctaBanner', 'button']);
+                }
+              : openLogin
+          }
+        >
+          {content.ctaBanner.button}
+        </button>
+      </Reveal>
+
       {/* ONE PLATFORM FLOW */}
       <Reveal
         as="div"
@@ -613,18 +739,19 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
         >
           {content.flow.paragraph}
         </Editable>
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+        {/* Numbered circular steps connected by a dashed line — the "4-step
+            work process" timeline pattern, using real step labels instead
+            of stock step-photos. */}
+        <div className="relative mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-4">
+          <div className="absolute left-[12%] right-[12%] top-8 hidden border-t-2 border-dashed border-gray-300 sm:block" />
           {content.flow.steps.map((step, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <Editable
-                path={['flow', 'steps', i]}
-                active={previewMode}
-                notify={notify}
-                className="rounded-full border border-gray-200 bg-white px-5 py-3 text-sm font-bold shadow-sm"
-              >
+            <div key={i} className="relative flex flex-col items-center gap-3">
+              <span className="relative z-10 grid h-16 w-16 flex-none place-items-center rounded-full border-2 border-[var(--site-blue)] bg-white text-lg font-extrabold text-[var(--site-blue)] shadow-sm">
+                {i + 1}
+              </span>
+              <Editable path={['flow', 'steps', i]} active={previewMode} notify={notify} as="div" className="text-sm font-bold text-[var(--site-navy)]">
                 {step}
               </Editable>
-              {i < content.flow.steps.length - 1 && <span className="text-[var(--site-blue)]">→</span>}
             </div>
           ))}
         </div>

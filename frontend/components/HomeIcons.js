@@ -167,3 +167,12 @@ export function GlobeIcon(props) {
     </svg>
   );
 }
+
+export function BlogIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+      <path strokeLinecap="round" d="M15 4v4h4M8 12h8M8 15.5h8M8 19h5" />
+    </svg>
+  );
+}
