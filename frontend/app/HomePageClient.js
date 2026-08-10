@@ -293,17 +293,6 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                 </button>
               )}
             </div>
-            {heroSlides[activeSlide].chip && (
-              <Editable
-                path={['hero', 'slides', activeSlide, 'chip']}
-                active={previewMode}
-                notify={notify}
-                className="mt-7 inline-flex w-fit items-center gap-2.5 rounded-full border border-[rgb(var(--site-green-rgb)/40%)] bg-[rgb(var(--site-green-rgb)/20%)] px-5 py-3 text-sm font-bold text-[var(--site-green-soft)] backdrop-blur"
-              >
-                ✓ {heroSlides[activeSlide].chip}
-              </Editable>
-            )}
-
             {/* dots + arrows — normal flow, no overlap */}
             <div className="mt-10 flex items-center gap-6 border-t border-white/15 pt-8">
               <div className="flex gap-2">
