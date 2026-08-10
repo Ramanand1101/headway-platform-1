@@ -1,4 +1,4 @@
-const cloudinary = require('cloudinary').v2;
+const { uploadBuffer } = require('./s3Service');
 const ContentPost = require('../models/ContentPost');
 
 // Uses a real OpenAI key once OPENAI_API_KEY is set in the environment.
@@ -78,15 +78,15 @@ style, warm and trustworthy tone, no text or words anywhere in the image, no log
     });
     const data = await response.json();
     const image = data.data?.[0];
-    const source = image?.url || (image?.b64_json && `data:image/png;base64,${image.b64_json}`);
-    if (!source) return null;
+    if (!image?.url && !image?.b64_json) return null;
 
-    const uploaded = await cloudinary.uploader.upload(source, {
-      folder: 'blog-images',
-      public_id: `${Date.now()}`,
-      resource_type: 'image'
-    });
-    return uploaded.secure_url;
+    // Re-host onto our own storage either way — OpenAI's `url` is temporary
+    // (expires in ~1hr), and a raw base64 payload has nowhere else to live.
+    const buffer = image.url
+      ? Buffer.from(await (await fetch(image.url)).arrayBuffer())
+      : Buffer.from(image.b64_json, 'base64');
+
+    return await uploadBuffer(buffer, { folder: 'blog-images', filename: `${Date.now()}.png`, contentType: 'image/png' });
   } catch {
     return null;
   }

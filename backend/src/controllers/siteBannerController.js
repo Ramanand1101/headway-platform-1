@@ -1,4 +1,4 @@
-const cloudinary = require('cloudinary').v2;
+const { uploadBuffer, deleteByUrl } = require('../services/s3Service');
 const SiteBanner = require('../models/SiteBanner');
 
 exports.getBanners = async (req, res, next) => {
@@ -20,20 +20,21 @@ exports.uploadBanner = async (req, res, next) => {
       return res.status(400).json({ error: 'Image file is required' });
     }
 
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    const existing = await SiteBanner.findOne({ key });
 
-    const uploaded = await cloudinary.uploader.upload(dataUri, {
+    const imageUrl = await uploadBuffer(req.file.buffer, {
       folder: 'site-banners',
-      public_id: key,
-      overwrite: true,
-      resource_type: 'image'
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
     });
 
     const banner = await SiteBanner.findOneAndUpdate(
       { key },
-      { $set: { imageUrl: uploaded.secure_url, key } },
+      { $set: { imageUrl, key } },
       { new: true, upsert: true }
     );
+
+    if (existing?.imageUrl) await deleteByUrl(existing.imageUrl).catch(() => {});
 
     res.json({ banner });
   } catch (err) {

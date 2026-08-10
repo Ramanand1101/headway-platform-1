@@ -77,6 +77,21 @@ export const homepageThemes = {
       green: '#16A34A',
       greenSoft: '#22C55E'
     }
+  },
+  // Bold deep-purple + orange — the "navy" role becomes a vivid purple, the
+  // "blue" role (CTAs/accents) becomes orange, "green" (secondary accent)
+  // stays a warm gold so checkmarks/highlights still read as positive.
+  'bold-purple': {
+    label: 'Bold Purple & Orange',
+    colors: {
+      navy: '#3B1F6B',
+      navy2: '#4C2A8A',
+      navy3: '#2A1650',
+      blue: '#F97316',
+      blueSoft: '#FB923C',
+      green: '#F59E0B',
+      greenSoft: '#FBBF24'
+    }
   }
 };
 

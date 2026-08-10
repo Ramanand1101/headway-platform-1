@@ -8,7 +8,7 @@ import { micrositeThemes } from '../../../lib/micrositeThemes';
 import { decodeToken } from '../../../lib/auth';
 import { micrositeCopyDefaults } from '../../../lib/advisorMicrositeCopyDefaults';
 import { defaultVision, defaultMission } from '../../../lib/advisorMicrositeDefaults';
-import { watermarkedUrl, downloadableUrl, videoThumbnailUrl } from '../../../lib/watermark';
+import { watermarkedUrl, downloadableUrl } from '../../../lib/watermark';
 import ChatWidget from '../../../components/ChatWidget';
 
 function MenuIcon(props) {
@@ -936,7 +936,7 @@ export default function AdvisorDashboardPage() {
     const url = await unlockCreativeForAction(creative);
     if (!url) return;
     const link = document.createElement('a');
-    link.href = downloadableUrl(url);
+    link.href = downloadableUrl(url, creative.title);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -1012,7 +1012,7 @@ export default function AdvisorDashboardPage() {
   // already-downloaded photo.
   async function downloadAndCopyCaption(url, creative, platform) {
     const link = document.createElement('a');
-    link.href = downloadableUrl(url);
+    link.href = downloadableUrl(url, creative.title);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -2685,7 +2685,7 @@ export default function AdvisorDashboardPage() {
                               {creative.type === 'reel' ? (
                                 <video
                                   src={creative.imageUrl}
-                                  poster={videoThumbnailUrl(creative.imageUrl)}
+                                  poster={creative.thumbnailUrl}
                                   muted
                                   playsInline
                                   onClick={() => setPreviewCreative(creative)}
@@ -2769,7 +2769,7 @@ export default function AdvisorDashboardPage() {
                         {previewCreative.type === 'reel' ? (
                           <video
                             src={previewCreative.imageUrl}
-                            poster={videoThumbnailUrl(previewCreative.imageUrl)}
+                            poster={previewCreative.thumbnailUrl}
                             controls
                             autoPlay
                             muted

@@ -1,7 +1,7 @@
 const { parse } = require('csv-parse/sync');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const cloudinary = require('cloudinary').v2;
+const { uploadBuffer, deleteByUrl } = require('../services/s3Service');
 const Advisor = require('../models/Advisor');
 const Testimonial = require('../models/Testimonial');
 const User = require('../models/User');
@@ -275,21 +275,22 @@ exports.uploadProfilePhoto = async (req, res, next) => {
       return res.status(400).json({ error: 'Photo file is required' });
     }
 
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    const previous = await Advisor.findById(req.user.advisorId).select('photoUrl');
 
-    const uploaded = await cloudinary.uploader.upload(dataUri, {
-      folder: 'advisor-photos',
-      public_id: String(req.user.advisorId),
-      overwrite: true,
-      resource_type: 'image'
+    const photoUrl = await uploadBuffer(req.file.buffer, {
+      folder: `advisor-photos/${req.user.advisorId}`,
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
     });
 
     const advisor = await Advisor.findByIdAndUpdate(
       req.user.advisorId,
-      { $set: { photoUrl: uploaded.secure_url } },
+      { $set: { photoUrl } },
       { new: true }
     );
     if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    if (previous?.photoUrl) await deleteByUrl(previous.photoUrl).catch(() => {});
 
     res.json({ advisor });
   } catch (err) {
@@ -314,21 +315,23 @@ exports.uploadMicrositeImage = async (req, res, next) => {
       return res.status(400).json({ error: 'Photo file is required' });
     }
 
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    const previous = await Advisor.findById(req.user.advisorId).select('micrositeImages');
 
-    const uploaded = await cloudinary.uploader.upload(dataUri, {
-      folder: 'advisor-microsite-images',
-      public_id: `${req.user.advisorId}-${section}`,
-      overwrite: true,
-      resource_type: 'image'
+    const imageUrl = await uploadBuffer(req.file.buffer, {
+      folder: `advisor-microsite-images/${req.user.advisorId}/${section}`,
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
     });
 
     const advisor = await Advisor.findByIdAndUpdate(
       req.user.advisorId,
-      { $set: { [`micrositeImages.${section}`]: uploaded.secure_url } },
+      { $set: { [`micrositeImages.${section}`]: imageUrl } },
       { new: true }
     );
     if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    const previousUrl = previous?.micrositeImages?.[section];
+    if (previousUrl) await deleteByUrl(previousUrl).catch(() => {});
 
     res.json({ advisor });
   } catch (err) {
@@ -345,12 +348,17 @@ exports.deleteMicrositeImage = async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid microsite image section' });
     }
 
+    const previous = await Advisor.findById(req.user.advisorId).select('micrositeImages');
+
     const advisor = await Advisor.findByIdAndUpdate(
       req.user.advisorId,
       { $unset: { [`micrositeImages.${section}`]: '' } },
       { new: true }
     );
     if (!advisor) return res.status(404).json({ error: 'Advisor not found' });
+
+    const previousUrl = previous?.micrositeImages?.[section];
+    if (previousUrl) await deleteByUrl(previousUrl).catch(() => {});
 
     res.json({ advisor });
   } catch (err) {
@@ -411,15 +419,13 @@ exports.uploadListImage = async (req, res, next) => {
       return res.status(400).json({ error: 'Photo file is required' });
     }
 
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-
-    const uploaded = await cloudinary.uploader.upload(dataUri, {
-      folder: 'advisor-list-images',
-      public_id: `${req.user.advisorId}-${Date.now()}`,
-      resource_type: 'image'
+    const url = await uploadBuffer(req.file.buffer, {
+      folder: `advisor-list-images/${req.user.advisorId}`,
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
     });
 
-    res.json({ url: uploaded.secure_url });
+    res.json({ url });
   } catch (err) {
     next(err);
   }

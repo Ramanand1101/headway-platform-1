@@ -1,4 +1,5 @@
-const cloudinary = require('cloudinary').v2;
+const { uploadBuffer, deleteByUrl } = require('../services/s3Service');
+const { extractVideoThumbnail } = require('../services/mediaService');
 const Creative = require('../models/Creative');
 
 const { CREATIVE_CATEGORIES, CREATIVE_TYPES } = Creative;
@@ -46,17 +47,31 @@ exports.uploadCreatives = async (req, res, next) => {
       return res.status(400).json({ error: `At least one ${type === 'reel' ? 'video' : 'image'} file is required` });
     }
 
-    const resourceType = type === 'reel' ? 'video' : 'image';
-
     const created = await Promise.all(
-      files.map(async (file, index) => {
-        const dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-        const uploaded = await cloudinary.uploader.upload(dataUri, {
+      files.map(async (file) => {
+        const imageUrl = await uploadBuffer(file.buffer, {
           folder: `creatives/${type}/${category}`,
-          public_id: `${Date.now()}-${index}`,
-          resource_type: resourceType
+          filename: file.originalname,
+          contentType: file.mimetype
         });
-        return Creative.create({ category, type, imageUrl: uploaded.secure_url });
+
+        let thumbnailUrl;
+        if (type === 'reel') {
+          // Best-effort — a bad/corrupt video shouldn't block the upload,
+          // it'll just fall back to no poster image until re-processed.
+          try {
+            const frame = await extractVideoThumbnail(file.buffer);
+            thumbnailUrl = await uploadBuffer(frame, {
+              folder: `creatives/${type}/${category}/thumbnails`,
+              filename: `${file.originalname}.jpg`,
+              contentType: 'image/jpeg'
+            });
+          } catch (err) {
+            console.error('Reel thumbnail generation failed:', err.message);
+          }
+        }
+
+        return Creative.create({ category, type, imageUrl, thumbnailUrl });
       })
     );
 
@@ -73,7 +88,7 @@ exports.uploadCreatives = async (req, res, next) => {
 // preview card are exposed — nothing else on the document.
 exports.getPublicCreative = async (req, res, next) => {
   try {
-    const creative = await Creative.findById(req.params.id).select('imageUrl title description type');
+    const creative = await Creative.findById(req.params.id).select('imageUrl thumbnailUrl title description type');
     if (!creative) return res.status(404).json({ error: 'Not found' });
     res.json({ creative });
   } catch (err) {
@@ -103,6 +118,9 @@ exports.deleteCreative = async (req, res, next) => {
   try {
     const creative = await Creative.findByIdAndDelete(req.params.id);
     if (!creative) return res.status(404).json({ error: 'Creative not found' });
+    await Promise.all(
+      [creative.imageUrl, creative.thumbnailUrl].filter(Boolean).map((url) => deleteByUrl(url).catch(() => {}))
+    );
     res.json({ success: true });
   } catch (err) {
     next(err);

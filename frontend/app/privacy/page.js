@@ -57,7 +57,7 @@ export default function PrivacyPage() {
           <p className="mt-2">
             We do not sell personal data. We share data only with service providers that help us run the platform —
             for example Google (sign-in), Meta/Instagram (social publishing, only for advisors who connect their
-            account), Cloudinary (photo storage) and our payment processor (for paid plans) — strictly to provide
+            account), Amazon Web Services (photo/video storage) and our payment processor (for paid plans) — strictly to provide
             their respective services to us. Content you choose to publish on your public microsite (name, photo,
             bio, services) is, by design, visible to your site&apos;s visitors.
           </p>

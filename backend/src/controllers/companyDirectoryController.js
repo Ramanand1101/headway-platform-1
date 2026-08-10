@@ -1,4 +1,4 @@
-const cloudinary = require('cloudinary').v2;
+const { uploadBuffer, deleteByUrl } = require('../services/s3Service');
 const CompanyDirectory = require('../models/CompanyDirectory');
 
 const { CATEGORIES } = CompanyDirectory;
@@ -38,14 +38,13 @@ exports.createCompany = async (req, res, next) => {
       return res.status(400).json({ error: 'Logo file is required' });
     }
 
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    const uploaded = await cloudinary.uploader.upload(dataUri, {
+    const logoUrl = await uploadBuffer(req.file.buffer, {
       folder: `company-directory/${category}`,
-      public_id: `${Date.now()}`,
-      resource_type: 'image'
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
     });
 
-    const company = await CompanyDirectory.create({ name: name.trim(), logoUrl: uploaded.secure_url, category });
+    const company = await CompanyDirectory.create({ name: name.trim(), logoUrl, category });
     res.status(201).json({ company });
   } catch (err) {
     next(err);
@@ -57,6 +56,7 @@ exports.deleteCompany = async (req, res, next) => {
   try {
     const company = await CompanyDirectory.findByIdAndDelete(req.params.id);
     if (!company) return res.status(404).json({ error: 'Company not found' });
+    if (company.logoUrl) await deleteByUrl(company.logoUrl).catch(() => {});
     res.json({ success: true });
   } catch (err) {
     next(err);
