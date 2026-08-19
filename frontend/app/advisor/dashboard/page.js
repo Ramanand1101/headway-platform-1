@@ -914,22 +914,32 @@ export default function AdvisorDashboardPage() {
     if (!window.confirm(`This ${creative.type} costs ${cost} credits. Continue?`)) return null;
 
     setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'adding' }));
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/content-library/from-url`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ creativeId: creative._id })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setAdvisor(data.advisor);
-      setLibraryImages(data.advisor.contentLibraryImages || []);
-      setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'added' }));
-      return data.url;
-    }
+    // A network failure or a non-JSON response (e.g. a proxy/CDN error page)
+    // must still clear the 'adding' status — otherwise the button is left
+    // disabled on "Please wait..." forever with no way to retry.
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advisor/content-library/from-url`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ creativeId: creative._id }),
+        signal: AbortSignal.timeout(20000)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAdvisor(data.advisor);
+        setLibraryImages(data.advisor.contentLibraryImages || []);
+        setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'added' }));
+        return data.url;
+      }
 
-    showToast(data.error || 'Could not unlock this content', true);
-    setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
-    return null;
+      showToast(data.error || 'Could not unlock this content', true);
+      setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
+      return null;
+    } catch (err) {
+      showToast('Network error — please try again', true);
+      setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: '' }));
+      return null;
+    }
   }
 
   async function handleCreativeDownload(creative) {
