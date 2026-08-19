@@ -2778,26 +2778,12 @@ export default function AdvisorDashboardPage() {
 
                       <div className="flex-1 overflow-y-auto">
                         {previewCreative.format === 'pdf' ? (
-                          <div className="flex aspect-square w-full flex-col items-center justify-center gap-3 bg-gray-50 text-red-500">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
-                              <path strokeLinecap="round" d="M15 4v4h4" />
-                            </svg>
-                            {isCreativeUnlocked(previewCreative) ? (
-                              <a
-                                href={previewCreative.imageUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="rounded-lg bg-red-500 px-4 py-2 text-sm font-bold text-white hover:bg-red-600"
-                              >
-                                Open PDF
-                              </a>
-                            ) : (
-                              <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                                Unlock to view — PDF has no free preview
-                              </p>
-                            )}
-                          </div>
+                          <iframe
+                            key={previewCreative._id}
+                            src={`${previewCreative.imageUrl}#toolbar=1&navpanes=0`}
+                            title={previewCreative.title || 'PDF preview'}
+                            className="h-[70vh] w-full border-0 bg-gray-100"
+                          />
                         ) : previewCreative.type === 'reel' ? (
                           <video
                             src={previewCreative.imageUrl}
