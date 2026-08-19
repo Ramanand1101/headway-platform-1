@@ -20,6 +20,16 @@ async function uploadBuffer(buffer, { folder, filename, contentType }) {
   return `${PUBLIC_BASE_URL}/${key}`;
 }
 
+// Writes to an exact, caller-chosen key instead of a timestamped one —
+// for content-addressed derivatives (e.g. a per-advisor personalized
+// image/PDF, keyed by a hash of its inputs) where a second request for the
+// same inputs should overwrite/reuse the same object rather than pile up
+// duplicates that objectExists() can never find again.
+async function uploadBufferAtKey(buffer, key, contentType) {
+  await s3Client.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: buffer, ContentType: contentType }));
+  return `${PUBLIC_BASE_URL}/${key}`;
+}
+
 // For large files (reel videos) — the browser PUTs the bytes straight to
 // S3 using this URL, never through our own server/serverless function, so
 // the hosting platform's ~4.5MB request-body cap never applies. Returns
@@ -67,6 +77,7 @@ async function getPresignedDownloadUrl(url, downloadFilename) {
 
 module.exports = {
   uploadBuffer,
+  uploadBufferAtKey,
   keyFromUrl,
   deleteByUrl,
   objectExists,

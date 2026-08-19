@@ -902,13 +902,34 @@ export default function AdvisorDashboardPage() {
     return libraryImages.includes(creative.imageUrl);
   }
 
+  // Stamps the advisor's own name + phone onto the file the advisor is
+  // about to actually download/share (image or PDF only — reels aren't
+  // supported yet) — so what they post carries their own contact details,
+  // not just the generic template. Best-effort: if this fails for any
+  // reason, falls back to the clean/original url rather than blocking the
+  // download entirely.
+  async function personalizedDownloadUrl(creative, url) {
+    if (creative.format !== 'image' && creative.format !== 'pdf') return url;
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/media/personalize?src=${encodeURIComponent(url)}&format=${creative.format}`,
+        { headers: authHeaders(), signal: AbortSignal.timeout(30000) }
+      );
+      const data = await res.json();
+      return res.ok && data.url ? data.url : url;
+    } catch (err) {
+      return url;
+    }
+  }
+
   // Charges credits (by content type) the first time this creative is
   // shared or downloaded — never before. Already-unlocked creatives are
-  // free to share/download again. Returns the creative's real (clean) URL
-  // on success so the caller can proceed with the share/download action, or
-  // null if the advisor cancelled/couldn't afford it.
+  // free to share/download again. Returns the creative's personalized (or,
+  // for reels, real/clean) URL on success so the caller can proceed with
+  // the share/download action, or null if the advisor cancelled/couldn't
+  // afford it.
   async function unlockCreativeForAction(creative) {
-    if (isCreativeUnlocked(creative)) return creative.imageUrl;
+    if (isCreativeUnlocked(creative)) return personalizedDownloadUrl(creative, creative.imageUrl);
 
     const cost = CREATIVE_COSTS[creative.type] || CREATIVE_COSTS.image;
     if (!window.confirm(`This ${creative.type} costs ${cost} credits. Continue?`)) return null;
@@ -929,7 +950,7 @@ export default function AdvisorDashboardPage() {
         setAdvisor(data.advisor);
         setLibraryImages(data.advisor.contentLibraryImages || []);
         setCreativeAddStatus((prev) => ({ ...prev, [creative._id]: 'added' }));
-        return data.url;
+        return personalizedDownloadUrl(creative, data.url);
       }
 
       showToast(data.error || 'Could not unlock this content', true);

@@ -5,7 +5,8 @@ const crypto = require('crypto');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const { uploadBuffer, keyFromUrl, objectExists, PUBLIC_BASE_URL } = require('./s3Service');
+const { uploadBuffer, uploadBufferAtKey, keyFromUrl, objectExists, PUBLIC_BASE_URL } = require('./s3Service');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
@@ -95,6 +96,58 @@ function watermarkPng(width, height) {
   return canvas.toBuffer('image/png');
 }
 
+// Small rounded "business card" badge (advisor name + phone) drawn
+// bottom-left — carries its own semi-transparent background so it stays
+// legible regardless of what's behind it. Bottom-left rather than top-left:
+// these creative templates almost always put their own eyebrow tag/headline
+// starting near the top-left, so a badge there collides with the template's
+// own text; the bottom corners are consistently the one area left empty
+// across templates (the CTA button/logo block is bottom-*center*).
+function personalizationBadgePng(width, height, name, phone) {
+  const { createCanvas } = loadCanvasLib();
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+
+  const pad = Math.round(width * 0.035);
+  const nameSize = Math.max(14, Math.round(width * 0.032));
+  const phoneSize = Math.max(11, Math.round(width * 0.024));
+  const lineGap = Math.round(nameSize * 0.35);
+
+  ctx.font = `bold ${nameSize}px ${WATERMARK_FONT_FAMILY}`;
+  const nameWidth = ctx.measureText(name).width;
+  ctx.font = `${phoneSize}px ${WATERMARK_FONT_FAMILY}`;
+  const phoneWidth = phone ? ctx.measureText(phone).width : 0;
+
+  const boxWidth = Math.max(nameWidth, phoneWidth) + pad * 2;
+  const boxHeight = nameSize + (phone ? phoneSize + lineGap : 0) + pad * 1.6;
+  const boxX = pad;
+  const boxY = height - pad - boxHeight;
+  const radius = Math.min(boxHeight * 0.22, 16);
+
+  ctx.beginPath();
+  ctx.moveTo(boxX + radius, boxY);
+  ctx.arcTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + boxHeight, radius);
+  ctx.arcTo(boxX + boxWidth, boxY + boxHeight, boxX, boxY + boxHeight, radius);
+  ctx.arcTo(boxX, boxY + boxHeight, boxX, boxY, radius);
+  ctx.arcTo(boxX, boxY, boxX + boxWidth, boxY, radius);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(11, 20, 38, 0.72)';
+  ctx.fill();
+
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${nameSize}px ${WATERMARK_FONT_FAMILY}`;
+  ctx.fillText(name, boxX + pad, boxY + pad * 0.8);
+
+  if (phone) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.font = `${phoneSize}px ${WATERMARK_FONT_FAMILY}`;
+    ctx.fillText(phone, boxX + pad, boxY + pad * 0.8 + nameSize + lineGap);
+  }
+
+  return canvas.toBuffer('image/png');
+}
+
 async function fetchBuffer(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Could not fetch source (${res.status})`);
@@ -123,6 +176,80 @@ async function getOrCreateWatermarkedUrl(sourceUrl) {
 
   const url = await uploadBuffer(watermarked, { folder: 'derived/watermark', filename: `${crypto.randomBytes(4).toString('hex')}.jpg`, contentType: 'image/jpeg' });
   return url;
+}
+
+// Content-addressed by source URL + advisor identity — same advisor
+// re-downloading the same creative reuses the already-generated file
+// instead of re-running canvas/sharp (or pdf-lib) every time.
+function personalizedKey(sourceUrl, advisorId, ext) {
+  const hash = crypto.createHash('sha1').update(`${sourceUrl}|${advisorId}`).digest('hex');
+  return `derived/personalized/${hash}.${ext}`;
+}
+
+// Overlays a small "advisor name + phone" badge (top-left) onto an image
+// creative — used at download/share time so the file the advisor actually
+// posts carries their own contact details, not the generic template alone.
+async function getOrCreatePersonalizedImageUrl(sourceUrl, { advisorId, name, phone }) {
+  const key = personalizedKey(sourceUrl, advisorId, 'jpg');
+  if (await objectExists(key)) return `${PUBLIC_BASE_URL}/${key}`;
+
+  const original = await fetchBuffer(sourceUrl);
+  const meta = await sharp(original).metadata();
+  const badge = personalizationBadgePng(meta.width || 800, meta.height || 800, name, phone);
+  const personalized = await sharp(original)
+    .composite([{ input: badge, gravity: 'northwest' }])
+    .jpeg({ quality: 90 })
+    .toBuffer();
+
+  return uploadBufferAtKey(personalized, key, 'image/jpeg');
+}
+
+// Same idea for a PDF carousel, applied to every page — drawn directly with
+// pdf-lib (a pure-JS PDF editor, no native binary) rather than rasterizing
+// each page through pdfjs/canvas and re-saving as images, which would both
+// balloon file size and throw away the PDF's original vector quality.
+async function getOrCreatePersonalizedPdfUrl(sourceUrl, { advisorId, name, phone }) {
+  const key = personalizedKey(sourceUrl, advisorId, 'pdf');
+  if (await objectExists(key)) return `${PUBLIC_BASE_URL}/${key}`;
+
+  const original = await fetchBuffer(sourceUrl);
+  const pdfDoc = await PDFDocument.load(original);
+  const nameFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const phoneFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  for (const page of pdfDoc.getPages()) {
+    const { width, height } = page.getSize();
+    const pad = width * 0.035;
+    const nameSize = Math.max(10, width * 0.032);
+    const phoneSize = Math.max(8, width * 0.024);
+    const lineGap = nameSize * 0.35;
+    const nameWidth = nameFont.widthOfTextAtSize(name, nameSize);
+    const phoneWidth = phone ? phoneFont.widthOfTextAtSize(phone, phoneSize) : 0;
+    const boxWidth = Math.max(nameWidth, phoneWidth) + pad * 2;
+    const boxHeight = nameSize + (phone ? phoneSize + lineGap : 0) + pad * 1.6;
+    const boxBottom = pad;
+    const boxTop = boxBottom + boxHeight;
+
+    page.drawRectangle({
+      x: pad,
+      y: boxBottom,
+      width: boxWidth,
+      height: boxHeight,
+      color: rgb(11 / 255, 20 / 255, 38 / 255),
+      opacity: 0.72
+    });
+
+    const nameBaselineY = boxTop - pad * 0.8 - nameSize * 0.82;
+    page.drawText(name, { x: pad * 2, y: nameBaselineY, size: nameSize, font: nameFont, color: rgb(1, 1, 1) });
+
+    if (phone) {
+      const phoneBaselineY = nameBaselineY - lineGap - phoneSize * 0.82;
+      page.drawText(phone, { x: pad * 2, y: phoneBaselineY, size: phoneSize, font: phoneFont, color: rgb(0.92, 0.92, 0.92) });
+    }
+  }
+
+  const personalized = Buffer.from(await pdfDoc.save());
+  return uploadBufferAtKey(personalized, key, 'application/pdf');
 }
 
 // Extracts a still JPEG from a video buffer — used as a reel's
@@ -173,4 +300,11 @@ async function extractPdfThumbnail(pdfBuffer) {
   }
 }
 
-module.exports = { getOrCreateWatermarkedUrl, extractVideoThumbnail, extractPdfThumbnail, keyFromUrl };
+module.exports = {
+  getOrCreateWatermarkedUrl,
+  extractVideoThumbnail,
+  extractPdfThumbnail,
+  getOrCreatePersonalizedImageUrl,
+  getOrCreatePersonalizedPdfUrl,
+  keyFromUrl
+};

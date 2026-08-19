@@ -26,6 +26,7 @@
     "mongoose": "^8.4.0",
     "multer": "^2.2.0",
     "node-cron": "^3.0.3",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.2.108",
     "sharp": "^0.35.3"
   },
