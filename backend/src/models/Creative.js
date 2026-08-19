@@ -26,10 +26,10 @@ const creativeSchema = new mongoose.Schema(
     // video URL for 'reel' creatives — one field either way since only one
     // file is ever attached per creative today.
     imageUrl: { type: String, required: true },
-    // Poster frame for 'reel' creatives, generated once via ffmpeg at
-    // upload time and stored here — S3 has no Cloudinary-style on-the-fly
-    // `so_0` frame-extraction transform, so this can't be derived from
-    // imageUrl at render time the way it used to be.
+    // Poster frame for 'reel' creatives (via ffmpeg) or first-page render for
+    // 'pdf' creatives (via pdfjs), generated once at upload time and stored
+    // here — S3 has no Cloudinary-style on-the-fly transform, so this can't
+    // be derived from imageUrl at render time the way it used to be.
     thumbnailUrl: String,
     // Headline + description the admin writes for this creative — shown to
     // advisors browsing the Content Library (and usable as a ready-made

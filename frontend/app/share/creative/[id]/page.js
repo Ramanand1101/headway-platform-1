@@ -20,12 +20,11 @@ export async function generateMetadata({ params }) {
   const description = creative.description || 'Insurance content shared via InsuranceAdvise.in';
   const isReel = creative.type === 'reel';
   const isPdf = creative.format === 'pdf';
-  // Reels store a pre-generated poster frame (thumbnailUrl, made via ffmpeg
-  // at upload time) — WhatsApp/Facebook/LinkedIn need a real image to show
-  // anything, a raw video URL alone won't render a preview in most of them.
-  // PDFs have no equivalent thumbnail, so the card just falls back to
-  // title/description with no image rather than a broken/fake one.
-  const thumbnail = isPdf ? null : isReel ? creative.thumbnailUrl : creative.imageUrl;
+  // Reels and PDFs store a pre-generated thumbnail (a poster frame via
+  // ffmpeg, or a first-page render via pdfjs, both made at upload time) —
+  // WhatsApp/Facebook/LinkedIn need a real image to show anything, a raw
+  // video/PDF URL alone won't render a preview in most of them.
+  const thumbnail = isPdf || isReel ? creative.thumbnailUrl : creative.imageUrl;
   const images = thumbnail ? [thumbnail] : [];
 
   return {
@@ -53,13 +52,21 @@ export default async function SharedCreativePage({ params }) {
           href={creative.imageUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center gap-3 rounded-2xl bg-white px-10 py-12 text-red-500 shadow-lg"
+          className="block overflow-hidden rounded-2xl bg-white shadow-lg"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
-            <path strokeLinecap="round" d="M15 4v4h4" />
-          </svg>
-          <span className="text-sm font-bold uppercase tracking-wide">Open PDF</span>
+          {creative.thumbnailUrl ? (
+            <img src={creative.thumbnailUrl} alt={creative.title || 'Shared PDF'} className="max-h-[70vh] max-w-full" />
+          ) : (
+            <div className="flex flex-col items-center gap-3 px-10 py-12 text-red-500">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+                <path strokeLinecap="round" d="M15 4v4h4" />
+              </svg>
+            </div>
+          )}
+          <span className="block px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-red-500">
+            Open PDF
+          </span>
         </a>
       ) : creative.type === 'reel' ? (
         <video

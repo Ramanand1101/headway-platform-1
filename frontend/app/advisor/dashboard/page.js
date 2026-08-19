@@ -2683,16 +2683,25 @@ export default function AdvisorDashboardPage() {
                           <div key={creative._id} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
                             <div className="group relative">
                               {creative.format === 'pdf' ? (
-                                <div
-                                  onClick={() => setPreviewCreative(creative)}
-                                  className="flex aspect-square w-full cursor-zoom-in flex-col items-center justify-center gap-2 bg-gray-50 text-red-500"
-                                >
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-10 w-10">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
-                                    <path strokeLinecap="round" d="M15 4v4h4" />
-                                  </svg>
-                                  <span className="text-xs font-bold uppercase tracking-wide">PDF Carousel</span>
-                                </div>
+                                creative.thumbnailUrl ? (
+                                  <div className="relative aspect-square w-full cursor-zoom-in" onClick={() => setPreviewCreative(creative)}>
+                                    <img src={creative.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                                    <span className="absolute left-1.5 top-1.5 rounded bg-red-500 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-white">
+                                      PDF
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div
+                                    onClick={() => setPreviewCreative(creative)}
+                                    className="flex aspect-square w-full cursor-zoom-in flex-col items-center justify-center gap-2 bg-gray-50 text-red-500"
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-10 w-10">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+                                      <path strokeLinecap="round" d="M15 4v4h4" />
+                                    </svg>
+                                    <span className="text-xs font-bold uppercase tracking-wide">PDF Carousel</span>
+                                  </div>
+                                )
                               ) : creative.type === 'reel' ? (
                                 <video
                                   src={creative.imageUrl}

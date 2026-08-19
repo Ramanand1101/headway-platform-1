@@ -1,5 +1,5 @@
 const { uploadBuffer, deleteByUrl, getPresignedUploadUrl } = require('../services/s3Service');
-const { extractVideoThumbnail } = require('../services/mediaService');
+const { extractVideoThumbnail, extractPdfThumbnail } = require('../services/mediaService');
 const Creative = require('../models/Creative');
 
 const { CREATIVE_CATEGORIES, CREATIVE_TYPES } = Creative;
@@ -99,6 +99,19 @@ exports.uploadCreatives = async (req, res, next) => {
           } catch (err) {
             console.error('Reel thumbnail generation failed:', err.message);
           }
+        } else if (format === 'pdf') {
+          // Best-effort — a bad/corrupt PDF shouldn't block the upload, it'll
+          // just fall back to the generic file icon until re-processed.
+          try {
+            const frame = await extractPdfThumbnail(file.buffer);
+            thumbnailUrl = await uploadBuffer(frame, {
+              folder: `creatives/${type}/${category}/thumbnails`,
+              filename: `${file.originalname}.jpg`,
+              contentType: 'image/jpeg'
+            });
+          } catch (err) {
+            console.error('PDF thumbnail generation failed:', err.message);
+          }
         }
 
         return Creative.create({ category, type, format, imageUrl, thumbnailUrl });
@@ -183,6 +196,23 @@ exports.finalizeCreative = async (req, res, next) => {
         }
       } catch (err) {
         console.error('Reel thumbnail generation failed:', err.message);
+      }
+    } else if (format === 'pdf') {
+      // Best-effort — a bad/corrupt PDF shouldn't block the upload, it'll
+      // just fall back to the generic file icon until re-processed.
+      try {
+        const pdfRes = await fetch(imageUrl);
+        if (pdfRes.ok) {
+          const buffer = Buffer.from(await pdfRes.arrayBuffer());
+          const frame = await extractPdfThumbnail(buffer);
+          thumbnailUrl = await uploadBuffer(frame, {
+            folder: `creatives/${type}/${category}/thumbnails`,
+            filename: `${Date.now()}.jpg`,
+            contentType: 'image/jpeg'
+          });
+        }
+      } catch (err) {
+        console.error('PDF thumbnail generation failed:', err.message);
       }
     }
 

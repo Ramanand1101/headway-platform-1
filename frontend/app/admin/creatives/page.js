@@ -253,13 +253,21 @@ export default function CreativesLibraryPage() {
                         href={creative.imageUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-red-500 hover:bg-gray-100"
+                        className="relative flex h-full w-full items-center justify-center hover:opacity-90"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-8 w-8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
-                          <path strokeLinecap="round" d="M15 4v4h4" />
-                        </svg>
-                        <span className="text-[0.65rem] font-bold uppercase tracking-wide">PDF</span>
+                        {creative.thumbnailUrl ? (
+                          <img src={creative.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-red-500">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-8 w-8">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+                              <path strokeLinecap="round" d="M15 4v4h4" />
+                            </svg>
+                          </div>
+                        )}
+                        <span className="absolute left-1 top-1 rounded bg-red-500 px-1 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-white">
+                          PDF
+                        </span>
                       </a>
                     ) : creative.type === 'reel' ? (
                       <video src={creative.imageUrl} className="h-full w-full object-cover" muted controls />

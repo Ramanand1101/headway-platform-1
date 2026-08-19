@@ -5,9 +5,42 @@ const crypto = require('crypto');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const { createCanvas } = require('@napi-rs/canvas');
 const { uploadBuffer, keyFromUrl, objectExists, PUBLIC_BASE_URL } = require('./s3Service');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
+
+// pdfjs-dist is ESM-only; the rest of this codebase is CommonJS, so it's
+// loaded lazily via dynamic import() and cached instead of a top-level
+// require().
+let pdfjsLibPromise;
+function loadPdfjs() {
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = import('pdfjs-dist/legacy/build/pdf.mjs');
+  }
+  return pdfjsLibPromise;
+}
+
+// pdfjs renders into a canvas via this factory instead of the DOM canvas
+// it expects in a browser — @napi-rs/canvas is a prebuilt native binding
+// (no system cairo/pango needed), so it works on serverless hosts the same
+// way sharp and the ffmpeg binary already do.
+class NodeCanvasFactory {
+  create(width, height) {
+    const canvas = createCanvas(width, height);
+    return { canvas, context: canvas.getContext('2d') };
+  }
+  reset(canvasAndContext, width, height) {
+    canvasAndContext.canvas.width = width;
+    canvasAndContext.canvas.height = height;
+  }
+  destroy(canvasAndContext) {
+    canvasAndContext.canvas.width = 0;
+    canvasAndContext.canvas.height = 0;
+    canvasAndContext.canvas = null;
+    canvasAndContext.context = null;
+  }
+}
 
 // Single large, semi-transparent diagonal "PREVIEW" watermark — same look
 // the old Cloudinary `l_text` overlay produced. Built as an SVG (sharp has
@@ -74,4 +107,29 @@ async function extractVideoThumbnail(videoBuffer) {
   }
 }
 
-module.exports = { getOrCreateWatermarkedUrl, extractVideoThumbnail, keyFromUrl };
+// Rasterizes the first page of a PDF carousel to a JPEG — used as its grid
+// thumbnail, generated once at upload time (not per-request; parsing/
+// rendering a PDF is comparatively expensive) and stored on the Creative doc,
+// same pattern as extractVideoThumbnail above.
+async function extractPdfThumbnail(pdfBuffer) {
+  const pdfjsLib = await loadPdfjs();
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(pdfBuffer),
+    disableFontFace: true,
+    standardFontDataUrl: path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'standard_fonts') + '/'
+  });
+  let doc;
+  try {
+    doc = await loadingTask.promise;
+    const page = await doc.getPage(1);
+    const viewport = page.getViewport({ scale: 1200 / page.getViewport({ scale: 1 }).width });
+    const canvasFactory = new NodeCanvasFactory();
+    const canvasAndContext = canvasFactory.create(viewport.width, viewport.height);
+    await page.render({ canvasContext: canvasAndContext.context, viewport, canvasFactory }).promise;
+    return canvasAndContext.canvas.toBuffer('image/jpeg', 85);
+  } finally {
+    await loadingTask.destroy();
+  }
+}
+
+module.exports = { getOrCreateWatermarkedUrl, extractVideoThumbnail, extractPdfThumbnail, keyFromUrl };
