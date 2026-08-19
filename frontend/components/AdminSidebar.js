@@ -105,6 +105,7 @@ const adminNavItems = [
   { href: '/admin/content', label: 'Generate content', Icon: SparklesIcon },
   { href: '/admin/content/write', label: 'Write blog', Icon: PencilIcon },
   { href: '/admin/homepage', label: 'Homepage editor', Icon: PhotoIcon },
+  { href: '/admin/homepage-leads', label: 'Website enquiries', Icon: ClipboardIcon },
   { href: '/admin/creatives', label: 'Creatives library', Icon: SparklesIcon },
   { href: '/admin/companies', label: 'Company directory', Icon: PhotoIcon },
   { href: '/admin/advisor-defaults', label: 'Advisor defaults', Icon: PencilIcon }

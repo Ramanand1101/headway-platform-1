@@ -177,6 +177,60 @@ export const defaultHomepageContent = {
       price: '₹6,000 one-time'
     }
   },
+  testimonials: {
+    eyebrow: 'Advisor Stories',
+    heading: 'What advisors are saying',
+    items: [
+      {
+        rating: 5,
+        quote:
+          "I went live in under 10 minutes and had my first WhatsApp enquiry the same week. I'm not technical at all — the platform just handled everything for me.",
+        name: 'Priya Sharma',
+        role: 'IRDAI Licensed Advisor, Pune'
+      },
+      {
+        rating: 5,
+        quote:
+          "My clients used to just get a phone number. Now they see a real website with my photo, my experience and reviews before we even speak — it changes the first conversation completely.",
+        name: 'Arjun Mehta',
+        role: 'IRDAI Licensed Advisor, Ahmedabad'
+      },
+      {
+        rating: 5,
+        quote:
+          "The content library alone is worth it. I post a reel or carousel a few times a week without writing anything myself, and it always looks professional.",
+        name: 'Kavita Nair',
+        role: 'IRDAI Licensed Advisor, Kochi'
+      }
+    ]
+  },
+  contact: {
+    eyebrow: 'Contact Us',
+    heading: 'Your digital presence starts with one signup',
+    supportHours: 'Mon – Sat, 10 AM – 7 PM IST',
+    whatsappNumber: '',
+    email: 'support@insuranceadvise.in',
+    formTitle: 'Get Your Free Website',
+    submitButton: 'Claim Free Website'
+  },
+  insights: {
+    eyebrow: 'Advisor Insights',
+    heading: 'Why every advisor needs a website',
+    posts: [
+      {
+        title: 'Clients Google You First',
+        desc: "Before the first meeting, prospects search your name. A professional website is the difference between credibility and doubt — first impressions are now digital, not in-person.",
+        date: '',
+        author: 'Team InsuranceAdvise'
+      },
+      {
+        title: "Leads Get Captured While You're Busy",
+        desc: 'A built-in WhatsApp button, call button and enquiry form work for you 24/7 — every visitor becomes a potential client, captured automatically, even while you\'re with another customer.',
+        date: '',
+        author: 'Team InsuranceAdvise'
+      }
+    ]
+  },
   compliance: {
     heading: 'A technology platform. Nothing more, nothing less.',
     paragraph:

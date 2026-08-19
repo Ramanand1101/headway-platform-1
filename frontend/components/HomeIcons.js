@@ -167,3 +167,44 @@ export function GlobeIcon(props) {
     </svg>
   );
 }
+
+export function StarIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M12 2.75l2.76 5.94 6.49.66-4.9 4.42 1.4 6.4L12 16.9l-5.75 3.27 1.4-6.4-4.9-4.42 6.49-.66L12 2.75Z" />
+    </svg>
+  );
+}
+
+export function QuoteIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M9.5 6.5C6.2 8 4.5 10.5 4.5 13.7c0 2.4 1.5 4 3.6 4 1.8 0 3.1-1.3 3.1-3 0-1.6-1.1-2.8-2.6-2.9.2-1.6 1.4-3 3.2-3.8L9.5 6.5Zm9 0c-3.3 1.5-5 4-5 7.2 0 2.4 1.5 4 3.6 4 1.8 0 3.1-1.3 3.1-3 0-1.6-1.1-2.8-2.6-2.9.2-1.6 1.4-3 3.2-3.8l-2.3-1.5Z" />
+    </svg>
+  );
+}
+
+export function ArrowUpRightIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 17 17 7M8.5 7H17v8.5" />
+    </svg>
+  );
+}
+
+export function MailIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 7 7.5 6 7.5-6" />
+    </svg>
+  );
+}
+
+export function PhoneOutlineIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 4.5h3.5l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5V19a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 3.5 6.1 1.5 1.5 0 0 1 5 4.5Z" />
+    </svg>
+  );
+}

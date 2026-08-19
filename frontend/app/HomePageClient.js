@@ -25,7 +25,12 @@ import {
   UploadIcon,
   LockIcon,
   HandshakeIcon,
-  GlobeIcon
+  GlobeIcon,
+  StarIcon,
+  QuoteIcon,
+  ArrowUpRightIcon,
+  MailIcon,
+  PhoneOutlineIcon
 } from '../components/HomeIcons';
 
 // Flat, borderless CTAs with a soft lift on hover instead of a glow-shadow —
@@ -102,7 +107,11 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
   const [bannerUrls, setBannerUrls] = useState(initialBannerUrls || {});
   const [content, setContent] = useState(initialContent || defaultHomepageContent);
   const [previewMode, setPreviewMode] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [contactForm, setContactForm] = useState({ name: '', phone: '', irdaiLicenseNumber: '', city: '', message: '' });
+  const [contactStatus, setContactStatus] = useState({ submitting: false, error: '', success: false });
   const heroSlides = content.hero.slides;
+  const testimonialItems = content.testimonials?.items || [];
 
   function notify(path) {
     window.parent.postMessage({ type: 'homepage-preview-click', path }, '*');
@@ -152,6 +161,29 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
   // that page directly so there's a single login/signup implementation.
   function openLogin() {
     window.location.href = '/advisor/login';
+  }
+
+  async function handleContactSubmit(e) {
+    e.preventDefault();
+    if (!contactForm.name || !contactForm.phone) return;
+    setContactStatus({ submitting: true, error: '', success: false });
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/homepage-leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactForm),
+        signal: AbortSignal.timeout(20000)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setContactStatus({ submitting: false, error: data.error || 'Could not submit — please try again', success: false });
+        return;
+      }
+      setContactStatus({ submitting: false, error: '', success: true });
+      setContactForm({ name: '', phone: '', irdaiLicenseNumber: '', city: '', message: '' });
+    } catch (err) {
+      setContactStatus({ submitting: false, error: 'Network error — please try again', success: false });
+    }
   }
 
   function handleRecharge(planName) {
@@ -544,32 +576,37 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
               as="div"
               key={i}
               delay={i * 80}
-              className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${cardHover}`}
+              className={`group relative aspect-[4/5] overflow-hidden rounded-3xl ${cardHover}`}
             >
-              <div className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 to-green-50">
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--site-navy)] to-[var(--site-navy-2)]">
                 {bannerUrls[capMeta[i].key] ? (
                   <img
                     src={bannerUrls[capMeta[i].key]}
                     alt={cap.title}
-                    className={`h-full w-full object-cover ${previewMode ? 'cursor-pointer outline-dashed outline-2 outline-transparent hover:outline-[rgb(var(--site-blue-rgb)/60%)]' : ''}`}
+                    className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${previewMode ? 'cursor-pointer outline-dashed outline-2 outline-transparent hover:outline-[rgb(var(--site-blue-rgb)/60%)]' : ''}`}
                     onClick={previewMode ? () => notify(['image', capMeta[i].key]) : undefined}
                   />
                 ) : (
                   <span
-                    className={`text-[var(--site-blue)] ${previewMode ? 'cursor-pointer' : ''}`}
+                    className={`grid h-full w-full place-items-center text-white/25 ${previewMode ? 'cursor-pointer' : ''}`}
                     onClick={previewMode ? () => notify(['image', capMeta[i].key]) : undefined}
                   >
-                    <CapIcon className="h-16 w-16" />
+                    <CapIcon className="h-20 w-20" />
                   </span>
                 )}
               </div>
-              <div className="p-6">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+              <div className="absolute right-4 top-4 grid h-10 w-10 flex-none place-items-center rounded-full bg-white/90 text-[var(--site-navy)] shadow-sm transition group-hover:bg-[var(--site-blue)] group-hover:text-white">
+                <ArrowUpRightIcon className="h-4 w-4" />
+              </div>
+              <div className="absolute inset-x-0 bottom-0 p-6">
+                <span className="text-xs font-bold uppercase tracking-widest text-white/60">Content Engine</span>
                 <Editable
                   path={['capabilities', 'cards', i, 'title']}
                   active={previewMode}
                   notify={notify}
                   as="h3"
-                  className="text-lg font-bold tracking-tight"
+                  className="mt-1.5 text-xl font-extrabold tracking-tight text-white"
                 >
                   {cap.title}
                 </Editable>
@@ -578,7 +615,7 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                   active={previewMode}
                   notify={notify}
                   as="p"
-                  className="mt-2.5 text-sm leading-relaxed text-gray-600"
+                  className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/70"
                 >
                   {cap.desc}
                 </Editable>
@@ -644,13 +681,12 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
         </button>
       </Reveal>
 
-      {/* PRICING */}
-      <section id="pricing" className="relative isolate overflow-hidden px-[6vw] py-28">
-        {/* Soft drifting color blobs — a quiet touch of "fintech glow" behind
-            the pricing cards, low-opacity and heavily blurred so it never
-            competes with the actual content. */}
+      {/* PRICING — dark navy section, middle "popular" plan raised on a
+          bright accent card with a circular price badge. */}
+      <section id="pricing" className="relative isolate overflow-hidden bg-[var(--site-navy)] px-[6vw] py-28 text-white">
+        <div className="bg-grid-pattern pointer-events-none absolute inset-0 -z-10 opacity-40" />
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="animate-ia-drift1 absolute -left-24 top-0 h-96 w-96 rounded-full bg-[var(--site-blue)]/10 blur-3xl" />
+          <div className="animate-ia-drift1 absolute -left-24 top-0 h-96 w-96 rounded-full bg-[var(--site-blue)]/15 blur-3xl" />
           <div className="animate-ia-drift2 absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-[var(--site-green)]/10 blur-3xl" />
         </div>
         <Reveal as="div" className="mx-auto mb-14 max-w-2xl text-center">
@@ -658,7 +694,7 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
             path={['pricing', 'eyebrow']}
             active={previewMode}
             notify={notify}
-            className="text-sm font-bold uppercase tracking-widest text-[var(--site-blue)]"
+            className="inline-flex rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[var(--site-blue-soft)]"
           >
             {content.pricing.eyebrow}
           </Editable>
@@ -667,33 +703,35 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
             active={previewMode}
             notify={notify}
             as="h2"
-            className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl"
+            className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl"
           >
             {content.pricing.heading}
           </Editable>
-          <Editable path={['pricing', 'paragraph']} active={previewMode} notify={notify} as="p" className="mt-4 text-gray-600">
+          <Editable path={['pricing', 'paragraph']} active={previewMode} notify={notify} as="p" className="mt-4 text-white/70">
             {content.pricing.paragraph}
           </Editable>
         </Reveal>
 
         {rechargeNotice && (
-          <div className="mx-auto mb-8 max-w-xl rounded-2xl border border-ia-gold-tint bg-ia-gold-tint/40 px-5 py-4 text-center text-sm font-medium text-[var(--site-blue)]">
+          <div className="mx-auto mb-8 max-w-xl rounded-2xl border border-[var(--site-blue)]/40 bg-[var(--site-blue)]/15 px-5 py-4 text-center text-sm font-medium text-[var(--site-blue-soft)]">
             {rechargeNotice}
           </div>
         )}
 
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-7 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-7 lg:grid-cols-3 lg:items-center">
           {content.pricing.plans.map((plan, i) => (
             <Reveal
               as="div"
               key={i}
               delay={i * 80}
-              className={`relative rounded-3xl border p-9 text-center shadow-sm ${cardHover} ${
-                pricingMeta[i].popular ? 'border-[var(--site-blue)] bg-ia-gold-tint/40' : 'border-gray-100 bg-white'
+              className={`relative rounded-3xl p-9 text-center transition-all duration-300 hover:-translate-y-1 ${
+                pricingMeta[i].popular
+                  ? 'bg-gradient-to-br from-[var(--site-blue)] to-[var(--site-blue-soft)] text-[var(--site-navy)] shadow-xl shadow-black/20 lg:scale-105'
+                  : 'border border-white/10 bg-white/5 text-white'
               }`}
             >
               {pricingMeta[i].popular && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--site-blue)] px-5 py-1.5 text-xs font-extrabold uppercase tracking-wide text-white shadow-sm">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--site-navy)] px-5 py-1.5 text-xs font-extrabold uppercase tracking-wide text-white shadow-sm">
                   Most Popular
                 </span>
               )}
@@ -702,33 +740,46 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                 active={previewMode}
                 notify={notify}
                 as="h4"
-                className="text-xs font-extrabold uppercase tracking-widest text-gray-500"
+                className={`text-xs font-extrabold uppercase tracking-widest ${pricingMeta[i].popular ? 'text-[var(--site-navy)]/70' : 'text-white/60'}`}
               >
                 {plan.name}
               </Editable>
-              <Editable
-                path={['pricing', 'plans', i, 'amount']}
-                active={previewMode}
-                notify={notify}
-                as="div"
-                className="mt-3 text-4xl font-extrabold text-[var(--site-navy)]"
+
+              <div
+                className={`mx-auto my-6 grid h-32 w-32 place-items-center rounded-full border-2 border-dashed ${
+                  pricingMeta[i].popular ? 'border-[var(--site-navy)]/30' : 'border-white/25'
+                }`}
               >
-                {plan.amount}
-              </Editable>
-              <div className="mt-2 text-sm font-bold text-[var(--site-green)]">
+                <div>
+                  <Editable
+                    path={['pricing', 'plans', i, 'amount']}
+                    active={previewMode}
+                    notify={notify}
+                    as="div"
+                    className="text-2xl font-extrabold"
+                  >
+                    {plan.amount}
+                  </Editable>
+                  <span className={`text-[0.6rem] font-bold uppercase tracking-wide ${pricingMeta[i].popular ? 'text-[var(--site-navy)]/60' : 'text-white/50'}`}>
+                    One-time
+                  </span>
+                </div>
+              </div>
+
+              <div className={`text-sm font-bold ${pricingMeta[i].popular ? 'text-[var(--site-navy)]' : 'text-[var(--site-green-soft)]'}`}>
                 <Editable path={['pricing', 'plans', i, 'credits']} active={previewMode} notify={notify}>
                   {plan.credits}
                 </Editable>{' '}
                 {plan.bonus && (
-                  <Editable path={['pricing', 'plans', i, 'bonus']} active={previewMode} notify={notify} className="text-[var(--site-blue)]">
+                  <Editable path={['pricing', 'plans', i, 'bonus']} active={previewMode} notify={notify}>
                     {plan.bonus}
                   </Editable>
                 )}
               </div>
               <ul className="mt-7 space-y-3 text-left">
                 {plan.features.map((f, fi) => (
-                  <li key={fi} className="flex items-start gap-2.5 text-sm text-gray-700">
-                    <span className="mt-0.5 text-[var(--site-green)]">✓</span>
+                  <li key={fi} className={`flex items-start gap-2.5 text-sm ${pricingMeta[i].popular ? 'text-[var(--site-navy)]/90' : 'text-white/80'}`}>
+                    <span className={`mt-0.5 ${pricingMeta[i].popular ? 'text-[var(--site-navy)]' : 'text-[var(--site-green-soft)]'}`}>✓</span>
                     <Editable path={['pricing', 'plans', i, 'features', fi]} active={previewMode} notify={notify}>
                       {f}
                     </Editable>
@@ -737,7 +788,11 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
               </ul>
               <button
                 type="button"
-                className={`${pricingMeta[i].btnClass} mt-8${previewMode ? ' outline-dashed outline-2 outline-current' : ''}`}
+                className={`mt-8 w-full justify-center ${pillBase} ${
+                  pricingMeta[i].popular
+                    ? 'bg-[var(--site-navy)] text-white hover:bg-[var(--site-navy-2)]'
+                    : 'border border-white/25 text-white hover:bg-white hover:text-[var(--site-navy)]'
+                }${previewMode ? ' outline-dashed outline-2 outline-current' : ''}`}
                 onClick={
                   previewMode
                     ? (e) => {
@@ -758,14 +813,14 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
           active={previewMode}
           notify={notify}
           as="div"
-          className="mx-auto mt-10 max-w-3xl rounded-2xl border border-gray-100 bg-gray-50 p-6 text-center text-sm leading-relaxed text-gray-600"
+          className="mx-auto mt-10 max-w-3xl rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm leading-relaxed text-white/70"
         >
           {content.pricing.note}
         </Editable>
 
-        <div className="mx-auto mt-8 flex max-w-5xl flex-wrap items-center justify-between gap-6 rounded-2xl border border-gray-100 bg-gradient-to-r from-[#2E6FD8]/5 to-blue-50 p-7">
+        <div className="mx-auto mt-8 flex max-w-5xl flex-wrap items-center justify-between gap-6 rounded-2xl border border-white/10 bg-white/5 p-7">
           <div className="flex items-center gap-4">
-            <div className="grid h-[52px] w-[52px] flex-none place-items-center rounded-2xl bg-[#2E6FD8]/10 text-[#2E6FD8]">
+            <div className="grid h-[52px] w-[52px] flex-none place-items-center rounded-2xl bg-[var(--site-blue)]/15 text-[var(--site-blue-soft)]">
               <GlobeIcon className="h-6 w-6" />
             </div>
             <div>
@@ -774,7 +829,7 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                 active={previewMode}
                 notify={notify}
                 as="strong"
-                className="block text-[var(--site-navy)]"
+                className="block text-white"
               >
                 {content.pricing.domainCrossSell.title}
               </Editable>
@@ -782,7 +837,7 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
                 path={['pricing', 'domainCrossSell', 'desc']}
                 active={previewMode}
                 notify={notify}
-                className="text-sm text-gray-600"
+                className="text-sm text-white/60"
               >
                 {content.pricing.domainCrossSell.desc}
               </Editable>
@@ -792,10 +847,366 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
             path={['pricing', 'domainCrossSell', 'price']}
             active={previewMode}
             notify={notify}
-            className="whitespace-nowrap text-xl font-extrabold text-[var(--site-blue)]"
+            className="whitespace-nowrap text-xl font-extrabold text-[var(--site-blue-soft)]"
           >
             {content.pricing.domainCrossSell.price}
           </Editable>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS — split layout: quote on the left with a manual
+          prev/next carousel, overlapping circular photo collage on the
+          right. */}
+      {testimonialItems.length > 0 && (
+        <section className="px-[6vw] py-28">
+          <Reveal as="div" className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 lg:grid-cols-2">
+            <div>
+              <Editable
+                path={['testimonials', 'eyebrow']}
+                active={previewMode}
+                notify={notify}
+                className="text-sm font-bold uppercase tracking-widest text-[var(--site-blue)]"
+              >
+                {content.testimonials.eyebrow}
+              </Editable>
+              <Editable
+                path={['testimonials', 'heading']}
+                active={previewMode}
+                notify={notify}
+                as="h2"
+                className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl"
+              >
+                {content.testimonials.heading}
+              </Editable>
+
+              <div key={activeTestimonial} className="animate-fade-in mt-8">
+                <div className="flex gap-1 text-[var(--site-blue)]">
+                  {Array.from({ length: testimonialItems[activeTestimonial].rating || 5 }).map((_, si) => (
+                    <StarIcon key={si} className="h-5 w-5" />
+                  ))}
+                </div>
+                <QuoteIcon className="mt-5 h-8 w-8 text-[var(--site-blue)]/25" />
+                <Editable
+                  path={['testimonials', 'items', activeTestimonial, 'quote']}
+                  active={previewMode}
+                  notify={notify}
+                  as="p"
+                  className="mt-3 text-lg leading-relaxed text-gray-700"
+                >
+                  {testimonialItems[activeTestimonial].quote}
+                </Editable>
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="grid h-11 w-11 flex-none place-items-center rounded-full bg-ia-gold-tint/40 text-sm font-extrabold text-[var(--site-blue)]">
+                    {testimonialItems[activeTestimonial].name?.[0] || 'A'}
+                  </div>
+                  <div>
+                    <Editable
+                      path={['testimonials', 'items', activeTestimonial, 'name']}
+                      active={previewMode}
+                      notify={notify}
+                      as="p"
+                      className="text-sm font-extrabold text-[var(--site-navy)]"
+                    >
+                      {testimonialItems[activeTestimonial].name}
+                    </Editable>
+                    <Editable
+                      path={['testimonials', 'items', activeTestimonial, 'role']}
+                      active={previewMode}
+                      notify={notify}
+                      as="p"
+                      className="text-xs text-gray-500"
+                    >
+                      {testimonialItems[activeTestimonial].role}
+                    </Editable>
+                  </div>
+                </div>
+              </div>
+
+              {testimonialItems.length > 1 && (
+                <div className="mt-8 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTestimonial((i) => (i - 1 + testimonialItems.length) % testimonialItems.length)}
+                    aria-label="Previous testimonial"
+                    className="grid h-10 w-10 place-items-center rounded-full border border-gray-200 text-[var(--site-navy)] transition hover:border-[var(--site-navy)] hover:bg-gray-50"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTestimonial((i) => (i + 1) % testimonialItems.length)}
+                    aria-label="Next testimonial"
+                    className="grid h-10 w-10 place-items-center rounded-full bg-[var(--site-navy)] text-white transition hover:bg-[var(--site-navy-2)]"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="relative mx-auto h-80 w-full max-w-sm sm:h-96">
+              <div className="absolute left-0 top-0 h-56 w-56 overflow-hidden rounded-full border-4 border-white shadow-lg sm:h-64 sm:w-64">
+                {bannerUrls['testimonial-photo-1'] ? (
+                  <img
+                    src={bannerUrls['testimonial-photo-1']}
+                    alt=""
+                    className={`h-full w-full object-cover ${previewMode ? 'cursor-pointer outline-dashed outline-2 outline-transparent hover:outline-[rgb(var(--site-blue-rgb)/60%)]' : ''}`}
+                    onClick={previewMode ? () => notify(['image', 'testimonial-photo-1']) : undefined}
+                  />
+                ) : (
+                  <span
+                    className={`grid h-full w-full place-items-center bg-gradient-to-br from-blue-50 to-green-50 text-[var(--site-blue)] ${previewMode ? 'cursor-pointer' : ''}`}
+                    onClick={previewMode ? () => notify(['image', 'testimonial-photo-1']) : undefined}
+                  >
+                    <HandshakeIcon className="h-20 w-20" strokeWidth={1.1} />
+                  </span>
+                )}
+              </div>
+              <div className="absolute bottom-0 right-0 h-44 w-44 overflow-hidden rounded-full border-4 border-white shadow-lg sm:h-52 sm:w-52">
+                {bannerUrls['testimonial-photo-2'] ? (
+                  <img
+                    src={bannerUrls['testimonial-photo-2']}
+                    alt=""
+                    className={`h-full w-full object-cover ${previewMode ? 'cursor-pointer outline-dashed outline-2 outline-transparent hover:outline-[rgb(var(--site-blue-rgb)/60%)]' : ''}`}
+                    onClick={previewMode ? () => notify(['image', 'testimonial-photo-2']) : undefined}
+                  />
+                ) : (
+                  <span
+                    className={`grid h-full w-full place-items-center bg-gradient-to-br from-green-50 to-blue-50 text-[var(--site-green)] ${previewMode ? 'cursor-pointer' : ''}`}
+                    onClick={previewMode ? () => notify(['image', 'testimonial-photo-2']) : undefined}
+                  >
+                    <ShieldIcon className="h-16 w-16" strokeWidth={1.1} />
+                  </span>
+                )}
+              </div>
+              <div className="absolute right-6 top-6 grid h-14 w-14 place-items-center rounded-2xl bg-white text-[var(--site-green)] shadow-md">
+                <StarIcon className="h-6 w-6" />
+              </div>
+            </div>
+          </Reveal>
+        </section>
+      )}
+
+      {/* CONTACT — split layout: support info on the left, lead-capture
+          form (wired to POST /api/homepage-leads) on the right. */}
+      <section id="contact" className="bg-gray-50 px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto grid max-w-6xl grid-cols-1 gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
+          <div>
+            <Editable
+              path={['contact', 'eyebrow']}
+              active={previewMode}
+              notify={notify}
+              className="text-sm font-bold uppercase tracking-widest text-[var(--site-blue)]"
+            >
+              {content.contact.eyebrow}
+            </Editable>
+            <Editable
+              path={['contact', 'heading']}
+              active={previewMode}
+              notify={notify}
+              as="h2"
+              className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl"
+            >
+              {content.contact.heading}
+            </Editable>
+
+            <div className="mt-9 space-y-3">
+              <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-ia-gold-tint/40 text-[var(--site-blue)]">
+                  <ClockIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Support hours</p>
+                  <Editable path={['contact', 'supportHours']} active={previewMode} notify={notify} as="p" className="text-sm font-semibold text-[var(--site-navy)]">
+                    {content.contact.supportHours}
+                  </Editable>
+                </div>
+              </div>
+
+              {content.contact.whatsappNumber && (
+                <a
+                  href={`https://wa.me/${content.contact.whatsappNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 rounded-2xl bg-[var(--site-navy)] p-5 text-white shadow-sm transition hover:bg-[var(--site-navy-2)]"
+                >
+                  <div className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-white/10">
+                    <PhoneOutlineIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-white/60">Call or WhatsApp</p>
+                    <Editable path={['contact', 'whatsappNumber']} active={previewMode} notify={notify} as="p" className="text-sm font-semibold">
+                      {content.contact.whatsappNumber}
+                    </Editable>
+                  </div>
+                </a>
+              )}
+
+              <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-green-50 text-[var(--site-green)]">
+                  <MailIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Email us today</p>
+                  <Editable path={['contact', 'email']} active={previewMode} notify={notify} as="p" className="text-sm font-semibold text-[var(--site-navy)]">
+                    {content.contact.email}
+                  </Editable>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-gray-100 bg-white p-7 shadow-sm sm:p-9">
+            <Editable
+              path={['contact', 'formTitle']}
+              active={previewMode}
+              notify={notify}
+              as="h3"
+              className="text-xs font-extrabold uppercase tracking-widest text-gray-500"
+            >
+              {content.contact.formTitle}
+            </Editable>
+
+            {contactStatus.success ? (
+              <div className="mt-6 rounded-2xl border border-green-100 bg-green-50 p-6 text-center">
+                <p className="font-bold text-[var(--site-green)]">Thanks — we&apos;ve got your details.</p>
+                <p className="mt-1.5 text-sm text-gray-600">Our team will reach out to you shortly.</p>
+              </div>
+            ) : (
+              <form className="mt-5 space-y-4" onSubmit={handleContactSubmit}>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Full Name*"
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[var(--site-blue)]"
+                  />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Mobile Number*"
+                    value={contactForm.phone}
+                    onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[var(--site-blue)]"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    placeholder="IRDAI License Number"
+                    value={contactForm.irdaiLicenseNumber}
+                    onChange={(e) => setContactForm((f) => ({ ...f, irdaiLicenseNumber: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[var(--site-blue)]"
+                  />
+                  <input
+                    type="text"
+                    placeholder="City"
+                    value={contactForm.city}
+                    onChange={(e) => setContactForm((f) => ({ ...f, city: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[var(--site-blue)]"
+                  />
+                </div>
+                <textarea
+                  rows={3}
+                  placeholder="Message"
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[var(--site-blue)]"
+                />
+                {contactStatus.error && <p className="text-sm font-medium text-red-600">{contactStatus.error}</p>}
+                <button type="submit" disabled={contactStatus.submitting} className={`${pillBlue} w-full justify-center disabled:opacity-60`}>
+                  {contactStatus.submitting ? 'Submitting...' : content.contact.submitButton}
+                </button>
+              </form>
+            )}
+          </div>
+        </Reveal>
+      </section>
+
+      {/* INSIGHTS / BLOG teaser — trust-building copy cards, not linked to
+          live articles (no company blog exists yet, only per-advisor
+          microsite blogs). */}
+      <section className="px-[6vw] py-28">
+        <Reveal as="div" className="mx-auto mb-14 max-w-2xl text-center">
+          <Editable
+            path={['insights', 'eyebrow']}
+            active={previewMode}
+            notify={notify}
+            className="text-sm font-bold uppercase tracking-widest text-[var(--site-blue)]"
+          >
+            {content.insights.eyebrow}
+          </Editable>
+          <Editable
+            path={['insights', 'heading']}
+            active={previewMode}
+            notify={notify}
+            as="h2"
+            className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl"
+          >
+            {content.insights.heading}
+          </Editable>
+        </Reveal>
+        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2">
+          {content.insights.posts.map((post, i) => {
+            const key = `insight-${i + 1}`;
+            return (
+              <Reveal
+                as="div"
+                key={i}
+                delay={i * 80}
+                className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${cardHover}`}
+              >
+                <div className="relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-[var(--site-navy)] to-[var(--site-navy-2)]">
+                  {bannerUrls[key] ? (
+                    <img
+                      src={bannerUrls[key]}
+                      alt={post.title}
+                      className={`h-full w-full object-cover ${previewMode ? 'cursor-pointer outline-dashed outline-2 outline-transparent hover:outline-[rgb(var(--site-blue-rgb)/60%)]' : ''}`}
+                      onClick={previewMode ? () => notify(['image', key]) : undefined}
+                    />
+                  ) : (
+                    <span
+                      className={`text-white/25 ${previewMode ? 'cursor-pointer' : ''}`}
+                      onClick={previewMode ? () => notify(['image', key]) : undefined}
+                    >
+                      <SearchIcon className="h-16 w-16" />
+                    </span>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-[var(--site-navy)] shadow-sm">
+                    <ArrowUpRightIcon className="h-4 w-4" />
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    <Editable path={['insights', 'posts', i, 'author']} active={previewMode} notify={notify} className="text-xs font-bold uppercase tracking-wide text-white/60">
+                      {post.author}
+                    </Editable>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <Editable
+                    path={['insights', 'posts', i, 'title']}
+                    active={previewMode}
+                    notify={notify}
+                    as="h3"
+                    className="text-lg font-bold tracking-tight"
+                  >
+                    {post.title}
+                  </Editable>
+                  <Editable
+                    path={['insights', 'posts', i, 'desc']}
+                    active={previewMode}
+                    notify={notify}
+                    as="p"
+                    className="mt-2.5 text-sm leading-relaxed text-gray-600"
+                  >
+                    {post.desc}
+                  </Editable>
+                </div>
+              </Reveal>
+            );
+          })}
         </div>
       </section>
 
@@ -884,7 +1295,14 @@ export default function HomePageClient({ initialContent, initialBannerUrls }) {
       </section>
 
       <SiteFooter />
-      <MobileActionBar accountHref="/advisor/login" accountLabel="Advisor Login" enquireHref="/#pricing" />
+      <MobileActionBar
+        accountHref="/advisor/login"
+        accountLabel="Advisor Login"
+        enquireHref="/#contact"
+        enquireLabel="Enquire"
+        whatsappNumber={content.contact?.whatsappNumber}
+        phone={content.contact?.whatsappNumber}
+      />
     </div>
   );
 }

@@ -26,7 +26,12 @@ async function getHomepageContent() {
     if (!res.ok) return defaultHomepageContent;
     const data = await res.json();
     if (!data.content) return defaultHomepageContent;
+    // Top-level merge over the defaults — content saved before a new
+    // section (e.g. testimonials/contact/insights) was added to the schema
+    // won't have that key at all, and the homepage would crash rendering
+    // `content.thatSection.whatever` on undefined without this fallback.
     return {
+      ...defaultHomepageContent,
       ...data.content,
       navLinks: data.content.navLinks?.length ? data.content.navLinks : defaultHomepageContent.navLinks
     };

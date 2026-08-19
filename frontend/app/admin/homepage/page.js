@@ -191,7 +191,11 @@ export default function HomepageContentPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.content) {
-          setContent({ ...data.content, navLinks: data.content.navLinks?.length ? data.content.navLinks : defaultHomepageContent.navLinks });
+          setContent({
+            ...defaultHomepageContent,
+            ...data.content,
+            navLinks: data.content.navLinks?.length ? data.content.navLinks : defaultHomepageContent.navLinks
+          });
         }
         setLoading(false);
       })
@@ -885,6 +889,196 @@ export default function HomepageContentPage() {
                   />
                 </div>
               </div>
+            </Section>
+
+            <Section title="Testimonials" desc="The advisor-story quotes shown with a photo collage. Add photos below in 'Testimonial photos'.">
+              <Field
+                id={fieldId(['testimonials', 'eyebrow'])}
+                highlighted={highlightedId === fieldId(['testimonials', 'eyebrow'])}
+                label="Eyebrow"
+                value={content.testimonials?.eyebrow || ''}
+                onChange={(v) => set(['testimonials', 'eyebrow'], v)}
+              />
+              <Field
+                id={fieldId(['testimonials', 'heading'])}
+                highlighted={highlightedId === fieldId(['testimonials', 'heading'])}
+                label="Heading"
+                value={content.testimonials?.heading || ''}
+                onChange={(v) => set(['testimonials', 'heading'], v)}
+              />
+              {(content.testimonials?.items || []).map((item, i) => (
+                <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                  <p className="mb-3 text-xs font-extrabold uppercase tracking-wide text-gray-400">Testimonial {i + 1}</p>
+                  <div className="space-y-3">
+                    <Field
+                      id={fieldId(['testimonials', 'items', i, 'quote'])}
+                      highlighted={highlightedId === fieldId(['testimonials', 'items', i, 'quote'])}
+                      label="Quote"
+                      textarea
+                      value={item.quote}
+                      onChange={(v) => set(['testimonials', 'items', i, 'quote'], v)}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field
+                        id={fieldId(['testimonials', 'items', i, 'name'])}
+                        highlighted={highlightedId === fieldId(['testimonials', 'items', i, 'name'])}
+                        label="Name"
+                        value={item.name}
+                        onChange={(v) => set(['testimonials', 'items', i, 'name'], v)}
+                      />
+                      <Field
+                        id={fieldId(['testimonials', 'items', i, 'role'])}
+                        highlighted={highlightedId === fieldId(['testimonials', 'items', i, 'role'])}
+                        label="Role / City"
+                        value={item.role}
+                        onChange={(v) => set(['testimonials', 'items', i, 'role'], v)}
+                      />
+                    </div>
+                    <label className="block">
+                      <span className="text-xs font-semibold text-gray-500">Star rating (1–5)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="5"
+                        value={item.rating}
+                        onChange={(e) => set(['testimonials', 'items', i, 'rating'], Number(e.target.value))}
+                        className="mt-1 w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none focus:border-ia-blue"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs font-semibold text-gray-500">Testimonial photos</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ImageSlot
+                  id={fieldId(['image', 'testimonial-photo-1'])}
+                  highlighted={highlightedId === fieldId(['image', 'testimonial-photo-1'])}
+                  label="Photo 1 (large circle)"
+                  size="500×500px, square"
+                  imageUrl={bannerUrls['testimonial-photo-1']}
+                  uploading={uploadingKey === 'testimonial-photo-1'}
+                  error={bannerErrors['testimonial-photo-1']}
+                  onUpload={(file) => handleUploadImage('testimonial-photo-1', file)}
+                />
+                <ImageSlot
+                  id={fieldId(['image', 'testimonial-photo-2'])}
+                  highlighted={highlightedId === fieldId(['image', 'testimonial-photo-2'])}
+                  label="Photo 2 (small circle)"
+                  size="500×500px, square"
+                  imageUrl={bannerUrls['testimonial-photo-2']}
+                  uploading={uploadingKey === 'testimonial-photo-2'}
+                  error={bannerErrors['testimonial-photo-2']}
+                  onUpload={(file) => handleUploadImage('testimonial-photo-2', file)}
+                />
+              </div>
+            </Section>
+
+            <Section title="Contact section" desc="Support info shown next to the 'Claim Free Website' lead form. Form submissions land in Website Enquiries in the sidebar.">
+              <Field
+                id={fieldId(['contact', 'eyebrow'])}
+                highlighted={highlightedId === fieldId(['contact', 'eyebrow'])}
+                label="Eyebrow"
+                value={content.contact?.eyebrow || ''}
+                onChange={(v) => set(['contact', 'eyebrow'], v)}
+              />
+              <Field
+                id={fieldId(['contact', 'heading'])}
+                highlighted={highlightedId === fieldId(['contact', 'heading'])}
+                label="Heading"
+                value={content.contact?.heading || ''}
+                onChange={(v) => set(['contact', 'heading'], v)}
+              />
+              <Field
+                id={fieldId(['contact', 'supportHours'])}
+                highlighted={highlightedId === fieldId(['contact', 'supportHours'])}
+                label="Support hours"
+                value={content.contact?.supportHours || ''}
+                onChange={(v) => set(['contact', 'supportHours'], v)}
+              />
+              <Field
+                id={fieldId(['contact', 'whatsappNumber'])}
+                highlighted={highlightedId === fieldId(['contact', 'whatsappNumber'])}
+                label="WhatsApp / call number (digits only, with country code — e.g. 919876543210). Leave blank to hide this row."
+                value={content.contact?.whatsappNumber || ''}
+                onChange={(v) => set(['contact', 'whatsappNumber'], v)}
+              />
+              <Field
+                id={fieldId(['contact', 'email'])}
+                highlighted={highlightedId === fieldId(['contact', 'email'])}
+                label="Support email"
+                value={content.contact?.email || ''}
+                onChange={(v) => set(['contact', 'email'], v)}
+              />
+              <Field
+                id={fieldId(['contact', 'formTitle'])}
+                highlighted={highlightedId === fieldId(['contact', 'formTitle'])}
+                label="Form title"
+                value={content.contact?.formTitle || ''}
+                onChange={(v) => set(['contact', 'formTitle'], v)}
+              />
+              <Field
+                id={fieldId(['contact', 'submitButton'])}
+                highlighted={highlightedId === fieldId(['contact', 'submitButton'])}
+                label="Submit button label"
+                value={content.contact?.submitButton || ''}
+                onChange={(v) => set(['contact', 'submitButton'], v)}
+              />
+            </Section>
+
+            <Section title="Advisor insights (blog teaser)" desc="Two trust-building cards — not linked to live articles yet.">
+              <Field
+                id={fieldId(['insights', 'eyebrow'])}
+                highlighted={highlightedId === fieldId(['insights', 'eyebrow'])}
+                label="Eyebrow"
+                value={content.insights?.eyebrow || ''}
+                onChange={(v) => set(['insights', 'eyebrow'], v)}
+              />
+              <Field
+                id={fieldId(['insights', 'heading'])}
+                highlighted={highlightedId === fieldId(['insights', 'heading'])}
+                label="Heading"
+                value={content.insights?.heading || ''}
+                onChange={(v) => set(['insights', 'heading'], v)}
+              />
+              {(content.insights?.posts || []).map((post, i) => (
+                <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                  <p className="mb-3 text-xs font-extrabold uppercase tracking-wide text-gray-400">Card {i + 1}</p>
+                  <div className="space-y-3">
+                    <ImageSlot
+                      id={fieldId(['image', `insight-${i + 1}`])}
+                      highlighted={highlightedId === fieldId(['image', `insight-${i + 1}`])}
+                      label={`Card ${i + 1} photo`}
+                      size="800×450px, landscape"
+                      imageUrl={bannerUrls[`insight-${i + 1}`]}
+                      uploading={uploadingKey === `insight-${i + 1}`}
+                      error={bannerErrors[`insight-${i + 1}`]}
+                      onUpload={(file) => handleUploadImage(`insight-${i + 1}`, file)}
+                    />
+                    <Field
+                      id={fieldId(['insights', 'posts', i, 'title'])}
+                      highlighted={highlightedId === fieldId(['insights', 'posts', i, 'title'])}
+                      label="Title"
+                      value={post.title}
+                      onChange={(v) => set(['insights', 'posts', i, 'title'], v)}
+                    />
+                    <Field
+                      id={fieldId(['insights', 'posts', i, 'desc'])}
+                      highlighted={highlightedId === fieldId(['insights', 'posts', i, 'desc'])}
+                      label="Description"
+                      textarea
+                      value={post.desc}
+                      onChange={(v) => set(['insights', 'posts', i, 'desc'], v)}
+                    />
+                    <Field
+                      id={fieldId(['insights', 'posts', i, 'author'])}
+                      highlighted={highlightedId === fieldId(['insights', 'posts', i, 'author'])}
+                      label="Author"
+                      value={post.author}
+                      onChange={(v) => set(['insights', 'posts', i, 'author'], v)}
+                    />
+                  </div>
+                </div>
+              ))}
             </Section>
 
             <Section title="Compliance section" desc="The 'technology platform only' box with 4 disclosure items.">
