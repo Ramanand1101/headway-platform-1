@@ -2813,24 +2813,17 @@ export default function AdvisorDashboardPage() {
 
                       <div className="flex-1 overflow-y-auto">
                         {previewCreative.format === 'pdf' ? (
-                          isCreativeUnlocked(previewCreative) ? (
-                            // Unlocked — the advisor has already paid for this
-                            // one, so the full multi-page deck (and the PDF
-                            // viewer's own download/print controls) is fine.
-                            <iframe
-                              key={previewCreative._id}
-                              src={`${previewCreative.imageUrl}#toolbar=1&navpanes=0`}
-                              title={previewCreative.title || 'PDF preview'}
-                              className="h-[70vh] w-full border-0 bg-gray-100"
-                            />
-                          ) : previewCreative.thumbnailUrl ? (
-                            // Locked — only the watermarked first page, as a
-                            // plain image. An iframe here would let the
-                            // browser's built-in PDF-viewer download/print
-                            // buttons hand over the full, un-watermarked file
-                            // for free, bypassing the credit charge below.
+                          previewCreative.thumbnailUrl ? (
+                            // Static first-page image only — no native PDF
+                            // viewer/iframe, so there's no toolbar and no
+                            // scrollable multi-page deck here. Watermarked
+                            // until unlocked, same as image/video creatives.
                             <img
-                              src={watermarkedUrl(previewCreative.thumbnailUrl)}
+                              src={
+                                isCreativeUnlocked(previewCreative)
+                                  ? previewCreative.thumbnailUrl
+                                  : watermarkedUrl(previewCreative.thumbnailUrl)
+                              }
                               alt="Content preview"
                               className="block max-h-[85vh] w-full object-contain"
                             />
@@ -2841,7 +2834,7 @@ export default function AdvisorDashboardPage() {
                                 <path strokeLinecap="round" d="M15 4v4h4" />
                               </svg>
                               <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                                Preview unavailable — unlock to view
+                                Preview unavailable
                               </p>
                             </div>
                           )

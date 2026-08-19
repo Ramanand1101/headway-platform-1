@@ -5,10 +5,23 @@ const crypto = require('crypto');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const { createCanvas } = require('@napi-rs/canvas');
+const { createCanvas, GlobalFonts } = require('@napi-rs/canvas');
 const { uploadBuffer, keyFromUrl, objectExists, PUBLIC_BASE_URL } = require('./s3Service');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
+
+// Registered from a bundled file (not relying on the host having Arial/any
+// font installed) — on the production container this has no system fonts,
+// so the old SVG <text> watermark silently rasterized blank (sharp/librsvg
+// don't error on a missing font, they just fail to draw glyphs), and every
+// "watermarked" image quietly came back clean. Reusing pdfjs-dist's
+// standard_fonts (already a dependency, needed for PDF thumbnails) instead
+// of adding a new one.
+const WATERMARK_FONT_FAMILY = 'HeadwayWatermark';
+GlobalFonts.registerFromPath(
+  path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'standard_fonts', 'LiberationSans-Bold.ttf'),
+  WATERMARK_FONT_FAMILY
+);
 
 // pdfjs-dist is ESM-only; the rest of this codebase is CommonJS, so it's
 // loaded lazily via dynamic import() and cached instead of a top-level
@@ -43,17 +56,21 @@ class NodeCanvasFactory {
 }
 
 // Single large, semi-transparent diagonal "PREVIEW" watermark — same look
-// the old Cloudinary `l_text` overlay produced. Built as an SVG (sharp has
-// no built-in text rendering) and composited over the source image.
-function watermarkSvg(width, height) {
+// the old Cloudinary `l_text` overlay produced. Drawn on a canvas (sharp has
+// no built-in text rendering) using the bundled font above, then composited
+// over the source image as a PNG buffer.
+function watermarkPng(width, height) {
   const fontSize = Math.round(Math.min(width, height) * 0.18);
-  return Buffer.from(`
-    <svg width="${width}" height="${height}">
-      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold"
-        fill="white" fill-opacity="0.45" text-anchor="middle" dominant-baseline="middle"
-        transform="rotate(-30 ${width / 2} ${height / 2})">PREVIEW</text>
-    </svg>
-  `);
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+  ctx.translate(width / 2, height / 2);
+  ctx.rotate((-30 * Math.PI) / 180);
+  ctx.font = `bold ${fontSize}px ${WATERMARK_FONT_FAMILY}`;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('PREVIEW', 0, 0);
+  return canvas.toBuffer('image/png');
 }
 
 async function fetchBuffer(url) {
@@ -76,7 +93,7 @@ async function getOrCreateWatermarkedUrl(sourceUrl) {
 
   const original = await fetchBuffer(sourceUrl);
   const meta = await sharp(original).metadata();
-  const overlay = watermarkSvg(meta.width || 800, meta.height || 800);
+  const overlay = watermarkPng(meta.width || 800, meta.height || 800);
   const watermarked = await sharp(original)
     .composite([{ input: overlay, gravity: 'center' }])
     .jpeg({ quality: 85 })
@@ -86,9 +103,11 @@ async function getOrCreateWatermarkedUrl(sourceUrl) {
   return url;
 }
 
-// Extracts a still JPEG from the first frame of a video buffer — used as a
-// reel's poster/thumbnail, generated once at upload time (not per-request;
+// Extracts a still JPEG from a video buffer — used as a reel's
+// poster/thumbnail, generated once at upload time (not per-request;
 // decoding video is comparatively expensive) and stored on the Creative doc.
+// Grabs the frame at 1s rather than 0s: most of these reels open on a
+// black fade-in, so a literal first frame is a blank/black thumbnail.
 async function extractVideoThumbnail(videoBuffer) {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'reel-'));
   const videoPath = path.join(tmpDir, 'input.mp4');
@@ -99,7 +118,7 @@ async function extractVideoThumbnail(videoBuffer) {
       ffmpeg(videoPath)
         .on('end', resolve)
         .on('error', reject)
-        .screenshots({ timestamps: ['0'], filename: 'frame.jpg', folder: tmpDir, size: '720x?' });
+        .screenshots({ timestamps: ['1'], filename: 'frame.jpg', folder: tmpDir, size: '720x?' });
     });
     return await fs.readFile(framePath);
   } finally {
