@@ -17,15 +17,28 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 // top-level GlobalFonts.registerFromPath() call that throws takes down the
 // ENTIRE API on cold start, not just the watermark/PDF-thumbnail features
 // that actually need it — loaded lazily instead, on first real use.
+// Bundled under src/assets (a plain source file, not a node_modules asset
+// reached via require.resolve('pdfjs-dist/...')) — a path built from another
+// package's internal directory is exactly the kind of dynamically-computed
+// path that serverless bundlers' static file-tracing can miss, which is what
+// silently broke this the first time: registerFromPath() doesn't throw when
+// the file it's pointed at isn't actually in the deployed bundle, it just
+// fails to register the font — so `ctx.font` referencing an unregistered
+// family draws nothing, and getOrCreateWatermarkedUrl below happily
+// "succeeds" with a clean, un-watermarked image. That's not a cosmetic bug,
+// it's a paywall bypass, so registration failure here must throw loudly
+// instead of degrading silently.
 const WATERMARK_FONT_FAMILY = 'HeadwayWatermark';
+const WATERMARK_FONT_PATH = path.join(__dirname, '..', 'assets', 'fonts', 'LiberationSans-Bold.ttf');
 let canvasLib;
 function loadCanvasLib() {
   if (!canvasLib) {
-    canvasLib = require('@napi-rs/canvas');
-    canvasLib.GlobalFonts.registerFromPath(
-      path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'standard_fonts', 'LiberationSans-Bold.ttf'),
-      WATERMARK_FONT_FAMILY
-    );
+    const lib = require('@napi-rs/canvas');
+    const registered = lib.GlobalFonts.registerFromPath(WATERMARK_FONT_PATH, WATERMARK_FONT_FAMILY);
+    if (!registered || !lib.GlobalFonts.has(WATERMARK_FONT_FAMILY)) {
+      throw new Error(`Watermark font failed to register from ${WATERMARK_FONT_PATH}`);
+    }
+    canvasLib = lib;
   }
   return canvasLib;
 }
