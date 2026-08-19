@@ -2685,7 +2685,11 @@ export default function AdvisorDashboardPage() {
                               {creative.format === 'pdf' ? (
                                 creative.thumbnailUrl ? (
                                   <div className="relative aspect-square w-full cursor-zoom-in" onClick={() => setPreviewCreative(creative)}>
-                                    <img src={creative.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                                    <img
+                                      src={unlocked ? creative.thumbnailUrl : watermarkedUrl(creative.thumbnailUrl)}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                    />
                                     <span className="absolute left-1.5 top-1.5 rounded bg-red-500 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-white">
                                       PDF
                                     </span>
@@ -2787,12 +2791,38 @@ export default function AdvisorDashboardPage() {
 
                       <div className="flex-1 overflow-y-auto">
                         {previewCreative.format === 'pdf' ? (
-                          <iframe
-                            key={previewCreative._id}
-                            src={`${previewCreative.imageUrl}#toolbar=1&navpanes=0`}
-                            title={previewCreative.title || 'PDF preview'}
-                            className="h-[70vh] w-full border-0 bg-gray-100"
-                          />
+                          isCreativeUnlocked(previewCreative) ? (
+                            // Unlocked — the advisor has already paid for this
+                            // one, so the full multi-page deck (and the PDF
+                            // viewer's own download/print controls) is fine.
+                            <iframe
+                              key={previewCreative._id}
+                              src={`${previewCreative.imageUrl}#toolbar=1&navpanes=0`}
+                              title={previewCreative.title || 'PDF preview'}
+                              className="h-[70vh] w-full border-0 bg-gray-100"
+                            />
+                          ) : previewCreative.thumbnailUrl ? (
+                            // Locked — only the watermarked first page, as a
+                            // plain image. An iframe here would let the
+                            // browser's built-in PDF-viewer download/print
+                            // buttons hand over the full, un-watermarked file
+                            // for free, bypassing the credit charge below.
+                            <img
+                              src={watermarkedUrl(previewCreative.thumbnailUrl)}
+                              alt="Content preview"
+                              className="block max-h-[85vh] w-full object-contain"
+                            />
+                          ) : (
+                            <div className="flex aspect-square w-full flex-col items-center justify-center gap-3 bg-gray-50 text-red-500">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+                                <path strokeLinecap="round" d="M15 4v4h4" />
+                              </svg>
+                              <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                                Preview unavailable — unlock to view
+                              </p>
+                            </div>
+                          )
                         ) : previewCreative.type === 'reel' ? (
                           <video
                             src={previewCreative.imageUrl}
