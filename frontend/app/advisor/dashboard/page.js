@@ -2717,36 +2717,18 @@ export default function AdvisorDashboardPage() {
                                   </div>
                                 )
                               ) : creative.type === 'reel' ? (
-                                unlocked ? (
-                                  <video
-                                    src={creative.imageUrl}
-                                    poster={creative.thumbnailUrl}
-                                    muted
-                                    playsInline
-                                    onClick={() => setPreviewCreative(creative)}
-                                    className="aspect-square w-full cursor-zoom-in object-cover"
-                                  />
-                                ) : (
-                                  // Locked — a static watermarked poster
-                                  // instead of a real <video src>, so the raw
-                                  // unwatermarked file URL never lands in the
-                                  // page's DOM/source before it's paid for.
-                                  <div
-                                    onClick={() => setPreviewCreative(creative)}
-                                    className="relative aspect-square w-full cursor-zoom-in bg-black"
-                                  >
-                                    {creative.thumbnailUrl && (
-                                      <img
-                                        src={watermarkedUrl(creative.thumbnailUrl)}
-                                        alt=""
-                                        className="h-full w-full object-cover"
-                                      />
-                                    )}
-                                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                      <span className="grid h-10 w-10 place-items-center rounded-full bg-black/60 text-lg text-white">▶</span>
-                                    </div>
-                                  </div>
-                                )
+                                // Poster only here (no controls/autoplay) —
+                                // actual playback happens in the preview
+                                // modal, which is always free to watch;
+                                // credits are only charged on download/share.
+                                <video
+                                  src={creative.imageUrl}
+                                  poster={creative.thumbnailUrl}
+                                  muted
+                                  playsInline
+                                  onClick={() => setPreviewCreative(creative)}
+                                  className="aspect-square w-full cursor-zoom-in object-cover"
+                                />
                               ) : (
                                 <img
                                   src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
@@ -2849,40 +2831,23 @@ export default function AdvisorDashboardPage() {
                             </div>
                           )
                         ) : previewCreative.type === 'reel' ? (
-                          isCreativeUnlocked(previewCreative) ? (
-                            // Unlocked — already paid for, so the real file
-                            // (and the player's own download control) is fine.
-                            <video
-                              src={previewCreative.imageUrl}
-                              poster={previewCreative.thumbnailUrl}
-                              controls
-                              autoPlay
-                              muted
-                              className="aspect-square w-full bg-black object-contain"
-                            />
-                          ) : (
-                            // Locked — a static watermarked poster frame, not
-                            // a real <video src>. A <video> tag here would put
-                            // the raw, unwatermarked file URL straight into
-                            // the DOM (visible via view-source/inspect) and
-                            // its native controls include a download button —
-                            // both bypass the credit charge below.
-                            <div className="relative aspect-square w-full bg-black">
-                              {previewCreative.thumbnailUrl && (
-                                <img
-                                  src={watermarkedUrl(previewCreative.thumbnailUrl)}
-                                  alt="Content preview"
-                                  className="h-full w-full object-contain"
-                                />
-                              )}
-                              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
-                                <span className="grid h-14 w-14 place-items-center rounded-full bg-black/60 text-2xl text-white">▶</span>
-                                <span className="rounded-lg bg-black/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
-                                  Unlock to play
-                                </span>
-                              </div>
-                            </div>
-                          )
+                          // Playback is always free, same as images/PDFs —
+                          // credits are only charged on actual download/share
+                          // (handleCreativeDownload/handleCreativeShare)
+                          // below. controlsList/onContextMenu just remove the
+                          // *casual* one-click download path from the native
+                          // player; they're not a hard security boundary.
+                          <video
+                            key={previewCreative._id}
+                            src={previewCreative.imageUrl}
+                            poster={previewCreative.thumbnailUrl}
+                            controls
+                            controlsList="nodownload"
+                            onContextMenu={(e) => e.preventDefault()}
+                            autoPlay
+                            muted
+                            className="aspect-square w-full bg-black object-contain"
+                          />
                         ) : (
                           <img
                             src={
