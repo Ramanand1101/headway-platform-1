@@ -5,23 +5,30 @@ const crypto = require('crypto');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const { createCanvas, GlobalFonts } = require('@napi-rs/canvas');
 const { uploadBuffer, keyFromUrl, objectExists, PUBLIC_BASE_URL } = require('./s3Service');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
-// Registered from a bundled file (not relying on the host having Arial/any
-// font installed) — on the production container this has no system fonts,
-// so the old SVG <text> watermark silently rasterized blank (sharp/librsvg
-// don't error on a missing font, they just fail to draw glyphs), and every
-// "watermarked" image quietly came back clean. Reusing pdfjs-dist's
-// standard_fonts (already a dependency, needed for PDF thumbnails) instead
-// of adding a new one.
+// @napi-rs/canvas ships a separate native binary per OS/CPU as an optional
+// dependency, and font registration reads a file off disk — either can
+// legitimately be missing/fail to load on a given deployment target. This
+// whole module is required transitively by every controller (via
+// creativeController.js), so a top-level `require('@napi-rs/canvas')` or a
+// top-level GlobalFonts.registerFromPath() call that throws takes down the
+// ENTIRE API on cold start, not just the watermark/PDF-thumbnail features
+// that actually need it — loaded lazily instead, on first real use.
 const WATERMARK_FONT_FAMILY = 'HeadwayWatermark';
-GlobalFonts.registerFromPath(
-  path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'standard_fonts', 'LiberationSans-Bold.ttf'),
-  WATERMARK_FONT_FAMILY
-);
+let canvasLib;
+function loadCanvasLib() {
+  if (!canvasLib) {
+    canvasLib = require('@napi-rs/canvas');
+    canvasLib.GlobalFonts.registerFromPath(
+      path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'standard_fonts', 'LiberationSans-Bold.ttf'),
+      WATERMARK_FONT_FAMILY
+    );
+  }
+  return canvasLib;
+}
 
 // pdfjs-dist is ESM-only; the rest of this codebase is CommonJS, so it's
 // loaded lazily via dynamic import() and cached instead of a top-level
@@ -40,6 +47,7 @@ function loadPdfjs() {
 // way sharp and the ffmpeg binary already do.
 class NodeCanvasFactory {
   create(width, height) {
+    const { createCanvas } = loadCanvasLib();
     const canvas = createCanvas(width, height);
     return { canvas, context: canvas.getContext('2d') };
   }
@@ -60,6 +68,7 @@ class NodeCanvasFactory {
 // no built-in text rendering) using the bundled font above, then composited
 // over the source image as a PNG buffer.
 function watermarkPng(width, height) {
+  const { createCanvas } = loadCanvasLib();
   const fontSize = Math.round(Math.min(width, height) * 0.18);
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
