@@ -104,6 +104,20 @@ const statusStyles = {
   converted: 'bg-green-50 text-ia-green'
 };
 
+// Live preview of the personalization badge that actually gets baked into
+// the file on download (see personalize.js on the backend) — drawn here as
+// plain HTML/CSS instead of round-tripping through the personalize API, so
+// the preview modal shows it instantly with no extra request/loading state.
+function PersonalizationBadge({ name, phone }) {
+  if (!name) return null;
+  return (
+    <div className="absolute right-2.5 top-2.5 rounded-lg bg-[#0B1426]/75 px-3 py-2 text-right backdrop-blur-sm">
+      <p className="text-sm font-bold leading-tight text-white">{name}</p>
+      {phone && <p className="mt-0.5 text-xs leading-tight text-white/85">{phone}</p>}
+    </div>
+  );
+}
+
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-IN', {
     day: 'numeric',
@@ -2831,15 +2845,18 @@ export default function AdvisorDashboardPage() {
                             // viewer/iframe, so there's no toolbar and no
                             // scrollable multi-page deck here. Watermarked
                             // until unlocked, same as image/video creatives.
-                            <img
-                              src={
-                                isCreativeUnlocked(previewCreative)
-                                  ? previewCreative.thumbnailUrl
-                                  : watermarkedUrl(previewCreative.thumbnailUrl)
-                              }
-                              alt="Content preview"
-                              className="block max-h-[85vh] w-full object-contain"
-                            />
+                            <div className="relative">
+                              <img
+                                src={
+                                  isCreativeUnlocked(previewCreative)
+                                    ? previewCreative.thumbnailUrl
+                                    : watermarkedUrl(previewCreative.thumbnailUrl)
+                                }
+                                alt="Content preview"
+                                className="block max-h-[85vh] w-full object-contain"
+                              />
+                              <PersonalizationBadge name={advisor?.name} phone={advisor?.contactNumber} />
+                            </div>
                           ) : (
                             <div className="flex aspect-square w-full flex-col items-center justify-center gap-3 bg-gray-50 text-red-500">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16">
@@ -2870,15 +2887,18 @@ export default function AdvisorDashboardPage() {
                             className="aspect-square w-full bg-black object-contain"
                           />
                         ) : (
-                          <img
-                            src={
-                              isCreativeUnlocked(previewCreative)
-                                ? previewCreative.imageUrl
-                                : watermarkedUrl(previewCreative.imageUrl)
-                            }
-                            alt="Content preview"
-                            className="block max-h-[85vh] w-full object-contain"
-                          />
+                          <div className="relative">
+                            <img
+                              src={
+                                isCreativeUnlocked(previewCreative)
+                                  ? previewCreative.imageUrl
+                                  : watermarkedUrl(previewCreative.imageUrl)
+                              }
+                              alt="Content preview"
+                              className="block max-h-[85vh] w-full object-contain"
+                            />
+                            <PersonalizationBadge name={advisor?.name} phone={advisor?.contactNumber} />
+                          </div>
                         )}
 
                         {(previewCreative.title || previewCreative.description) && (

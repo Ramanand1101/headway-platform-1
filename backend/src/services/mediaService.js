@@ -97,12 +97,11 @@ function watermarkPng(width, height) {
 }
 
 // Small rounded "business card" badge (advisor name + phone) drawn
-// bottom-left — carries its own semi-transparent background so it stays
-// legible regardless of what's behind it. Bottom-left rather than top-left:
-// these creative templates almost always put their own eyebrow tag/headline
-// starting near the top-left, so a badge there collides with the template's
-// own text; the bottom corners are consistently the one area left empty
-// across templates (the CTA button/logo block is bottom-*center*).
+// top-right — carries its own semi-transparent background so it stays
+// legible regardless of what's behind it. Top-right rather than top-left:
+// these creative templates almost always left-align their own eyebrow
+// tag/headline starting at the top-left, so a badge there collides with the
+// template's own text — top-right is consistently clear across templates.
 function personalizationBadgePng(width, height, name, phone) {
   const { createCanvas } = loadCanvasLib();
   const canvas = createCanvas(width, height);
@@ -120,8 +119,8 @@ function personalizationBadgePng(width, height, name, phone) {
 
   const boxWidth = Math.max(nameWidth, phoneWidth) + pad * 2;
   const boxHeight = nameSize + (phone ? phoneSize + lineGap : 0) + pad * 1.6;
-  const boxX = pad;
-  const boxY = height - pad - boxHeight;
+  const boxX = width - pad - boxWidth;
+  const boxY = pad;
   const radius = Math.min(boxHeight * 0.22, 16);
 
   ctx.beginPath();
@@ -227,11 +226,12 @@ async function getOrCreatePersonalizedPdfUrl(sourceUrl, { advisorId, name, phone
     const phoneWidth = phone ? phoneFont.widthOfTextAtSize(phone, phoneSize) : 0;
     const boxWidth = Math.max(nameWidth, phoneWidth) + pad * 2;
     const boxHeight = nameSize + (phone ? phoneSize + lineGap : 0) + pad * 1.6;
-    const boxBottom = pad;
-    const boxTop = boxBottom + boxHeight;
+    const boxX = width - pad - boxWidth;
+    const boxTop = height - pad;
+    const boxBottom = boxTop - boxHeight;
 
     page.drawRectangle({
-      x: pad,
+      x: boxX,
       y: boxBottom,
       width: boxWidth,
       height: boxHeight,
@@ -240,11 +240,11 @@ async function getOrCreatePersonalizedPdfUrl(sourceUrl, { advisorId, name, phone
     });
 
     const nameBaselineY = boxTop - pad * 0.8 - nameSize * 0.82;
-    page.drawText(name, { x: pad * 2, y: nameBaselineY, size: nameSize, font: nameFont, color: rgb(1, 1, 1) });
+    page.drawText(name, { x: boxX + pad, y: nameBaselineY, size: nameSize, font: nameFont, color: rgb(1, 1, 1) });
 
     if (phone) {
       const phoneBaselineY = nameBaselineY - lineGap - phoneSize * 0.82;
-      page.drawText(phone, { x: pad * 2, y: phoneBaselineY, size: phoneSize, font: phoneFont, color: rgb(0.92, 0.92, 0.92) });
+      page.drawText(phone, { x: boxX + pad, y: phoneBaselineY, size: phoneSize, font: phoneFont, color: rgb(0.92, 0.92, 0.92) });
     }
   }
 
