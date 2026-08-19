@@ -2707,14 +2707,36 @@ export default function AdvisorDashboardPage() {
                                   </div>
                                 )
                               ) : creative.type === 'reel' ? (
-                                <video
-                                  src={creative.imageUrl}
-                                  poster={creative.thumbnailUrl}
-                                  muted
-                                  playsInline
-                                  onClick={() => setPreviewCreative(creative)}
-                                  className="aspect-square w-full cursor-zoom-in object-cover"
-                                />
+                                unlocked ? (
+                                  <video
+                                    src={creative.imageUrl}
+                                    poster={creative.thumbnailUrl}
+                                    muted
+                                    playsInline
+                                    onClick={() => setPreviewCreative(creative)}
+                                    className="aspect-square w-full cursor-zoom-in object-cover"
+                                  />
+                                ) : (
+                                  // Locked — a static watermarked poster
+                                  // instead of a real <video src>, so the raw
+                                  // unwatermarked file URL never lands in the
+                                  // page's DOM/source before it's paid for.
+                                  <div
+                                    onClick={() => setPreviewCreative(creative)}
+                                    className="relative aspect-square w-full cursor-zoom-in bg-black"
+                                  >
+                                    {creative.thumbnailUrl && (
+                                      <img
+                                        src={watermarkedUrl(creative.thumbnailUrl)}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                      />
+                                    )}
+                                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                      <span className="grid h-10 w-10 place-items-center rounded-full bg-black/60 text-lg text-white">▶</span>
+                                    </div>
+                                  </div>
+                                )
                               ) : (
                                 <img
                                   src={unlocked ? creative.imageUrl : watermarkedUrl(creative.imageUrl)}
@@ -2824,14 +2846,40 @@ export default function AdvisorDashboardPage() {
                             </div>
                           )
                         ) : previewCreative.type === 'reel' ? (
-                          <video
-                            src={previewCreative.imageUrl}
-                            poster={previewCreative.thumbnailUrl}
-                            controls
-                            autoPlay
-                            muted
-                            className="aspect-square w-full bg-black object-contain"
-                          />
+                          isCreativeUnlocked(previewCreative) ? (
+                            // Unlocked — already paid for, so the real file
+                            // (and the player's own download control) is fine.
+                            <video
+                              src={previewCreative.imageUrl}
+                              poster={previewCreative.thumbnailUrl}
+                              controls
+                              autoPlay
+                              muted
+                              className="aspect-square w-full bg-black object-contain"
+                            />
+                          ) : (
+                            // Locked — a static watermarked poster frame, not
+                            // a real <video src>. A <video> tag here would put
+                            // the raw, unwatermarked file URL straight into
+                            // the DOM (visible via view-source/inspect) and
+                            // its native controls include a download button —
+                            // both bypass the credit charge below.
+                            <div className="relative aspect-square w-full bg-black">
+                              {previewCreative.thumbnailUrl && (
+                                <img
+                                  src={watermarkedUrl(previewCreative.thumbnailUrl)}
+                                  alt="Content preview"
+                                  className="h-full w-full object-contain"
+                                />
+                              )}
+                              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                <span className="grid h-14 w-14 place-items-center rounded-full bg-black/60 text-2xl text-white">▶</span>
+                                <span className="rounded-lg bg-black/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                                  Unlock to play
+                                </span>
+                              </div>
+                            </div>
+                          )
                         ) : (
                           <img
                             src={
