@@ -1,4 +1,5 @@
 import { Poppins } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 
 const poppins = Poppins({
@@ -18,7 +19,18 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`scroll-smooth ${poppins.variable}`}>
-      <body className="bg-gray-50 font-sans antialiased">{children}</body>
+      <body className="bg-gray-50 font-sans antialiased">
+        {children}
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-B04JFX62P3" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-B04JFX62P3');
+          `}
+        </Script>
+      </body>
     </html>
   );
 }
